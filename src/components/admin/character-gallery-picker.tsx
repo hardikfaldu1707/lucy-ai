@@ -1,8 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { MatchTagsInput } from "@/components/admin/match-tags-input";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -25,12 +25,7 @@ import {
 import { toast } from "sonner";
 import { GripVertical, Loader2, Plus, Trash2, Upload, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  formatTagsInput,
-  parseTagsInput,
-  type CharacterGalleryItem,
-  type GalleryMediaType,
-} from "@/types/gallery";
+import { type CharacterGalleryItem, type GalleryMediaType } from "@/types/gallery";
 
 interface CharacterGalleryPickerProps {
   value: CharacterGalleryItem[];
@@ -47,7 +42,7 @@ export function CharacterGalleryPicker({
   const [showTypePicker, setShowTypePicker] = useState(false);
   const [pendingType, setPendingType] = useState<GalleryMediaType | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
-  const [newItemTags, setNewItemTags] = useState("");
+  const [newItemTags, setNewItemTags] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const uploadOptions = resolveCharacterUploadOptions(characterId);
@@ -60,7 +55,7 @@ export function CharacterGalleryPicker({
   const handleTypeSelect = (type: GalleryMediaType) => {
     setShowTypePicker(false);
     setPendingType(type);
-    setNewItemTags("");
+    setNewItemTags([]);
   };
 
   const handleFiles = async (files: FileList | null) => {
@@ -68,7 +63,7 @@ export function CharacterGalleryPicker({
 
     const type = pendingType;
     const toUpload = Array.from(files);
-    const tags = parseTagsInput(newItemTags);
+    const tags = newItemTags;
 
     setUploading(true);
     try {
@@ -91,7 +86,7 @@ export function CharacterGalleryPicker({
         onChange([...value, ...uploaded]);
         toast.success(`${uploaded.length} item(s) added`);
         setPendingType(null);
-        setNewItemTags("");
+        setNewItemTags([]);
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Upload failed");
@@ -154,9 +149,8 @@ export function CharacterGalleryPicker({
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Users tap + in chat, pick Photo or Video, and type a prompt. Match tags here control
-        which file is served (e.g. red dress, selfie, bedroom). Add as many tags as you need,
-        comma-separated.
+        Users tap + in chat, pick Photo or Video, and type a prompt. Add match tags per file —
+        when a user&apos;s message includes a tag, that photo or video is sent.
       </p>
 
       {!characterId && (
@@ -191,15 +185,12 @@ export function CharacterGalleryPicker({
       )}
 
       {pendingType && !uploading && (
-        <div className="space-y-2 rounded-xl border bg-card p-3">
-          <Label className="text-xs text-muted-foreground">
-            Match tags for this {pendingType} (optional)
-          </Label>
-          <Input
+        <div className="rounded-xl border bg-card p-3">
+          <MatchTagsInput
             value={newItemTags}
-            onChange={(e) => setNewItemTags(e.target.value)}
-            placeholder="red dress, selfie, bedroom"
-            className="h-8 text-sm"
+            onChange={setNewItemTags}
+            label={`Match tags for this ${pendingType} (optional)`}
+            placeholder="e.g. red dress — press Enter to add"
           />
         </div>
       )}
@@ -323,17 +314,11 @@ export function CharacterGalleryPicker({
                     </Button>
                   </div>
                 </div>
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Match tags</Label>
-                  <Input
-                    value={formatTagsInput(item.tags)}
-                    onChange={(e) =>
-                      updateItem(index, { tags: parseTagsInput(e.target.value) })
-                    }
-                    placeholder="red dress, selfie, bedroom"
-                    className="h-8 text-sm"
-                  />
-                </div>
+                <MatchTagsInput
+                  value={item.tags}
+                  onChange={(tags) => updateItem(index, { tags })}
+                  placeholder="e.g. selfie, bedroom — press Enter to add"
+                />
               </div>
             </div>
           ))}

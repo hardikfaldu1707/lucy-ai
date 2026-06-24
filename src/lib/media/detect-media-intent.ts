@@ -1,5 +1,18 @@
 import type { GalleryMediaType } from "@/types/gallery";
 
+/** Explicit media-type words — checked before generic request phrases. */
+const VIDEO_KEYWORDS = [
+  "video",
+  "clip",
+  "reel",
+  "recording",
+  "video moklo",
+  "video mokl",
+  "video mok",
+  "vidio",
+  "vidiyo",
+];
+
 const IMAGE_KEYWORDS = [
   "photo",
   "pic",
@@ -8,21 +21,12 @@ const IMAGE_KEYWORDS = [
   "image",
   "snap",
   "shot",
-  "send me",
-  "show me",
-  "moklo",
-  "mokl",
   "photo moklo",
+  "photo mokl",
   "pic moklo",
-];
-
-const VIDEO_KEYWORDS = [
-  "video",
-  "clip",
-  "reel",
-  "recording",
-  "video moklo",
-  "video mokl",
+  "pic mokl",
+  "selfie moklo",
+  "foto",
 ];
 
 export type MediaIntent = {
@@ -34,7 +38,8 @@ export function detectMediaIntent(text: string): MediaIntent | null {
   const hasVideo = VIDEO_KEYWORDS.some((kw) => lower.includes(kw));
   const hasImage = IMAGE_KEYWORDS.some((kw) => lower.includes(kw));
 
-  if (hasVideo && !hasImage) return { type: "video" };
+  // Video wins when both appear (e.g. "send me a video" used to match image-only keywords).
+  if (hasVideo) return { type: "video" };
   if (hasImage) return { type: "image" };
   return null;
 }
