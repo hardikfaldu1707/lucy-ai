@@ -103,19 +103,19 @@ export async function PATCH(req: Request, context: RouteContext) {
   });
 
   const character = await updateCharacter(characterId, {
-    name: body.name,
+    name: mergedName,
     tagline: body.tagline,
-    description: body.description,
+    description: mergedDescription,
     avatarUrl: body.avatarUrl,
-    tags: body.tags,
-    personality: body.personality,
+    tags: mergedTags,
+    personality: mergedPersonality,
     aiModel: body.aiModel === undefined ? undefined : body.aiModel,
     systemPrompt: systemPrompt,
-    gender: body.gender,
-    style: body.style,
-    age: body.age,
-    appearance: body.appearance,
-    voiceId: body.voicePersonaId === undefined ? undefined : body.voicePersonaId,
+    gender: mergedGender,
+    style: mergedStyle,
+    age: mergedAge,
+    appearance: mergedAppearance,
+    voiceId: mergedVoicePersonaId === undefined ? undefined : mergedVoicePersonaId,
   });
 
   if (!character) {

@@ -52,7 +52,7 @@ const securityHeaders = [
       "connect-src 'self' https://*.supabase.co https://*.clerk.accounts.dev wss://*.supabase.co https://vitals.vercel-insights.com https://*.r2.cloudflarestorage.com" +
         r2PresignConnectSrc() +
         r2ImgSrc,
-      "frame-src https://clerk.lucyai.com https://*.clerk.accounts.dev",
+      "frame-src https://clerk.lucyailove.com https://*.clerk.accounts.dev",
       "frame-ancestors 'none'",
     ].join("; "),
   },
