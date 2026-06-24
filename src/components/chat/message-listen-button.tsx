@@ -17,6 +17,7 @@ interface MessageListenButtonProps {
   messageId: string;
   text: string;
   characterName?: string;
+  voicePersonaId?: string | null;
   variant?: "light" | "dark";
   className?: string;
 }
@@ -25,6 +26,7 @@ export function MessageListenButton({
   messageId,
   text,
   characterName,
+  voicePersonaId,
   variant = "light",
   className,
 }: MessageListenButtonProps) {
@@ -58,7 +60,9 @@ export function MessageListenButton({
 
   async function handleClick() {
     warmMessageSpeech();
-    const ok = await speakMessageText(messageId, text);
+    const ok = await speakMessageText(messageId, text, {
+      voicePersonaId: voicePersonaId ?? undefined,
+    });
     if (!ok) {
       toast.error("Could not play audio. Check your volume or try again.");
     }

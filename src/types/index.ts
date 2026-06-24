@@ -2,7 +2,7 @@ export type SubscriptionPlan = "free" | "premium" | "ultimate";
 
 export type MemoryType = "personality" | "relationship" | "semantic" | "episodic";
 
-export type MessageType = "text" | "voice" | "image" | "system";
+export type MessageType = "text" | "voice" | "image" | "video" | "system";
 
 export type RelationshipStatus =
   | "stranger"
@@ -42,6 +42,8 @@ export interface Conversation {
   characterId: string;
   characterName: string;
   characterAvatar: string;
+  /** Character default voice persona for TTS (OpenAI voice mapping). */
+  characterVoiceId?: string | null;
   lastMessage: string;
   lastMessageAt: string;
   unreadCount: number;

@@ -40,6 +40,9 @@ export interface StreamHandlers {
   onReplace?: (text: string) => void;
   onDone: (message: ChatMessage) => void;
   onCoins?: (balance: number) => void;
+  onMediaGenerating?: (mediaType: "image" | "video") => void;
+  onMedia?: (message: ChatMessage, balance?: number) => void;
+  onMediaError?: (error: string, insufficientCoins?: boolean) => void;
 }
 
 // Sends a message and consumes the newline-delimited JSON stream from the chat
@@ -92,6 +95,9 @@ export async function streamChatMessage(
         | { type: "replace"; text: string }
         | { type: "done"; message: ChatMessage }
         | { type: "coins"; balance: number }
+        | { type: "media_generating"; mediaType: "image" | "video" }
+        | { type: "media"; message: ChatMessage; balance?: number }
+        | { type: "media_error"; error: string; insufficientCoins?: boolean }
         | { type: "error"; error: string };
 
       if (event.type === "user") handlers.onUser(event.message);
@@ -102,6 +108,10 @@ export async function streamChatMessage(
       }
       else if (event.type === "done") handlers.onDone(event.message);
       else if (event.type === "coins") handlers.onCoins?.(event.balance);
+      else if (event.type === "media_generating") handlers.onMediaGenerating?.(event.mediaType);
+      else if (event.type === "media") handlers.onMedia?.(event.message, event.balance);
+      else if (event.type === "media_error")
+        handlers.onMediaError?.(event.error, event.insufficientCoins);
       else if (event.type === "error") throw new Error(event.error);
     }
   }

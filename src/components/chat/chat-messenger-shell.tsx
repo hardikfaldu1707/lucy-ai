@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
-import { ChevronLeft, ChevronRight, Menu, PanelLeft, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Menu, PanelLeft, Plus, Search } from "lucide-react";
 import { ConversationList } from "@/components/chat/conversation-list";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { ROUTES } from "@/constants/routes";
 import { BELOW_MD_MEDIA_QUERY, MD_MEDIA_QUERY } from "@/constants/breakpoints";
 import { useUIStore } from "@/store/ui-store";
@@ -76,6 +77,7 @@ export function ChatMessengerShell({
     chatSidebarCollapsed,
     toggleChatSidebarCollapsed,
   } = useUIStore();
+  const [chatSearch, setChatSearch] = useState("");
   const isDark = variant === "dark";
   const isEmbedded = layout === "embedded";
   const isGuestBrowse =
@@ -259,6 +261,27 @@ export function ChatMessengerShell({
                   New chat
                 </Link>
               </Button>
+              <div className="relative">
+                <Search
+                  className={cn(
+                    "pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2",
+                    isDark ? "text-white/40" : "text-muted-foreground",
+                  )}
+                  aria-hidden
+                />
+                <Input
+                  type="search"
+                  placeholder="Search chats"
+                  value={chatSearch}
+                  onChange={(e) => setChatSearch(e.target.value)}
+                  className={cn(
+                    "h-9 rounded-lg pl-9 text-sm",
+                    isDark &&
+                      "border-white/[0.08] bg-white/[0.06] text-white placeholder:text-white/40 focus-visible:ring-primary/40",
+                  )}
+                  aria-label="Search conversations"
+                />
+              </div>
             </div>
           )}
         </header>
@@ -266,6 +289,7 @@ export function ChatMessengerShell({
           <ConversationList
             variant={variant}
             collapsed={chatSidebarCollapsed}
+            search={chatSearch}
             onSelect={handleConversationSelect}
           />
         </div>

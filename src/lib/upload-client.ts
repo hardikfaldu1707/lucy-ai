@@ -112,3 +112,19 @@ export async function uploadVideoToR2(
 
   return postUpload(file, contentType, options);
 }
+
+/** Scope/path for character gallery uploads during create (no id yet) vs edit. */
+export function resolveCharacterUploadOptions(characterId?: string): UploadToR2Options {
+  if (characterId) return { scope: "character", characterId };
+  return { scope: "user" };
+}
+
+/** Upload image or video for admin chat gallery (dispatches to correct helper). */
+export async function uploadGalleryMediaToR2(
+  file: File,
+  options: UploadToR2Options = {},
+): Promise<string> {
+  if (isAllowedVideoFile(file)) return uploadVideoToR2(file, options);
+  if (isAllowedImageFile(file)) return uploadToR2(file, options);
+  throw new Error("Please upload a supported image (JPEG, PNG, WebP, GIF) or video (MP4, WebM).");
+}

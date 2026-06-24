@@ -13,6 +13,7 @@ interface MessageBubbleProps {
   message: ChatMessage;
   characterAvatar?: string;
   characterName?: string;
+  voicePersonaId?: string | null;
   variant?: "light" | "dark";
   deliveryStatus?: MessageDeliveryStatus;
   groupPosition?: "single" | "first" | "middle" | "last";
@@ -86,6 +87,7 @@ export function MessageBubble({
   message,
   characterAvatar,
   characterName,
+  voicePersonaId,
   variant = "light",
   deliveryStatus,
   groupPosition = "single",
@@ -95,6 +97,8 @@ export function MessageBubble({
   const isDark = variant === "dark";
   const isText = message.type === "text" || !message.type;
   const isImage = message.type === "image";
+  const isVideo = message.type === "video";
+  const isMedia = isImage || isVideo;
   const showListenButton =
     !isUser && isText && !message.isStreaming && message.content.trim().length > 0;
 
@@ -149,26 +153,43 @@ export function MessageBubble({
           "max-w-[min(82%,22rem)]"
         )}
       >
-        {isImage ? (
+        {isMedia ? (
           /* Media bubble */
           <div
             className={cn(
               "w-52 relative overflow-hidden aspect-[3/4] border border-white/10 bg-zinc-950 shadow-md",
               isUser
-                ? (groupPosition === "last" || groupPosition === "single"
-                    ? "rounded-2xl rounded-br-md"
-                    : "rounded-2xl")
-                : (groupPosition === "last" || groupPosition === "single"
-                    ? "rounded-2xl rounded-bl-md"
-                    : "rounded-2xl")
+                ? groupPosition === "last" || groupPosition === "single"
+                  ? "rounded-2xl rounded-br-md"
+                  : "rounded-2xl"
+                : groupPosition === "last" || groupPosition === "single"
+                  ? "rounded-2xl rounded-bl-md"
+                  : "rounded-2xl",
             )}
           >
             {message.isStreaming && !message.mediaUrl ? (
-              <div className="absolute inset-0 bg-zinc-900 animate-pulse flex items-center justify-center">
-                <Sparkles className="h-5 w-5 text-white/25 animate-spin" style={{ animationDuration: "3s" }} />
+              <div className="absolute inset-0 flex items-center justify-center bg-zinc-900 animate-pulse">
+                <div className="space-y-2 text-center">
+                  <Sparkles
+                    className="mx-auto h-5 w-5 animate-spin text-white/25"
+                    style={{ animationDuration: "3s" }}
+                  />
+                  <p className="px-3 text-[11px] text-white/50">{message.content}</p>
+                </div>
               </div>
+            ) : message.mediaUrl && isVideo ? (
+              <video
+                src={message.mediaUrl}
+                controls
+                playsInline
+                preload="metadata"
+                className="h-full w-full object-cover"
+              />
             ) : message.mediaUrl ? (
-              <ShimmerImage src={message.mediaUrl} alt={isUser ? "Shared GIF" : `Photo from ${characterName ?? "AI"}`} />
+              <ShimmerImage
+                src={message.mediaUrl}
+                alt={isUser ? "Shared GIF" : `Photo from ${characterName ?? "AI"}`}
+              />
             ) : null}
 
             {/* Overlaid timestamp + ticks */}
@@ -183,77 +204,76 @@ export function MessageBubble({
             </div>
           </div>
         ) : (
-          /* Standard text bubble */
-          <div
-            className={cn(
-              "w-fit max-w-full px-3.5 py-2 text-sm shadow-sm",
-              isUser
-                ? (groupPosition === "last" || groupPosition === "single"
+          /* Standard text bubble + listen control beside it */
+          <div className="flex max-w-full items-end gap-0.5">
+            <div
+              className={cn(
+                "w-fit max-w-full px-3.5 py-2 text-sm shadow-sm",
+                isUser
+                  ? groupPosition === "last" || groupPosition === "single"
                     ? "rounded-2xl rounded-br-md bg-primary text-primary-foreground"
-                    : "rounded-2xl bg-primary text-primary-foreground")
-                : (groupPosition === "last" || groupPosition === "single"
+                    : "rounded-2xl bg-primary text-primary-foreground"
+                  : groupPosition === "last" || groupPosition === "single"
                     ? "rounded-2xl rounded-bl-md"
-                    : "rounded-2xl"),
-              !isUser && (
-                isDark
-                  ? "border border-white/[0.06] bg-zinc-900/85 text-white/95"
-                  : "bg-muted text-foreground"
-              ),
-              message.isStreaming && "animate-pulse"
-            )}
-          >
-            {message.type === "voice" && (
-              <>
-                <div className="flex items-center gap-2 py-0.5">
-                  <Mic className="h-4 w-4" aria-hidden />
-                  <span>Voice message</span>
-                  {message.duration != null && (
-                    <span className="text-xs opacity-70">{formatDuration(message.duration)}</span>
-                  )}
+                    : "rounded-2xl",
+                !isUser &&
+                  (isDark
+                    ? "border border-white/[0.06] bg-zinc-900/85 text-white/95"
+                    : "bg-muted text-foreground"),
+                message.isStreaming && "animate-pulse",
+              )}
+            >
+              {message.type === "voice" && (
+                <>
+                  <div className="flex items-center gap-2 py-0.5">
+                    <Mic className="h-4 w-4" aria-hidden />
+                    <span>Voice message</span>
+                    {message.duration != null && (
+                      <span className="text-xs opacity-70">{formatDuration(message.duration)}</span>
+                    )}
+                  </div>
+                  <div className="mt-0.5 flex justify-end">
+                    <BubbleMeta
+                      createdAt={message.createdAt}
+                      deliveryStatus={deliveryStatus}
+                      isUser={isUser}
+                      variant={variant}
+                      inline
+                    />
+                  </div>
+                </>
+              )}
+              {isText && (
+                <div className="inline-grid max-w-full grid-cols-[minmax(0,1fr)]">
+                  <p className="col-start-1 row-start-1 min-w-0 whitespace-pre-wrap break-words leading-[1.35] [overflow-wrap:anywhere]">
+                    {message.content}
+                    <span className="inline-block w-[4.75rem] select-none" aria-hidden="true" />
+                  </p>
+                  <div className="col-start-1 row-start-1 mb-px justify-self-end self-end">
+                    <BubbleMeta
+                      createdAt={message.createdAt}
+                      deliveryStatus={deliveryStatus}
+                      isUser={isUser}
+                      variant={variant}
+                      inline
+                    />
+                  </div>
                 </div>
-                <div className="mt-0.5 flex justify-end">
-                  <BubbleMeta
-                    createdAt={message.createdAt}
-                    deliveryStatus={deliveryStatus}
-                    isUser={isUser}
-                    variant={variant}
-                    inline
-                  />
-                </div>
-              </>
+              )}
+              {!isText && message.type !== "voice" && (
+                <p className="whitespace-pre-wrap break-words">{message.content}</p>
+              )}
+            </div>
+            {showListenButton && (
+              <MessageListenButton
+                messageId={message.id}
+                text={message.content}
+                characterName={characterName}
+                voicePersonaId={voicePersonaId}
+                variant={variant}
+                className="mb-0.5"
+              />
             )}
-            {isText && (
-              <div className="inline-grid max-w-full grid-cols-[minmax(0,1fr)]">
-                <p className="col-start-1 row-start-1 min-w-0 whitespace-pre-wrap break-words leading-[1.35] [overflow-wrap:anywhere]">
-                  {message.content}
-                  <span className="inline-block w-[4.75rem] select-none" aria-hidden="true" />
-                </p>
-                <div className="col-start-1 row-start-1 mb-px justify-self-end self-end">
-                  <BubbleMeta
-                    createdAt={message.createdAt}
-                    deliveryStatus={deliveryStatus}
-                    isUser={isUser}
-                    variant={variant}
-                    inline
-                  />
-                </div>
-              </div>
-            )}
-            {!isText && message.type !== "voice" && (
-              <p className="whitespace-pre-wrap break-words">{message.content}</p>
-            )}
-          </div>
-        )}
-
-        {/* Listen button below bubble instead of beside */}
-        {showListenButton && (
-          <div className="mt-0.5">
-            <MessageListenButton
-              messageId={message.id}
-              text={message.content}
-              characterName={characterName}
-              variant={variant}
-            />
           </div>
         )}
       </div>

@@ -43,6 +43,17 @@ async function fetchVoiceConfig(): Promise<VoiceConfigResponse> {
   };
 }
 
+async function fetchChatSettings(conversationId: string): Promise<{
+  effectiveVoicePersonaId: string | null;
+} | null> {
+  const res = await fetch(`/api/chat/${conversationId}/settings`, { credentials: "include" });
+  if (!res.ok) return null;
+  const json = (await res.json()) as { effectiveVoicePersonaId?: string | null };
+  return {
+    effectiveVoicePersonaId: json.effectiveVoicePersonaId ?? null,
+  };
+}
+
 interface ChatConversationViewProps {
   conversation: Conversation;
   initialMessages: ChatMessage[];
@@ -81,6 +92,16 @@ export function ChatConversationView({
     staleTime: 60_000,
   });
   const voiceEnabled = voiceFlag && voiceConfig?.enabled === true;
+
+  const { data: chatSettings } = useQuery({
+    queryKey: ["chat-settings", conversation.id],
+    queryFn: () => fetchChatSettings(conversation.id),
+    enabled: !isGuest,
+    staleTime: 60_000,
+  });
+
+  const voicePersonaId =
+    chatSettings?.effectiveVoicePersonaId ?? conversation.characterVoiceId ?? null;
 
   const voiceHref = useMemo(
     () =>
@@ -176,6 +197,7 @@ export function ChatConversationView({
         loadingEarlierMessages={loadingEarlier}
         onLoadEarlierMessages={isGuest ? undefined : handleLoadEarlier}
         mode={mode}
+        voicePersonaId={voicePersonaId}
       />
     </div>
   );

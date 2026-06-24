@@ -94,6 +94,7 @@ function conversationFromRow(r: ConversationDbRow): Conversation {
     characterId: charSlug,
     characterName: char?.name ?? "Unknown",
     characterAvatar: resolveCharacterImageUrl(char?.avatar_url, charSlug),
+    characterVoiceId: char?.voice_id ?? null,
     lastMessage: r.last_message ?? "Start a conversation",
     lastMessageAt: r.last_message_at ?? new Date(0).toISOString(),
     unreadCount: r.unread_count,

@@ -28,6 +28,8 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { parseBody } from "@/lib/validation/parse";
 import { chatMessageSchema } from "@/lib/validation/schemas";
 import { guardChatInput, guardOutput } from "@/lib/ai/security";
+import { detectMediaIntent } from "@/lib/media/detect-media-intent";
+import { fulfillMediaRequest } from "@/lib/data/character-photo-unlocks";
 import { isAllowedGifUrl } from "@/lib/chat/gif-url";
 import {
   ABUSE_SUSPEND_THRESHOLD,
@@ -87,6 +89,7 @@ export async function POST(req: Request, context: RouteContext) {
 
   const storedContent = content || (type === "image" ? "GIF" : "");
   const guardText = type === "image" ? "GIF" : storedContent;
+  const mediaIntent = type === "text" ? detectMediaIntent(storedContent) : null;
 
   // AI input guard (moderation + injection) runs BEFORE we persist the message
   // or spend coins, so a blocked or abusive message costs the user nothing.
@@ -255,6 +258,28 @@ export async function POST(req: Request, context: RouteContext) {
         }
 
         send({ type: "done", message: assistantMessage });
+
+        if (mediaIntent && type === "text") {
+          send({ type: "media_generating", mediaType: mediaIntent.type });
+          const mediaResult = await fulfillMediaRequest({
+            conversationId,
+            profileId: userId,
+            type: mediaIntent.type,
+            prompt: storedContent,
+            saveUserMessage: false,
+          });
+          if (mediaResult.ok) {
+            send({
+              type: "media",
+              message: mediaResult.message,
+              balance: mediaResult.balance,
+            });
+          } else if (mediaResult.status !== 402) {
+            send({ type: "media_error", error: mediaResult.error });
+          } else {
+            send({ type: "media_error", error: mediaResult.error, insufficientCoins: true });
+          }
+        }
       } catch (err) {
         console.error("[chat] AI reply failed", err);
         if (spend.amount > 0) {

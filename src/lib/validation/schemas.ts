@@ -5,6 +5,13 @@ import { z } from "zod";
 // (defense against payload abuse, DB bloat, and prompt-stuffing). Keep these in
 // sync with the domain types in src/types and the DB column limits.
 
+export const requestMediaSchema = z.object({
+  type: z.enum(["image", "video"]),
+  prompt: z.string().trim().min(1).max(500),
+  saveUserMessage: z.boolean().optional().default(true),
+});
+export type RequestMediaInput = z.infer<typeof requestMediaSchema>;
+
 export const chatCharacterPhotoSchema = z.object({
   index: z.number().int().min(0),
 });

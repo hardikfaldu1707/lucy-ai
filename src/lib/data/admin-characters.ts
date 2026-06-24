@@ -4,6 +4,11 @@ import type { CharacterAppearance } from "@/constants/create-appearance";
 import { resolveCharacterImageUrl } from "@/constants/character-portraits";
 import { revalidateCharacterCatalog } from "@/lib/data/characters-public";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import {
+  galleryItemsToUrls,
+  resolveCharacterGalleryItems,
+  type CharacterGalleryItem,
+} from "@/types/gallery";
 
 // Admin-facing character row (superset of the chat CharacterRow — includes the
 // fields the admin catalog/form needs). Mirrors the DB column names in camelCase.
@@ -18,6 +23,7 @@ export interface AdminCharacter {
   cardDisplayMode: "image" | "video";
   coverUrl: string | null;
   galleryUrls: string[];
+  galleryItems: import("@/types/gallery").CharacterGalleryItem[];
   suggestedQuestions: string[];
   category: string;
   tags: string[];
@@ -45,6 +51,7 @@ export interface AdminCharacterInput {
   cardDisplayMode?: "image" | "video";
   coverUrl?: string | null;
   galleryUrls?: string[];
+  galleryItems?: import("@/types/gallery").CharacterGalleryItem[];
   suggestedQuestions?: string[];
   category?: string;
   tags?: string[];
@@ -72,6 +79,7 @@ type AdminCharacterDbRow = {
   card_display_mode: string;
   cover_url: string | null;
   gallery_urls: string[];
+  gallery_items: CharacterGalleryItem[] | unknown;
   suggested_questions: string[];
   category: string;
   tags: string[];
@@ -90,10 +98,33 @@ type AdminCharacterDbRow = {
 };
 
 const SELECT =
-  "id, slug, name, tagline, description, avatar_url, preview_video_url, card_display_mode, cover_url, gallery_urls, suggested_questions, category, tags, personality, ai_model, system_prompt, visibility, created_by, gender, style, age, appearance, voice_id, is_published, created_at";
+  "id, slug, name, tagline, description, avatar_url, preview_video_url, card_display_mode, cover_url, gallery_urls, gallery_items, suggested_questions, category, tags, personality, ai_model, system_prompt, visibility, created_by, gender, style, age, appearance, voice_id, is_published, created_at";
+
+function resolveGalleryForRow(
+  r: AdminCharacterDbRow,
+  slug: string,
+): { galleryItems: CharacterGalleryItem[]; galleryUrls: string[] } {
+  const legacyUrls = (r.gallery_urls ?? []).map((g) => resolveCharacterImageUrl(g, slug));
+  const galleryItems = resolveCharacterGalleryItems(
+    r.gallery_items,
+    legacyUrls,
+    r.preview_video_url ?? null,
+  ).map((item) => ({
+    ...item,
+    url:
+      item.type === "image"
+        ? resolveCharacterImageUrl(item.url, slug)
+        : item.url,
+  }));
+  return {
+    galleryItems,
+    galleryUrls: galleryItemsToUrls(galleryItems),
+  };
+}
 
 function fromRow(r: AdminCharacterDbRow): AdminCharacter {
   const slug = r.slug ?? r.id;
+  const { galleryItems, galleryUrls } = resolveGalleryForRow(r, slug);
   return {
     id: r.id,
     slug: r.slug,
@@ -104,7 +135,8 @@ function fromRow(r: AdminCharacterDbRow): AdminCharacter {
     previewVideoUrl: r.preview_video_url ?? null,
     cardDisplayMode: r.card_display_mode === "video" ? "video" : "image",
     coverUrl: r.cover_url ?? null,
-    galleryUrls: (r.gallery_urls ?? []).map((g) => resolveCharacterImageUrl(g, slug)),
+    galleryUrls,
+    galleryItems,
     suggestedQuestions: r.suggested_questions ?? [],
     category: r.category,
     tags: r.tags ?? [],
@@ -121,6 +153,22 @@ function fromRow(r: AdminCharacterDbRow): AdminCharacter {
     isPublished: r.is_published,
     createdAt: r.created_at,
   };
+}
+
+function normalizeGalleryInput(
+  input: AdminCharacterInput,
+): { galleryItems: CharacterGalleryItem[]; galleryUrls: string[] } {
+  if (input.galleryItems && input.galleryItems.length > 0) {
+    const galleryItems = input.galleryItems;
+    return { galleryItems, galleryUrls: galleryItemsToUrls(galleryItems) };
+  }
+  const galleryUrls = input.galleryUrls ?? [];
+  const galleryItems = galleryUrls.map((url) => ({
+    url,
+    type: "image" as const,
+    tags: [] as string[],
+  }));
+  return { galleryItems, galleryUrls };
 }
 
 function slugify(value: string): string {
@@ -167,6 +215,7 @@ export async function createCharacter(
   input: AdminCharacterInput,
 ): Promise<CreateCharacterResult> {
   const slug = await resolveUniqueSlug(input.slug?.trim() || slugify(input.name));
+  const { galleryItems, galleryUrls } = normalizeGalleryInput(input);
   const { data, error } = await supabaseAdmin()
     .from("characters")
     .insert({
@@ -178,7 +227,8 @@ export async function createCharacter(
       preview_video_url: input.previewVideoUrl ?? null,
       card_display_mode: input.cardDisplayMode ?? "image",
       cover_url: input.coverUrl ?? null,
-      gallery_urls: input.galleryUrls ?? [],
+      gallery_urls: galleryUrls,
+      gallery_items: galleryItems,
       suggested_questions: input.suggestedQuestions ?? [],
       category: input.category ?? "",
       tags: input.tags ?? [],
@@ -218,7 +268,11 @@ export async function updateCharacter(
   if (patch.previewVideoUrl !== undefined) fields.preview_video_url = patch.previewVideoUrl;
   if (patch.cardDisplayMode !== undefined) fields.card_display_mode = patch.cardDisplayMode;
   if (patch.coverUrl !== undefined) fields.cover_url = patch.coverUrl;
-  if (patch.galleryUrls !== undefined) fields.gallery_urls = patch.galleryUrls;
+  if (patch.galleryItems !== undefined || patch.galleryUrls !== undefined) {
+    const { galleryItems, galleryUrls } = normalizeGalleryInput(patch);
+    fields.gallery_items = galleryItems;
+    fields.gallery_urls = galleryUrls;
+  }
   if (patch.suggestedQuestions !== undefined) fields.suggested_questions = patch.suggestedQuestions;
   if (patch.category !== undefined) fields.category = patch.category;
   if (patch.tags !== undefined) fields.tags = patch.tags;

@@ -30,6 +30,7 @@ import { CharacterPortraitMedia } from "@/components/home/character-portrait-med
 import { SuggestedQuestionsEditor } from "./suggested-questions-editor";
 import { resolveCharacterImageUrl } from "@/constants/character-portraits";
 import { CREATE_VOICE_OPTIONS } from "@/constants/create-voices";
+import type { CharacterGalleryItem } from "@/types/gallery";
 import type { AdminCharacter } from "@/lib/data/admin-characters";
 import { toast } from "sonner";
 
@@ -43,7 +44,7 @@ export interface CharacterFormValues {
   previewVideoUrl: string | null;
   cardDisplayMode: "image" | "video";
   coverUrl: string | null;
-  galleryUrls: string[];
+  galleryItems: CharacterGalleryItem[];
   suggestedQuestions: string[];
   category: string;
   tags: string[];
@@ -93,7 +94,9 @@ export function CharacterForm({
     initial?.cardDisplayMode ?? "image",
   );
   const [coverUrl, setCoverUrl] = useState(initial?.coverUrl ?? "");
-  const [galleryUrls, setGalleryUrls] = useState<string[]>(initial?.galleryUrls ?? []);
+  const [galleryItems, setGalleryItems] = useState<CharacterGalleryItem[]>(
+    initial?.galleryItems ?? initial?.galleryUrls?.map((url: string) => ({ url, type: "image" as const, tags: [] })) ?? [],
+  );
   const [suggestedQuestions, setSuggestedQuestions] = useState<string[]>(
     initial?.suggestedQuestions ?? [],
   );
@@ -136,7 +139,7 @@ export function CharacterForm({
       previewVideoUrl: previewVideoUrl.trim() || null,
       cardDisplayMode: previewVideoUrl.trim() ? cardDisplayMode : "image",
       coverUrl: coverUrl.trim() || null,
-      galleryUrls,
+      galleryItems,
       suggestedQuestions,
       category: category.trim(),
       tags: fromCsv(tags),
@@ -338,11 +341,18 @@ export function CharacterForm({
                     />
                   </div>
 
-                  <CharacterGalleryPicker
-                    value={galleryUrls}
-                    onChange={setGalleryUrls}
-                    characterId={initial?.id}
-                  />
+                  <div className="space-y-2 border-t pt-4">
+                    <Label className="text-sm font-semibold">Chat media library</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Powers the user + button in chat (Photo / Video requests). Separate from the
+                      preview video on the Appearance tab.
+                    </p>
+                    <CharacterGalleryPicker
+                      value={galleryItems}
+                      onChange={setGalleryItems}
+                      characterId={initial?.id}
+                    />
+                  </div>
 
                   <SuggestedQuestionsEditor
                     value={suggestedQuestions}
