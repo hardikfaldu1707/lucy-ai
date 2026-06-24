@@ -96,7 +96,7 @@ export function ChatInput({
     return appendTranscriptToDraft(value, dictation.interimText);
   }, [dictation.interimText, dictation.isListening, value]);
 
-  const { status: dictationStatus, stop: stopDictation } = dictation;
+  const { status: dictationStatus, errorKind: dictationErrorKind, stop: stopDictation } = dictation;
 
   useEffect(() => {
     if (dictationStatus === "unsupported") {
@@ -104,6 +104,16 @@ export function ChatInput({
       stopDictation();
     }
   }, [dictationStatus, stopDictation]);
+
+  useEffect(() => {
+    if (dictationStatus !== "error") return;
+    toast.error(
+      dictationErrorKind === "network"
+        ? "Voice typing needs an internet connection. Check your network and try again."
+        : "Voice typing failed. Please try again.",
+    );
+    stopDictation();
+  }, [dictationStatus, dictationErrorKind, stopDictation]);
 
   const handleSend = () => {
     dictation.stop();
@@ -199,7 +209,7 @@ export function ChatInput({
     ghostBtnClass,
     voiceCallEnabled &&
       isDark &&
-      "text-pink-300 hover:bg-pink-500/20 hover:text-pink-200",
+      "text-primary hover:bg-primary/20 hover:text-primary",
   );
 
   const emojiBtnActive = pickerOpen;
@@ -258,7 +268,7 @@ export function ChatInput({
             isDark
               ? "border-white/[0.08] bg-white/[0.04]"
               : "border-border bg-muted/30",
-            dictationActive && isDark && "border-pink-500/25",
+            dictationActive && isDark && "border-primary/25",
             dictationActive && !isDark && "border-primary/30",
           )}
         >
@@ -271,7 +281,7 @@ export function ChatInput({
                 "h-9 w-9 shrink-0 rounded-full",
                 ghostBtnClass,
                 emojiBtnActive &&
-                  (isDark ? "bg-white/10 text-pink-300" : "bg-muted text-foreground"),
+                  (isDark ? "bg-white/10 text-primary" : "bg-muted text-foreground"),
               )}
               aria-label={pickerOpen ? "Close emoji picker" : "Open emoji picker"}
               aria-expanded={pickerOpen}
@@ -306,7 +316,7 @@ export function ChatInput({
                   "h-9 w-9 shrink-0 rounded-full",
                   ghostBtnClass,
                   photoBtnActive &&
-                    (isDark ? "bg-white/10 text-pink-300" : "bg-muted text-foreground"),
+                    (isDark ? "bg-white/10 text-primary" : "bg-muted text-foreground"),
                 )}
                 aria-label={photoPanelOpen ? "Close send photo" : "Send a photo"}
                 aria-expanded={photoPanelOpen}
@@ -347,7 +357,7 @@ export function ChatInput({
                     : "text-muted-foreground hover:text-foreground",
                   dictationActive &&
                     (isDark
-                      ? "bg-pink-500/20 text-pink-300"
+                      ? "bg-primary/20 text-primary"
                       : "bg-primary/10 text-primary"),
                 )}
                 aria-label={
@@ -366,7 +376,7 @@ export function ChatInput({
             className={cn(
               "h-9 w-9 shrink-0 rounded-full",
               isDark
-                ? "bg-pink-500 text-white hover:bg-pink-400 disabled:bg-white/10 disabled:text-white/30"
+                ? "bg-primary text-primary-foreground hover:bg-primary/90 disabled:bg-white/10 disabled:text-white/30"
                 : undefined,
             )}
             onClick={handleSend}

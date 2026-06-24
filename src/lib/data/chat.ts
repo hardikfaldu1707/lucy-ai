@@ -161,20 +161,39 @@ export async function getPublicCharacterBySlug(
   return characterFromRow(row);
 }
 
-export async function getOrCreateConversation(
+async function fetchConversationByProfileAndCharacter(
   profileId: string,
   characterId: string,
 ): Promise<Conversation | null> {
   const supabase = supabaseAdmin();
-
-  const { data: existing } = await supabase
+  const { data, error } = await supabase
     .from("conversations")
     .select(CONVERSATION_SELECT)
     .eq("profile_id", profileId)
     .eq("character_id", characterId)
     .maybeSingle();
 
-  if (existing) return conversationFromRow(existing as ConversationDbRow);
+  if (error) {
+    console.error(
+      "[getOrCreateConversation] fetch failed",
+      error.message,
+      error.code,
+      error.details,
+    );
+    return null;
+  }
+  if (!data) return null;
+  return conversationFromRow(data as ConversationDbRow);
+}
+
+export async function getOrCreateConversation(
+  profileId: string,
+  characterId: string,
+): Promise<Conversation | null> {
+  const supabase = supabaseAdmin();
+
+  const existing = await fetchConversationByProfileAndCharacter(profileId, characterId);
+  if (existing) return existing;
 
   const { data: created, error } = await supabase
     .from("conversations")
@@ -182,10 +201,20 @@ export async function getOrCreateConversation(
     .select(CONVERSATION_SELECT)
     .single();
 
-  if (error || !created) {
-    if (error) console.error("[getOrCreateConversation]", error);
+  if (error) {
+    // Concurrent requests can both miss the initial select and race on insert.
+    if (error.code === "23505") {
+      return fetchConversationByProfileAndCharacter(profileId, characterId);
+    }
+    console.error(
+      "[getOrCreateConversation] insert failed",
+      error.message,
+      error.code,
+      error.details,
+    );
     return null;
   }
+  if (!created) return null;
   return conversationFromRow(created as ConversationDbRow);
 }
 

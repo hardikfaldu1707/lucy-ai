@@ -69,6 +69,16 @@ export interface MemoryItem {
   updatedAt: string;
 }
 
+export interface CharacterMemoryFile {
+  characterId: string;
+  slug: string;
+  name: string;
+  avatarUrl: string;
+  memoryMonth: string;
+  markdown: string;
+  updatedAt: string | null;
+}
+
 export interface SubscriptionInfo {
   plan: SubscriptionPlan;
   status: "active" | "cancelled" | "past_due" | "trialing";

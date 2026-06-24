@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
+
 import {
   Dialog,
   DialogContent,
@@ -20,12 +21,14 @@ interface DeleteCharacterDialogProps {
   characterId: string;
   characterName: string;
   variant?: "dashboard" | "browse";
+  onDeleteSuccess?: () => void;
 }
 
 export function DeleteCharacterDialog({
   characterId,
   characterName,
   variant = "dashboard",
+  onDeleteSuccess,
 }: DeleteCharacterDialogProps) {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -49,6 +52,7 @@ export function DeleteCharacterDialog({
       ]);
       toast.success(`${characterName} deleted`);
       setOpen(false);
+      onDeleteSuccess?.();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to delete character");
     } finally {

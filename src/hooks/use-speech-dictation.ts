@@ -16,6 +16,8 @@ export type DictationStatus =
   | "unsupported"
   | "error";
 
+export type DictationErrorKind = "network" | "generic" | null;
+
 type UseSpeechDictationOptions = {
   onFinalTranscript?: (segment: string) => void;
   disabled?: boolean;
@@ -26,6 +28,7 @@ export function useSpeechDictation({
   disabled = false,
 }: UseSpeechDictationOptions = {}) {
   const [status, setStatus] = useState<DictationStatus>("idle");
+  const [errorKind, setErrorKind] = useState<DictationErrorKind>(null);
   const [interimText, setInterimText] = useState("");
   const [showPermissionPrompt, setShowPermissionPrompt] = useState(false);
   const [isSupported] = useState(() =>
@@ -106,15 +109,21 @@ export function useSpeechDictation({
         listeningRef.current = false;
         permissionGrantedRef.current = false;
         setInterimText("");
+        setErrorKind(null);
         setStatus("denied");
         stopRecognition();
         return;
       }
-      console.error("[useSpeechDictation] recognition error", event.error);
+
       listeningRef.current = false;
       setInterimText("");
       setStatus("error");
+      setErrorKind(event.error === "network" ? "network" : "generic");
       stopRecognition();
+
+      if (event.error !== "network" && process.env.NODE_ENV === "development") {
+        console.warn("[useSpeechDictation] recognition error", event.error);
+      }
     };
 
     recognition.onend = () => {
@@ -133,6 +142,7 @@ export function useSpeechDictation({
     recognitionRef.current = recognition;
     try {
       recognition.start();
+      setErrorKind(null);
       setStatus("listening");
     } catch {
       setStatus("error");
@@ -184,6 +194,7 @@ export function useSpeechDictation({
     listeningRef.current = false;
     setShowPermissionPrompt(false);
     setInterimText("");
+    setErrorKind(null);
     stopRecognition();
     setStatus("idle");
   }, [stopRecognition]);
@@ -222,6 +233,7 @@ export function useSpeechDictation({
 
   return {
     status,
+    errorKind,
     isListening: status === "listening",
     interimText,
     showPermissionPrompt,

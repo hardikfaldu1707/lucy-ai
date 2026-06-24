@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useQueryClient } from "@tanstack/react-query";
 import { MessageBubble } from "./message-bubble";
 import { ChatInput } from "./chat-input";
+import { TypingIndicator } from "./typing-indicator";
 import { ChatSuggestionChips } from "./chat-suggestion-chips";
 import { GuestAuthDialog } from "./guest-auth-dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -341,6 +342,23 @@ export function ChatWindow({
 
   const handleSendCharacterPhoto = async (photoIndex: number) => {
     onError?.(null);
+    setTypingConversation(conversation.id);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    setTypingConversation(null);
+
+    const tempId = `temp-photo-${Date.now()}`;
+    const placeholderMsg: ChatMessage = {
+      id: tempId,
+      conversationId: conversation.id,
+      role: "assistant",
+      type: "image",
+      content: "📷 Photo",
+      mediaUrl: "",
+      isStreaming: true,
+      createdAt: new Date().toISOString(),
+    };
+    onMessagesChange?.([...messages, placeholderMsg]);
+
     try {
       const res = await fetch(`/api/chat/${conversation.id}/character-photo`, {
         method: "POST",
@@ -354,6 +372,7 @@ export function ChatWindow({
         balance?: number;
       };
       if (!res.ok) {
+        onMessagesChange?.(messages);
         const message = json.error ?? "Failed to send photo";
         if (res.status === 402) throw new InsufficientCoinsError(message);
         throw new Error(message);
@@ -363,12 +382,13 @@ export function ChatWindow({
         applyCoinBalance(queryClient, json.balance);
       }
       if (json.message) {
-        onMessagesChange?.([...messages, json.message]);
+        onMessagesChange?.([...messages, { ...json.message, isStreaming: false }]);
       }
       void queryClient.invalidateQueries({
         queryKey: ["character-photos", conversation.characterId],
       });
     } catch (err) {
+      onMessagesChange?.(messages);
       onError?.({
         message: err instanceof Error ? err.message : "Failed to send photo",
         insufficientCoins: err instanceof InsufficientCoinsError,
@@ -432,18 +452,55 @@ export function ChatWindow({
                     {group.label}
                   </span>
                 </div>
-                {group.messages.map((msg) => (
-                  <MessageBubble
-                    key={msg.id}
-                    message={msg}
-                    characterAvatar={conversation.characterAvatar}
-                    characterName={conversation.characterName}
-                    variant={bubbleVariant}
-                    deliveryStatus={getUserMessageDeliveryStatus(msg, messages, isTyping)}
-                  />
-                ))}
+                {group.messages.map((msg, msgIndex) => {
+                  const prev = group.messages[msgIndex - 1];
+                  const next = group.messages[msgIndex + 1];
+                  
+                  const isSameRoleAsPrev = prev && prev.role === msg.role && msg.type !== 'system' && prev.type !== 'system';
+                  const isWithin2MinOfPrev = prev && (new Date(msg.createdAt).getTime() - new Date(prev.createdAt).getTime()) <= 120000;
+                  const isPrevGrouped = isSameRoleAsPrev && isWithin2MinOfPrev;
+
+                  const isSameRoleAsNext = next && next.role === msg.role && msg.type !== 'system' && next.type !== 'system';
+                  const isWithin2MinOfNext = next && (new Date(next.createdAt).getTime() - new Date(msg.createdAt).getTime()) <= 120000;
+                  const isNextGrouped = isSameRoleAsNext && isWithin2MinOfNext;
+
+                  let groupPosition: "single" | "first" | "middle" | "last" = "single";
+                  if (isPrevGrouped && isNextGrouped) {
+                    groupPosition = "middle";
+                  } else if (isPrevGrouped) {
+                    groupPosition = "last";
+                  } else if (isNextGrouped) {
+                    groupPosition = "first";
+                  }
+
+                  return (
+                    <MessageBubble
+                      key={msg.id}
+                      message={msg}
+                      characterAvatar={conversation.characterAvatar}
+                      characterName={conversation.characterName}
+                      variant={bubbleVariant}
+                      deliveryStatus={getUserMessageDeliveryStatus(msg, messages, isTyping)}
+                      groupPosition={groupPosition}
+                    />
+                  );
+                })}
               </div>
             ))}
+            {isTyping && (
+              <div className="flex gap-3 items-center py-2 justify-start max-w-[min(82%,22rem)]">
+                <div className="w-8 h-8 rounded-full shrink-0 overflow-hidden relative border border-white/20">
+                  {conversation.characterAvatar && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={conversation.characterAvatar} alt={conversation.characterName} className="object-cover w-full h-full" />
+                  )}
+                </div>
+                <TypingIndicator
+                  characterName={conversation.characterName}
+                  variant={bubbleVariant}
+                />
+              </div>
+            )}
             <div ref={bottomRef} />
           </div>
         </ScrollArea>

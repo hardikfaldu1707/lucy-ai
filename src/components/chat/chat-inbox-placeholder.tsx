@@ -23,7 +23,7 @@ export function ChatInboxPlaceholder({ variant = "dark" }: ChatInboxPlaceholderP
       <div
         className={cn(
           "flex h-16 w-16 items-center justify-center rounded-2xl",
-          isDark ? "bg-pink-500/15 text-pink-400" : "bg-primary/10 text-primary",
+          isDark ? "bg-primary/15 text-primary" : "bg-primary/10 text-primary",
         )}
       >
         <MessageCircle className="h-8 w-8" aria-hidden />
@@ -43,7 +43,7 @@ export function ChatInboxPlaceholder({ variant = "dark" }: ChatInboxPlaceholderP
         asChild
         className={cn(
           isDark &&
-            "rounded-full bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white hover:from-pink-400 hover:to-fuchsia-500",
+            "rounded-full bg-gradient-to-r from-primary to-violet-600 text-white hover:from-primary/90 hover:to-violet-500",
         )}
       >
         <Link href={ROUTES.publicChatNew}>

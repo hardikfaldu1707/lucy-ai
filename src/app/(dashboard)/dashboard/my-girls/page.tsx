@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
+import { Pencil } from "lucide-react";
 import { DeleteCharacterDialog } from "@/components/character/delete-character-dialog";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -52,7 +53,7 @@ export default function MyGirlsPage() {
               className="group relative overflow-hidden rounded-2xl ring-1 ring-border"
             >
               <Link
-                href={ROUTES.characterProfile(c.slug ?? c.id)}
+                href={ROUTES.myGirl(c.slug ?? c.id)}
                 className="block"
               >
                 <div className="relative aspect-[3/4] w-full bg-muted">
@@ -73,7 +74,17 @@ export default function MyGirlsPage() {
                   </div>
                 </div>
               </Link>
-              <div className="absolute right-2 top-2 opacity-100 sm:opacity-0 transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+              <div className="absolute right-2 top-2 opacity-100 sm:opacity-0 transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 flex items-center gap-1.5">
+                <Button
+                  asChild
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8 border-border bg-background/80 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground"
+                >
+                  <Link href={ROUTES.myGirlEdit(c.slug ?? c.id)} title="Edit companion">
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Link>
+                </Button>
                 <DeleteCharacterDialog
                   characterId={c.id}
                   characterName={c.name}

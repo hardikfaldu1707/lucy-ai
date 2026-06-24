@@ -1,7 +1,7 @@
 import "server-only";
 
 import { upsertMemoryForCharacter } from "@/lib/data/memories";
-import { syncMemoryMdToR2 } from "@/lib/memory/memory-md";
+import { ensureCurrentMonthMemory, syncMemoryMdToR2 } from "@/lib/memory/memory-md";
 import { resolveDefaultModel } from "@/lib/data/ai-model-settings";
 import { sanitizeUserText } from "@/lib/ai/prompt-safety";
 import type { MemoryType } from "@/types";
@@ -130,6 +130,8 @@ export async function extractMemoriesFromExchange(params: {
     const parsed = parseExtractedMemories(raw);
     let saved = 0;
     const savedTypes: MemoryType[] = [];
+
+    await ensureCurrentMonthMemory(profileId, characterId);
 
     for (const m of parsed.memories ?? []) {
       if (!m.title?.trim() || !m.content?.trim()) continue;

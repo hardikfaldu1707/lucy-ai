@@ -106,6 +106,9 @@ export const createCharacterSchema = z.object({
   voicePersonaId: z.string().trim().max(40).optional(),
 });
 
+export const updateUserCharacterSchema = createCharacterSchema.partial();
+export type UpdateUserCharacterInput = z.infer<typeof updateUserCharacterSchema>;
+
 export const subscriptionUpgradeSchema = z.object({
   plan: z.enum(["free", "premium", "ultimate"]),
 });

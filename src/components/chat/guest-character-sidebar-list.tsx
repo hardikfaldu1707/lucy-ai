@@ -85,7 +85,7 @@ export function GuestCharacterSidebarList({
         <div
           className={cn(
             "mb-4 flex h-14 w-14 items-center justify-center rounded-2xl",
-            isDark ? "bg-pink-500/15 text-pink-400" : "bg-primary/10 text-primary",
+            "bg-primary/10 text-primary",
           )}
         >
           <MessageCircle className="h-7 w-7" aria-hidden />
@@ -123,7 +123,7 @@ export function GuestCharacterSidebarList({
                 isDark ? "hover:bg-white/[0.06]" : "hover:bg-muted/80",
                 active &&
                   (isDark
-                    ? "bg-white/[0.08] before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:bg-pink-500/80"
+                    ? "bg-white/[0.08] before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:bg-primary/80"
                     : "bg-muted before:absolute before:inset-y-1.5 before:left-0 before:w-0.5 before:rounded-full before:bg-primary"),
               )}
               aria-current={active ? "page" : undefined}
@@ -135,7 +135,7 @@ export function GuestCharacterSidebarList({
                   collapsed ? "h-10 w-10" : "h-11 w-11",
                   active &&
                     (isDark
-                      ? "ring-2 ring-pink-500/60 ring-offset-1 ring-offset-[#0a0a0a]"
+                      ? "ring-2 ring-primary/60 ring-offset-1 ring-offset-[#0a0a0a]"
                       : "ring-2 ring-primary/50 ring-offset-1 ring-offset-background"),
                 )}
               >

@@ -128,7 +128,7 @@ export function ChatSendPhotoPanel({
                     isDark ? "text-white/50" : "text-muted-foreground",
                   )}
                 >
-                  <Coins className="h-3.5 w-3.5 text-pink-400" aria-hidden />
+                  <Coins className="h-3.5 w-3.5 text-primary" aria-hidden />
                   Locked photos cost {costPerPhoto} coins — unlocks in chat and on profile
                 </p>
               )}
@@ -140,7 +140,7 @@ export function ChatSendPhotoPanel({
                       key={`${photo.url}-${photo.index}`}
                       type="button"
                       disabled={disabled || isSending}
-                      className="group relative aspect-[3/4] overflow-hidden rounded-lg bg-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500 disabled:opacity-60"
+                      className="group relative aspect-[3/4] overflow-hidden rounded-lg bg-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-60"
                       onClick={() => handlePhotoClick(photo.index, photo.unlocked)}
                       aria-label={
                         photo.unlocked
@@ -214,7 +214,7 @@ export function ChatSendPhotoPanel({
               Cancel
             </Button>
             <Button
-              className="bg-pink-500 hover:bg-pink-400"
+              className="bg-primary hover:bg-primary/95 text-white"
               onClick={() => unlockTarget !== null && void sendPhotoToChat(unlockTarget)}
               disabled={sendingIndex !== null}
             >

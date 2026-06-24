@@ -4,6 +4,7 @@ import {
   S3Client,
   PutObjectCommand,
   DeleteObjectCommand,
+  GetObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
@@ -71,6 +72,18 @@ export async function presignUpload(
 
 export async function deleteObject(key: string): Promise<void> {
   await client().send(new DeleteObjectCommand({ Bucket: bucket(), Key: key }));
+}
+
+export async function getObject(key: string): Promise<string | null> {
+  try {
+    const res = await client().send(
+      new GetObjectCommand({ Bucket: bucket(), Key: key }),
+    );
+    if (!res.Body) return null;
+    return await res.Body.transformToString("utf-8");
+  } catch {
+    return null;
+  }
 }
 
 export async function putObject(

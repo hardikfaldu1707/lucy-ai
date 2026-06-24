@@ -90,7 +90,7 @@ export function ConversationList({
         <div
           className={cn(
             "mb-4 flex h-14 w-14 items-center justify-center rounded-2xl",
-            isDark ? "bg-pink-500/15 text-pink-400" : "bg-primary/10 text-primary",
+            "bg-primary/10 text-primary",
           )}
         >
           <MessageCircle className="h-7 w-7" aria-hidden />
@@ -101,9 +101,7 @@ export function ConversationList({
           href={ROUTES.publicChatNew}
           className={cn(
             "mt-5 rounded-full px-4 py-2 text-sm font-medium transition-colors",
-            isDark
-              ? "bg-pink-500/15 text-pink-300 hover:bg-pink-500/25"
-              : "bg-primary/10 text-primary hover:bg-primary/15",
+            "bg-primary/10 text-primary hover:bg-primary/15",
           )}
         >
           Browse companions
@@ -136,7 +134,7 @@ export function ConversationList({
                 isDark ? "hover:bg-white/[0.08]" : "hover:bg-muted/80",
                 active &&
                   (isDark
-                    ? "bg-pink-500/10 before:absolute before:inset-y-1.5 before:left-0 before:w-0.5 before:rounded-full before:bg-pink-500"
+                    ? "bg-primary/10 before:absolute before:inset-y-1.5 before:left-0 before:w-0.5 before:rounded-full before:bg-primary"
                     : "bg-muted before:absolute before:inset-y-1.5 before:left-0 before:w-0.5 before:rounded-full before:bg-primary"),
               )}
               aria-current={active ? "page" : undefined}
@@ -148,7 +146,7 @@ export function ConversationList({
                   collapsed ? "h-10 w-10" : "h-11 w-11",
                   active &&
                     (isDark
-                      ? "ring-2 ring-pink-500/60 ring-offset-1 ring-offset-[#0a0a0a]"
+                      ? "ring-2 ring-primary/60 ring-offset-1 ring-offset-[#0a0a0a]"
                       : "ring-2 ring-primary/50 ring-offset-1 ring-offset-background"),
                 )}
               >
@@ -189,7 +187,7 @@ export function ConversationList({
                     </p>
                   </div>
                   {conv.unreadCount > 0 && (
-                    <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-pink-500 px-1.5 text-[10px] font-bold text-white">
+                    <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-white">
                       {formatUnread(conv.unreadCount)}
                     </span>
                   )}
@@ -197,7 +195,7 @@ export function ConversationList({
               )}
               {collapsed && conv.unreadCount > 0 && (
                 <span
-                  className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-pink-500 px-1 text-[9px] font-bold text-white"
+                  className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-white"
                   aria-label={`${conv.unreadCount} unread`}
                 >
                   {formatUnread(conv.unreadCount)}

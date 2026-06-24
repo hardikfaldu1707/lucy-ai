@@ -46,7 +46,7 @@ export async function POST(req: Request, context: RouteContext) {
     userId,
     conversationId,
     "assistant",
-    "Photo",
+    "📷 Photo",
     "image",
     unlock.photoUrl,
   );
