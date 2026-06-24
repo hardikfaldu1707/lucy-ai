@@ -54,9 +54,8 @@ export function ExplorePage() {
   const { data: dbCharacters } = useQuery({
     queryKey: ["explore", "characters"],
     queryFn: fetchExploreCharacters,
-    staleTime: 30_000,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
   });
   const baseList = useMemo(() => dbCharacters ?? [], [dbCharacters]);
 

@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
-import { Loader2 } from "lucide-react";
+import { HeartLoader } from "@/components/shared/heart-loader";
 import { ROUTES } from "@/constants/routes";
 
 export function ChatNewRedirect() {
@@ -27,7 +27,7 @@ export function ChatNewRedirect() {
 
   return (
     <div className="mt-8 flex flex-col items-center gap-3 text-white/70">
-      <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden />
+      <HeartLoader size="lg" />
       <p className="text-sm">Starting your chat…</p>
     </div>
   );

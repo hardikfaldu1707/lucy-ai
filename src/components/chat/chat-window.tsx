@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import Image from "next/image";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { MessageBubble } from "./message-bubble";
@@ -92,6 +92,19 @@ export function ChatWindow({
   const bgUrl = backgroundImageUrl ?? conversation.characterAvatar;
   const bubbleVariant = inputVariant;
 
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = "auto") => {
+    const viewport = scrollRootRef.current?.querySelector(
+      "[data-radix-scroll-area-viewport]",
+    ) as HTMLElement | null;
+
+    if (viewport) {
+      viewport.scrollTo({ top: viewport.scrollHeight, behavior });
+      return;
+    }
+
+    bottomRef.current?.scrollIntoView({ behavior, block: "end" });
+  }, []);
+
   useEffect(() => {
     if (!isGuest) return;
     void fetchGuestChatStatus(conversation.characterId).then((status) => {
@@ -130,6 +143,13 @@ export function ChatWindow({
     return groups;
   }, [messages]);
 
+  // Open every chat at the latest message.
+  useEffect(() => {
+    scrollToBottom("auto");
+    const t = window.setTimeout(() => scrollToBottom("auto"), 120);
+    return () => window.clearTimeout(t);
+  }, [conversation.id, scrollToBottom]);
+
   useEffect(() => {
     const active = document.activeElement;
     const inputFocused =
@@ -155,6 +175,7 @@ export function ChatWindow({
 
     bottomRef.current?.scrollIntoView({
       behavior: isStreamingRef.current ? "auto" : "smooth",
+      block: "end",
     });
   }, [messages, isTyping]);
 
@@ -359,7 +380,7 @@ export function ChatWindow({
               conversationId: conversation.id,
               role: "assistant",
               type: mediaType,
-              content: mediaType === "video" ? "Generating video…" : "Generating photo…",
+              content: "",
               mediaUrl: "",
               isStreaming: true,
               createdAt: new Date().toISOString(),
@@ -418,7 +439,7 @@ export function ChatWindow({
       conversationId: conversation.id,
       role: "assistant",
       type: mediaType,
-      content: mediaType === "video" ? "Generating video…" : "Generating photo…",
+      content: "",
       mediaUrl: "",
       isStreaming: true,
       createdAt: new Date().toISOString(),

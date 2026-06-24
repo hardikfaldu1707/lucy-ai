@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Mic, Info, Sparkles } from "lucide-react";
+import { HeartLoader } from "@/components/shared/heart-loader";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MessageListenButton } from "@/components/chat/message-listen-button";
 import { MessageStatusTicks } from "@/components/chat/message-status-ticks";
@@ -168,14 +169,8 @@ export function MessageBubble({
             )}
           >
             {message.isStreaming && !message.mediaUrl ? (
-              <div className="absolute inset-0 flex items-center justify-center bg-zinc-900 animate-pulse">
-                <div className="space-y-2 text-center">
-                  <Sparkles
-                    className="mx-auto h-5 w-5 animate-spin text-white/25"
-                    style={{ animationDuration: "3s" }}
-                  />
-                  <p className="px-3 text-[11px] text-white/50">{message.content}</p>
-                </div>
+              <div className="absolute inset-0 flex items-center justify-center bg-zinc-900/90">
+                <HeartLoader size="md" />
               </div>
             ) : message.mediaUrl && isVideo ? (
               <video
@@ -193,15 +188,17 @@ export function MessageBubble({
             ) : null}
 
             {/* Overlaid timestamp + ticks */}
-            <div className="absolute bottom-2 right-2 rounded-md bg-black/60 px-1.5 py-0.5 flex items-center gap-1 backdrop-blur-[2px] z-10">
-              <BubbleMeta
-                createdAt={message.createdAt}
-                deliveryStatus={deliveryStatus}
-                isUser={isUser}
-                variant="dark"
-                inline
-              />
-            </div>
+            {!(message.isStreaming && !message.mediaUrl) && (
+              <div className="absolute bottom-2 right-2 rounded-md bg-black/60 px-1.5 py-0.5 flex items-center gap-1 backdrop-blur-[2px] z-10">
+                <BubbleMeta
+                  createdAt={message.createdAt}
+                  deliveryStatus={deliveryStatus}
+                  isUser={isUser}
+                  variant="dark"
+                  inline
+                />
+              </div>
+            )}
           </div>
         ) : (
           /* Standard text bubble + listen control beside it */

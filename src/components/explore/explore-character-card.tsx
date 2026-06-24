@@ -2,7 +2,6 @@
 
 import { memo } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { DeleteCharacterDialog } from "@/components/character/delete-character-dialog";
 import { CharacterPortraitMedia } from "@/components/home/character-portrait-media";
 import type { ExploreCharacter } from "@/constants/explore-characters";
@@ -102,11 +101,9 @@ export const ExploreCharacterCard = memo(function ExploreCharacterCard({
     "group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#df1a97]";
 
   return (
-    <motion.article
-      whileHover={{ y: -4 }}
-      transition={{ type: "spring", stiffness: 420, damping: 28 }}
+    <article
       className={cn(
-        "group/card relative overflow-hidden ring-1 ring-white/10",
+        "group/card relative overflow-hidden ring-1 ring-white/10 transition-transform duration-200 will-change-transform hover:-translate-y-1",
         compact ? "rounded-xl" : "rounded-2xl",
       )}
     >
@@ -126,6 +123,6 @@ export const ExploreCharacterCard = memo(function ExploreCharacterCard({
       >
         <CardContent character={character} priority={priority} compact={compact} />
       </Link>
-    </motion.article>
+    </article>
   );
 });

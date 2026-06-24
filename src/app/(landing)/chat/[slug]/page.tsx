@@ -9,7 +9,7 @@ import {
   getOrCreateConversation,
   getPublicCharacterBySlug,
 } from "@/lib/data/chat";
-import { ensureProfile } from "@/lib/ensure-profile";
+import { cachedEnsureProfile } from "@/lib/server/request-cache";
 import { trackEvent } from "@/lib/analytics/track";
 import { ensureOpeningMessage } from "@/lib/ai/opening-message";
 import { guestConversationId, GUEST_COOKIE_NAME } from "@/lib/guest-chat/config";
@@ -72,12 +72,13 @@ export default async function PublicChatConversationPage({ params }: PageProps) 
     );
   }
 
-  await ensureProfile({ skipAllowance: true });
+  await cachedEnsureProfile({ skipAllowance: true });
 
-  const character = await getCharacterBySlug(characterSlug, userId);
+  const [character] = await Promise.all([
+    getCharacterBySlug(characterSlug, userId),
+    mergeGuestTranscript(userId, characterSlug),
+  ]);
   if (!character) notFound();
-
-  await mergeGuestTranscript(userId, characterSlug);
 
   const conversation = await getOrCreateConversation(userId, character.id);
   if (!conversation) notFound();

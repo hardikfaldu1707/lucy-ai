@@ -39,8 +39,8 @@ export function GuestCharacterSidebarList({
   const { data: characters = [], isLoading, isError } = useQuery({
     queryKey: ["chat-browse", "characters"],
     queryFn: fetchChatBrowseCharacters,
-    staleTime: 30_000,
-    refetchOnWindowFocus: true,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
   });
 
   if (isLoading) {

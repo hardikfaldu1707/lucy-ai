@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, KeyboardEvent, useCallback, useEffect } from "react";
-import { Mic, Plus, Send, Smile, X } from "lucide-react";
+import { Mic, Plus, Send, Smile } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -182,11 +182,6 @@ export function ChatInput({
     requestAnimationFrame(() => textareaRef.current?.focus());
   };
 
-  const clearAttachmentMode = () => {
-    setAttachmentMode(null);
-    requestAnimationFrame(() => textareaRef.current?.focus());
-  };
-
   const ghostBtnClass = cn(
     isDark && "text-white hover:bg-white/10 hover:text-white",
   );
@@ -235,32 +230,6 @@ export function ChatInput({
             onAllow={dictation.confirmPermission}
             onCancel={dictation.dismissPermission}
           />
-        </div>
-      )}
-      {attachmentMode && (
-        <div className="px-3 pt-2 sm:px-4">
-          <div
-            className={cn(
-              "mx-auto flex max-w-3xl items-center gap-2 rounded-xl border px-3 py-2 text-xs",
-              isDark
-                ? "border-primary/30 bg-primary/10 text-primary"
-                : "border-primary/20 bg-primary/5 text-primary",
-            )}
-          >
-            <span className="font-medium">
-              Requesting {attachmentMode === "video" ? "video" : "photo"}
-            </span>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className={cn("ml-auto h-7 w-7", isDark && "hover:bg-white/10")}
-              aria-label="Cancel media request"
-              onClick={clearAttachmentMode}
-            >
-              <X className="h-3.5 w-3.5" />
-            </Button>
-          </div>
         </div>
       )}
       <div className="p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-4 sm:pb-4">

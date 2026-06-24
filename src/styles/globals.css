@@ -137,3 +137,17 @@
     border-radius: 9999px;
   }
 }
+
+@keyframes heart-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.12);
+  }
+}
+
+@utility animate-heart-pulse {
+  animation: heart-pulse 0.85s ease-in-out infinite;
+}

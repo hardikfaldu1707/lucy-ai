@@ -1,9 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { motion, useReducedMotion } from "framer-motion";
 import {
   ArrowLeft,
   MessageCircle,
@@ -84,12 +83,10 @@ function CharacterGrid({
   characters,
   priorityFirst,
   showCreateCard,
-  reducedMotion,
 }: {
   characters: ExploreCharacter[];
   priorityFirst?: boolean;
   showCreateCard?: boolean;
-  reducedMotion: boolean;
 }) {
   return (
     <div
@@ -102,23 +99,12 @@ function CharacterGrid({
         </div>
       )}
       {characters.map((character, index) => (
-        <motion.div
-          key={character.id}
-          role="listitem"
-          className="min-w-0"
-          initial={reducedMotion ? false : { opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{
-            duration: 0.35,
-            delay: reducedMotion ? 0 : Math.min(index * 0.04, 0.4),
-            ease: [0.22, 1, 0.36, 1],
-          }}
-        >
+        <div key={character.id} role="listitem" className="min-w-0">
           <ExploreCharacterCard
             character={character}
             priority={priorityFirst && index < 4}
           />
-        </motion.div>
+        </div>
       ))}
     </div>
   );
@@ -151,23 +137,24 @@ export function PublicChatBrowse({ initialCharacters }: PublicChatBrowseProps) {
   const { isSignedIn, isLoaded } = useAuth();
   const createHref = isLoaded && isSignedIn ? ROUTES.create : signInHrefForCreate();
   const queryClient = useQueryClient();
-  const reducedMotion = useReducedMotion();
   const [search, setSearch] = useState("");
+  const wasSignedInRef = useRef(false);
 
   const { data: characters, isLoading, isError, isFetching, refetch } = useQuery({
     queryKey: CHAT_BROWSE_QUERY_KEY,
     queryFn: fetchChatBrowseCharacters,
-    placeholderData: initialCharacters,
-    staleTime: 0,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
+    initialData: initialCharacters,
+    staleTime: 60_000,
+    refetchOnMount: initialCharacters === undefined,
+    refetchOnWindowFocus: false,
     enabled: isLoaded,
   });
 
   useEffect(() => {
-    if (isLoaded && isSignedIn) {
+    if (isLoaded && isSignedIn && !wasSignedInRef.current) {
       void queryClient.invalidateQueries({ queryKey: CHAT_BROWSE_QUERY_KEY });
     }
+    wasSignedInRef.current = Boolean(isSignedIn);
   }, [isLoaded, isSignedIn, queryClient]);
 
   const mine = useMemo(
@@ -375,7 +362,6 @@ export function PublicChatBrowse({ initialCharacters }: PublicChatBrowseProps) {
                   characters={mine}
                   priorityFirst
                   showCreateCard
-                  reducedMotion={reducedMotion ?? false}
                 />
               </section>
             )}
@@ -394,7 +380,6 @@ export function PublicChatBrowse({ initialCharacters }: PublicChatBrowseProps) {
                   characters={everyone}
                   priorityFirst={!isSignedIn || mine.length === 0}
                   showCreateCard={isSignedIn && mine.length === 0}
-                  reducedMotion={reducedMotion ?? false}
                 />
               </section>
             )}

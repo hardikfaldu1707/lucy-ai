@@ -86,6 +86,7 @@ if (r2Host) {
 
 const nextConfig: NextConfig = {
   experimental: {
+    optimizePackageImports: ["lucide-react", "@radix-ui/react-icons"],
     // Clerk proxy buffers request bodies; default 10MB truncates admin video uploads.
     proxyClientMaxBodySize: "55mb",
   },

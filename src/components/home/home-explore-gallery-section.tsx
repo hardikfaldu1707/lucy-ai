@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState, useEffect, type ReactNode } from "react";
+import { useMemo, useState, useEffect, useRef, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@clerk/nextjs";
 // import { useAuth } from "@clerk/nextjs";
@@ -52,6 +52,7 @@ export function HomeExploreGallerySection({
 }: HomeExploreGallerySectionProps) {
   const { isSignedIn, isLoaded } = useAuth();
   const queryClient = useQueryClient();
+  const wasSignedInRef = useRef(false);
   const [query, setQuery] = useState("");
   const [gender, setGender] = useState<ExploreGender | "all">("female");
   const [style, setStyle] = useState<ExploreStyle | "all">("realistic");
@@ -64,16 +65,18 @@ export function HomeExploreGallerySection({
   const { data: dbCharacters } = useQuery({
     queryKey: ["home", "characters"],
     queryFn: fetchHomeCharacters,
-    placeholderData: initialCharacters,
-    staleTime: 0,
-    refetchOnMount: "always",
+    initialData: initialCharacters,
+    staleTime: 60_000,
+    refetchOnMount: initialCharacters === undefined,
+    refetchOnWindowFocus: false,
     enabled: isLoaded,
   });
 
   useEffect(() => {
-    if (isLoaded && isSignedIn) {
+    if (isLoaded && isSignedIn && !wasSignedInRef.current) {
       void queryClient.invalidateQueries({ queryKey: ["home", "characters"] });
     }
+    wasSignedInRef.current = Boolean(isSignedIn);
   }, [isLoaded, isSignedIn, queryClient]);
 
   const baseList = useMemo(
