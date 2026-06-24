@@ -156,7 +156,7 @@ function fromRow(r: AdminCharacterDbRow): AdminCharacter {
 }
 
 function normalizeGalleryInput(
-  input: AdminCharacterInput,
+  input: Pick<AdminCharacterInput, "galleryItems" | "galleryUrls">,
 ): { galleryItems: CharacterGalleryItem[]; galleryUrls: string[] } {
   if (input.galleryItems && input.galleryItems.length > 0) {
     const galleryItems = input.galleryItems;

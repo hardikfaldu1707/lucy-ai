@@ -14,6 +14,11 @@ function r2PublicHost(): string | null {
 const r2Host = r2PublicHost();
 const r2ImgSrc = r2Host ? ` https://${r2Host}` : " https://*.r2.dev";
 
+const scriptSrcDirective =
+  "script-src 'self' 'unsafe-inline'" +
+  (process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : "") +
+  " https://clerk.lucyailove.com https://*.clerk.accounts.dev";
+
 function r2PresignConnectSrc(): string {
   const accountId = process.env.R2_ACCOUNT_ID;
   const bucket = process.env.R2_BUCKET;
@@ -39,9 +44,7 @@ const securityHeaders = [
     key: "Content-Security-Policy",
     value: [
       "default-src 'self'",
-      `script-src 'self' 'unsafe-inline'${
-        process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""
-      } https://clerk.lucyai.com https://*.clerk.accounts.dev`,
+      scriptSrcDirective,
       "style-src 'self' 'unsafe-inline'",
       `img-src 'self' data: blob: https://img.clerk.com https://api.dicebear.com https://*.supabase.co https://images.unsplash.com https://picsum.photos${r2ImgSrc}`,
       `media-src 'self' blob:${r2ImgSrc}`,
@@ -82,6 +85,10 @@ if (r2Host) {
 }
 
 const nextConfig: NextConfig = {
+  experimental: {
+    // Clerk proxy buffers request bodies; default 10MB truncates admin video uploads.
+    proxyClientMaxBodySize: "55mb",
+  },
   async headers() {
     return [
       {

@@ -18,6 +18,10 @@ import {
   isAllowedImageFile,
   isAllowedVideoFile,
 } from "@/lib/upload-client";
+import {
+  IMAGE_MAX_UPLOAD_BYTES,
+  VIDEO_MAX_UPLOAD_BYTES,
+} from "@/lib/storage/upload-limits";
 import { toast } from "sonner";
 import { GripVertical, Loader2, Plus, Trash2, Upload, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -32,14 +36,12 @@ interface CharacterGalleryPickerProps {
   value: CharacterGalleryItem[];
   onChange: (items: CharacterGalleryItem[]) => void;
   characterId?: string;
-  maxItems?: number;
 }
 
 export function CharacterGalleryPicker({
   value,
   onChange,
   characterId,
-  maxItems = 12,
 }: CharacterGalleryPickerProps) {
   const [uploading, setUploading] = useState(false);
   const [showTypePicker, setShowTypePicker] = useState(false);
@@ -48,14 +50,9 @@ export function CharacterGalleryPicker({
   const [newItemTags, setNewItemTags] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const atLimit = value.length >= maxItems;
   const uploadOptions = resolveCharacterUploadOptions(characterId);
 
   const openTypePicker = () => {
-    if (atLimit) {
-      toast.error(`Maximum ${maxItems} gallery items allowed`);
-      return;
-    }
     setShowTypePicker(true);
     setPendingType(null);
   };
@@ -68,14 +65,9 @@ export function CharacterGalleryPicker({
 
   const handleFiles = async (files: FileList | null) => {
     if (!files?.length || !pendingType) return;
-    const remaining = maxItems - value.length;
-    if (remaining <= 0) {
-      toast.error(`Maximum ${maxItems} gallery items allowed`);
-      return;
-    }
 
     const type = pendingType;
-    const toUpload = Array.from(files).slice(0, remaining);
+    const toUpload = Array.from(files);
     const tags = parseTagsInput(newItemTags);
 
     setUploading(true);
@@ -87,13 +79,13 @@ export function CharacterGalleryPicker({
           toast.error(`${file.name}: unsupported format for ${type}`);
           continue;
         }
-        const maxSize = type === "video" ? 15 * 1024 * 1024 : 10 * 1024 * 1024;
+        const maxSize = type === "video" ? VIDEO_MAX_UPLOAD_BYTES : IMAGE_MAX_UPLOAD_BYTES;
         if (file.size > maxSize) {
           toast.error(`${file.name}: file too large`);
           continue;
         }
         const url = await uploadGalleryMediaToR2(file, uploadOptions);
-        uploaded.push({ url, type, tags: uploaded.length === 0 ? tags : [] });
+        uploaded.push({ url, type, tags });
       }
       if (uploaded.length) {
         onChange([...value, ...uploaded]);
@@ -143,13 +135,13 @@ export function CharacterGalleryPicker({
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <Label>Chat media library ({value.length}/{maxItems})</Label>
+        <Label>Chat media library ({value.length})</Label>
         <Button
           type="button"
           variant="outline"
           size="sm"
           className="h-8 gap-1 text-xs"
-          disabled={uploading || atLimit}
+          disabled={uploading}
           onClick={openTypePicker}
         >
           {uploading ? (
@@ -163,7 +155,8 @@ export function CharacterGalleryPicker({
 
       <p className="text-xs text-muted-foreground">
         Users tap + in chat, pick Photo or Video, and type a prompt. Match tags here control
-        which file is served (e.g. red dress, selfie, bedroom).
+        which file is served (e.g. red dress, selfie, bedroom). Add as many tags as you need,
+        comma-separated.
       </p>
 
       {!characterId && (
@@ -243,7 +236,7 @@ export function CharacterGalleryPicker({
           ref={fileInputRef}
           type="file"
           accept={accept}
-          multiple={pendingType === "image"}
+          multiple
           className="hidden"
           aria-label={pendingType ? `Upload ${pendingType}` : "Upload gallery media"}
           onChange={(e) => void handleFiles(e.target.files)}
@@ -259,7 +252,7 @@ export function CharacterGalleryPicker({
                 : "Tap Add media or drop files here"}
             </p>
             <p className="mt-1 text-[10px] text-muted-foreground">
-              Images up to 10MB, videos up to 15MB
+              Images up to 10MB, videos up to 50MB
             </p>
           </>
         )}

@@ -1,4 +1,8 @@
 import { z } from "zod";
+import {
+  maxUploadBytesForContentType,
+  maxUploadLabelForContentType,
+} from "@/lib/storage/upload-limits";
 
 // Centralized request-body schemas for API routes. Every schema enforces hard
 // length/enum bounds so a route never processes unbounded or malformed input
@@ -155,21 +159,28 @@ export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 
 export const mediaScopeSchema = z.enum(["user", "character", "platform"]);
 
-export const uploadMetaSchema = z.object({
-  contentType: z
-    .string()
-    .regex(/^(image|video)\/[a-z0-9.+-]+$/i, "Only image/* and video/* uploads are allowed"),
-  size: z
-    .number()
-    .int()
-    .positive()
-    .max(15 * 1024 * 1024, "File too large (max 15MB)"),
-  characterId: z.string().max(128).optional(),
-  scope: mediaScopeSchema.optional().default("user"),
-  platformName: z
-    .string()
-    .trim()
-    .regex(/^[a-z0-9-]+$/, "Use lowercase letters, numbers, and hyphens")
-    .max(80)
-    .optional(),
-});
+export const uploadMetaSchema = z
+  .object({
+    contentType: z
+      .string()
+      .regex(/^(image|video)\/[a-z0-9.+-]+$/i, "Only image/* and video/* uploads are allowed"),
+    size: z.number().int().positive(),
+    characterId: z.string().max(128).optional(),
+    scope: mediaScopeSchema.optional().default("user"),
+    platformName: z
+      .string()
+      .trim()
+      .regex(/^[a-z0-9-]+$/, "Use lowercase letters, numbers, and hyphens")
+      .max(80)
+      .optional(),
+  })
+  .superRefine((data, ctx) => {
+    const max = maxUploadBytesForContentType(data.contentType);
+    if (data.size > max) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `File too large (max ${maxUploadLabelForContentType(data.contentType)})`,
+        path: ["size"],
+      });
+    }
+  });

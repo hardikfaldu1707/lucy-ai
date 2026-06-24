@@ -1,4 +1,9 @@
 import type { MediaScope } from "@/lib/storage/upload-keys";
+import {
+  IMAGE_MAX_UPLOAD_BYTES,
+  MULTIPART_BODY_SAFE_BYTES,
+  VIDEO_MAX_UPLOAD_BYTES,
+} from "@/lib/storage/upload-limits";
 
 export interface UploadToR2Options {
   characterId?: string;
@@ -18,8 +23,9 @@ const EXT_TO_MIME: Record<string, string> = {
   webm: "video/webm",
 };
 
-const VIDEO_MAX_BYTES = 15 * 1024 * 1024;
-const IMAGE_MAX_BYTES = 10 * 1024 * 1024;
+const VIDEO_MAX_BYTES = VIDEO_MAX_UPLOAD_BYTES;
+const IMAGE_MAX_BYTES = IMAGE_MAX_UPLOAD_BYTES;
+const MULTIPART_IMAGE_MAX_BYTES = MULTIPART_BODY_SAFE_BYTES;
 
 /** Infer image MIME when the browser leaves file.type empty (common on some OS/browser combos). */
 export function resolveImageContentType(file: File): string | null {
@@ -45,6 +51,24 @@ export function isAllowedVideoFile(file: File): boolean {
   return resolveVideoContentType(file) !== null;
 }
 
+function isDirectUploadNetworkError(err: unknown): boolean {
+  return (
+    err instanceof TypeError ||
+    (err instanceof Error &&
+      (err.message === "Failed to fetch" ||
+        err.message.toLowerCase().includes("networkerror") ||
+        err.message.toLowerCase().includes("load failed")))
+  );
+}
+function uploadErrorMessage(res: Response, fallback: string, body: { error?: string }): string {
+  const msg = body.error ?? fallback;
+  if (res.status === 503) return `${msg} Paste a URL instead.`;
+  if (res.status === 413) {
+    return `${msg} Try a smaller file (under 50MB) or MP4/WebM for video.`;
+  }
+  return msg;
+}
+
 async function postUpload(
   file: File,
   contentType: string,
@@ -67,11 +91,7 @@ async function postUpload(
 
   if (!res.ok) {
     const err = (await res.json().catch(() => ({}))) as { error?: string };
-    const msg = err.error ?? "Upload failed";
-    if (res.status === 503) {
-      throw new Error(`${msg} Paste a URL instead.`);
-    }
-    throw new Error(msg);
+    throw new Error(uploadErrorMessage(res, err.error ?? "Upload failed", err));
   }
 
   const { publicUrl } = (await res.json()) as { publicUrl: string };
@@ -82,7 +102,67 @@ async function postUpload(
   return publicUrl;
 }
 
-// Browser uploads through our API; the server writes to R2 (no browser PUT / CORS).
+async function presignAndUpload(
+  file: File,
+  contentType: string,
+  options: UploadToR2Options,
+): Promise<string> {
+  const { characterId, scope = "user", platformName } = options;
+
+  const res = await fetch("/api/upload", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({
+      contentType,
+      size: file.size,
+      scope,
+      characterId,
+      platformName,
+    }),
+  });
+
+  if (!res.ok) {
+    const err = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(uploadErrorMessage(res, err.error ?? "Upload failed", err));
+  }
+
+  const { uploadUrl, publicUrl } = (await res.json()) as {
+    uploadUrl?: string;
+    publicUrl?: string;
+  };
+
+  if (!uploadUrl || !publicUrl) {
+    throw new Error("Upload failed: no presigned URL returned");
+  }
+
+  let putRes: Response;
+  try {
+    putRes = await fetch(uploadUrl, {
+      method: "PUT",
+      body: file,
+      headers: { "Content-Type": contentType },
+      credentials: "omit",
+      mode: "cors",
+    });
+  } catch (err) {
+    if (isDirectUploadNetworkError(err)) {
+      throw new Error(
+        "Direct upload to storage blocked (R2 CORS). Run: npm run configure:r2-cors — or use a video under 4MB for server upload.",
+      );
+    }
+    throw err;
+  }
+
+  if (!putRes.ok) {
+    throw new Error(
+      "Direct upload to storage failed. Try a smaller video (under 50MB) or MP4/WebM format.",
+    );
+  }
+
+  return publicUrl;
+}
+
 export async function uploadToR2(
   file: File,
   options: UploadToR2Options = {},
@@ -93,6 +173,10 @@ export async function uploadToR2(
   }
   if (file.size > IMAGE_MAX_BYTES) {
     throw new Error("File size must be less than 10MB");
+  }
+
+  if (file.size > MULTIPART_IMAGE_MAX_BYTES) {
+    return presignAndUpload(file, contentType, options);
   }
 
   return postUpload(file, contentType, options);
@@ -107,16 +191,20 @@ export async function uploadVideoToR2(
     throw new Error("Please upload a supported video (MP4 or WebM).");
   }
   if (file.size > VIDEO_MAX_BYTES) {
-    throw new Error("Video must be less than 15MB");
+    throw new Error("Video must be less than 50MB");
   }
 
-  return postUpload(file, contentType, options);
+  // ≤4MB: server multipart (no R2 CORS). Larger: presigned direct-to-R2.
+  if (file.size <= MULTIPART_IMAGE_MAX_BYTES) {
+    return postUpload(file, contentType, options);
+  }
+
+  return presignAndUpload(file, contentType, options);
 }
 
-/** Scope/path for character gallery uploads during create (no id yet) vs edit. */
+/** Admin character media always uses character scope (API requires admin for this scope). */
 export function resolveCharacterUploadOptions(characterId?: string): UploadToR2Options {
-  if (characterId) return { scope: "character", characterId };
-  return { scope: "user" };
+  return { scope: "character", characterId };
 }
 
 /** Upload image or video for admin chat gallery (dispatches to correct helper). */

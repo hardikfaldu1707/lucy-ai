@@ -25,7 +25,7 @@ import {
 import { useAdminAiModels } from "@/hooks/use-ai-models";
 import { CharacterAvatarPicker } from "./character-avatar-picker";
 import { CharacterGalleryPicker } from "./character-gallery-picker";
-import { CharacterVideoPicker } from "./character-video-picker";
+import { CharacterProfileMediaPicker } from "./character-profile-media-picker";
 import { CharacterPortraitMedia } from "@/components/home/character-portrait-media";
 import { SuggestedQuestionsEditor } from "./suggested-questions-editor";
 import { resolveCharacterImageUrl } from "@/constants/character-portraits";
@@ -236,51 +236,25 @@ export function CharacterForm({
                 {/* Appearance Section */}
                 <TabsContent value="appearance" className="space-y-4 focus-visible:outline-none">
                   <div className="space-y-2">
-                    <Label>Avatar Photo Selection</Label>
-                    <CharacterAvatarPicker
-                      value={avatarUrl}
-                      onChange={setAvatarUrl}
-                      characterId={initial?.id}
-                      hidePresets
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Upload a photo or GIF for browse cards when Photo/GIF display is selected.
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Preview video (optional)</Label>
-                    <CharacterVideoPicker
-                      value={previewVideoUrl}
-                      onChange={(url) => {
-                        setPreviewVideoUrl(url);
-                        if (!url.trim()) setCardDisplayMode("image");
+                    <Label>Profile media (photo or video)</Label>
+                    <CharacterProfileMediaPicker
+                      value={{
+                        avatarUrl,
+                        previewVideoUrl,
+                        cardDisplayMode,
+                      }}
+                      onChange={(patch) => {
+                        if (patch.avatarUrl !== undefined) setAvatarUrl(patch.avatarUrl);
+                        if (patch.previewVideoUrl !== undefined) {
+                          setPreviewVideoUrl(patch.previewVideoUrl);
+                        }
+                        if (patch.cardDisplayMode !== undefined) {
+                          setCardDisplayMode(patch.cardDisplayMode);
+                        }
                       }}
                       characterId={initial?.id}
+                      previewSeed={initial?.id ?? "preview-seed"}
                     />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="cardDisplayMode">User-side card display</Label>
-                    <Select
-                      value={effectiveDisplayMode}
-                      onValueChange={(v) => setCardDisplayMode(v as "image" | "video")}
-                    >
-                      <SelectTrigger id="cardDisplayMode">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="image">Photo / GIF</SelectItem>
-                        <SelectItem value="video" disabled={!previewVideoUrl.trim()}>
-                          Video loop
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-muted-foreground">
-                      {previewVideoUrl.trim()
-                        ? "Pick what guests see on homepage, explore, and chat browse. Chat always uses the photo avatar."
-                        : "Photo/GIF shows now. Upload a video anytime, then switch to Video loop."}
-                    </p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
@@ -344,8 +318,8 @@ export function CharacterForm({
                   <div className="space-y-2 border-t pt-4">
                     <Label className="text-sm font-semibold">Chat media library</Label>
                     <p className="text-xs text-muted-foreground">
-                      Powers the user + button in chat (Photo / Video requests). Separate from the
-                      preview video on the Appearance tab.
+                      Powers the user + button in chat (Photo / Video requests). Separate from
+                      profile media on the Appearance tab.
                     </p>
                     <CharacterGalleryPicker
                       value={galleryItems}
@@ -357,6 +331,16 @@ export function CharacterForm({
                   <SuggestedQuestionsEditor
                     value={suggestedQuestions}
                     onChange={setSuggestedQuestions}
+                    generateContext={{
+                      name: name.trim(),
+                      tagline: tagline.trim(),
+                      description: description.trim(),
+                      personality: fromCsv(personality),
+                      tags: fromCsv(tags),
+                      category: category.trim(),
+                      style,
+                      age: Number(age) || 24,
+                    }}
                   />
                 </TabsContent>
 
