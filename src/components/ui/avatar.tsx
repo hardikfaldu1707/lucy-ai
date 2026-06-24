@@ -17,7 +17,7 @@ const AvatarImage = ({
   className,
   ...props
 }: React.ComponentProps<typeof AvatarPrimitive.Image>) => (
-  <AvatarPrimitive.Image className={cn("aspect-square h-full w-full", className)} {...props} />
+  <AvatarPrimitive.Image className={cn("aspect-square h-full w-full object-cover", className)} {...props} />
 );
 
 const AvatarFallback = ({

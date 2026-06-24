@@ -6,12 +6,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Coins, Lock, MessageCircle, Phone } from "lucide-react";
+import { Coins, Lock, MessageCircle, Phone, X } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -194,14 +195,14 @@ export function CharacterProfilePage({ profile }: CharacterProfilePageProps) {
 
         {photosAccess?.paywallEnabled && (
           <p className="mt-2 flex items-center gap-1.5 text-xs text-white/50">
-            <Coins className="h-3.5 w-3.5 text-pink-400" aria-hidden />
+            <Coins className="h-3.5 w-3.5 text-[#df1a97]" aria-hidden />
             Gallery photos cost {costPerPhoto} coins each to unlock
           </p>
         )}
 
         <div className="mt-5 flex flex-wrap gap-2">
           <Button
-            className="flex-1 gap-2 bg-pink-500 hover:bg-pink-400 sm:flex-none sm:min-w-[140px]"
+            className="flex-1 gap-2 bg-[#df1a97] hover:bg-[#df1a97]/90 sm:flex-none sm:min-w-[140px]"
             onClick={handleMessage}
             disabled={startingChat}
           >
@@ -242,12 +243,12 @@ export function CharacterProfilePage({ profile }: CharacterProfilePageProps) {
               <p className="text-sm text-white/50">No photos yet.</p>
             )}
             {photos.length > 0 && (
-              <div className="grid grid-cols-3 gap-0.5 overflow-hidden rounded-xl border border-white/10">
+              <div className="grid grid-cols-3 gap-1 p-[10px] rounded-xl border border-white/10 bg-zinc-950/20">
                 {photos.map((photo) => (
                   <button
                     key={`${photo.url}-${photo.index}`}
                     type="button"
-                    className="group relative aspect-[3/4] overflow-hidden bg-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500"
+                    className="group relative aspect-[3/4] overflow-hidden rounded-lg bg-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#df1a97]"
                     onClick={() => handlePhotoClick(photo.index, photo.unlocked, photo.url)}
                     aria-label={
                       photo.unlocked
@@ -322,17 +323,20 @@ export function CharacterProfilePage({ profile }: CharacterProfilePageProps) {
       </div>
 
       <Dialog open={!!lightboxUrl} onOpenChange={(open) => !open && setLightboxUrl(null)}>
-        <DialogContent className="max-w-lg border-white/10 bg-[#0a0a0a] p-0">
+        <DialogContent className="max-w-[90vw] sm:max-w-lg border-none bg-transparent p-0 overflow-visible shadow-none [&>button]:hidden">
           <DialogTitle className="sr-only">{profile.name} photo</DialogTitle>
           {lightboxUrl && (
-            <div className="relative aspect-[3/4] w-full">
-              <Image
+            <div className="relative max-w-fit mx-auto overflow-visible">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src={lightboxUrl}
                 alt={profile.name}
-                fill
-                className="object-contain"
-                sizes="512px"
+                className="max-h-[85vh] max-w-full rounded-2xl object-contain border border-white/10 shadow-2xl"
               />
+              <DialogClose className="absolute right-4 top-4 z-50 rounded-full bg-black/60 p-1.5 text-white hover:bg-black/80 transition-colors border border-white/10 focus:outline-none">
+                <X className="h-4 w-4" />
+                <span className="sr-only">Close</span>
+              </DialogClose>
             </div>
           )}
         </DialogContent>
@@ -370,7 +374,7 @@ export function CharacterProfilePage({ profile }: CharacterProfilePageProps) {
               Cancel
             </Button>
             <Button
-              className="gap-2 bg-pink-500 hover:bg-pink-400"
+              className="gap-2 bg-[#df1a97] hover:bg-[#df1a97]/90"
               onClick={handleUnlockConfirm}
               disabled={unlockMutation.isPending}
             >

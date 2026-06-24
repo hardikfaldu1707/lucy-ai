@@ -39,7 +39,9 @@ const securityHeaders = [
     key: "Content-Security-Policy",
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' https://clerk.lucyai.com https://*.clerk.accounts.dev",
+      `script-src 'self' 'unsafe-inline'${
+        process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""
+      } https://clerk.lucyai.com https://*.clerk.accounts.dev`,
       "style-src 'self' 'unsafe-inline'",
       `img-src 'self' data: blob: https://img.clerk.com https://api.dicebear.com https://*.supabase.co https://images.unsplash.com https://picsum.photos${r2ImgSrc}`,
       `media-src 'self' blob:${r2ImgSrc}`,
