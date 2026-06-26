@@ -12,7 +12,7 @@ export function DashboardTopNav() {
   const setMobileNavOpen = useUIStore((s) => s.setMobileNavOpen);
 
   return (
-    <header className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-xl sm:px-6">
+    <header className="sticky top-0 z-40 flex h-[calc(4rem+env(safe-area-inset-top))] pt-safe items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-xl sm:h-16 sm:pt-0 sm:px-6">
       <Button
         variant="ghost"
         size="icon"

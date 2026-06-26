@@ -78,6 +78,24 @@ export function authRedirectUrl(characterSlug?: string | null): string {
   return ROUTES.home;
 }
 
+/** Clerk may pass a path (/dashboard) or full URL (http://192.168.x.x:3000/dashboard). */
+export function resolveAuthPageRedirect(
+  redirectUrl?: string | null,
+  characterSlug?: string | null,
+): string {
+  const raw = redirectUrl?.trim();
+  if (raw) {
+    if (raw.startsWith("/")) return raw;
+    try {
+      const parsed = new URL(raw);
+      return `${parsed.pathname}${parsed.search}`;
+    } catch {
+      // ignore malformed redirect_url
+    }
+  }
+  return authRedirectUrl(characterSlug);
+}
+
 export function guestChatRedirectUrl(characterSlug: string): string {
   return ROUTES.publicChatWithCharacter(characterSlug);
 }

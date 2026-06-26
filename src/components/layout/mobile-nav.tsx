@@ -33,7 +33,7 @@ export function MobileNav() {
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
             transition={{ type: "spring", damping: 28, stiffness: 320 }}
-            className="fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r bg-sidebar lg:hidden"
+            className="fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r bg-sidebar pt-safe lg:hidden"
             role="dialog"
             aria-label="Mobile navigation"
           >
@@ -65,7 +65,7 @@ export function MobileNav() {
                 );
               })}
             </nav>
-            <div className="border-t p-4">
+            <div className="border-t p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
               <CoinBalanceBadge variant="nav" className="w-full justify-center" />
             </div>
           </motion.aside>

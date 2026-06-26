@@ -9,8 +9,8 @@ import {
   resolveEffectiveVoicePersona,
 } from "@/lib/data/character-chat-prefs";
 import { createVoiceCallSession } from "@/lib/data/voice-sessions";
-import { canStartVoiceSession, getVoiceCallMode } from "@/lib/voice/voice-mode";
-import { spendCoinsForAction } from "@/lib/coins/spend";
+import { canStartVoiceSession, getVoiceCallMode, hasVoiceTtsConfigured } from "@/lib/voice/voice-mode";
+import { spendCoinsForAction, refundCoinsForAction } from "@/lib/coins/spend";
 import { bannedResponse } from "@/lib/auth/require-not-banned";
 import { checkUserRateLimit } from "@/lib/rate-limit";
 
@@ -59,6 +59,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Failed to open conversation" }, { status: 500 });
   }
 
+  const mode = getVoiceCallMode();
+  if (mode === "text" && !hasVoiceTtsConfigured()) {
+    return NextResponse.json(
+      {
+        error:
+          "Voice TTS is not configured. Set OPENROUTER_API_KEY (uses openai/gpt-audio-mini on OpenRouter) or OPENAI_API_KEY for direct OpenAI TTS.",
+      },
+      { status: 503 },
+    );
+  }
+
   const sessionId = randomUUID();
   const spend = await spendCoinsForAction("voice_session", `voice-session:${sessionId}`, {
     characterId: character.id,
@@ -70,7 +81,6 @@ export async function POST(req: Request) {
 
   const economy = await getEconomyConfig();
   const expiresAt = new Date(Date.now() + economy.voiceSessionSeconds * 1000).toISOString();
-  const mode = getVoiceCallMode();
 
   const session = await createVoiceCallSession({
     id: sessionId,
@@ -82,6 +92,12 @@ export async function POST(req: Request) {
   });
 
   if (!session) {
+    await refundCoinsForAction(
+      userId,
+      "voice_session",
+      `voice-session:${sessionId}`,
+      spend.amount,
+    );
     return NextResponse.json({ error: "Failed to start voice session" }, { status: 500 });
   }
 

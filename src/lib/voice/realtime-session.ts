@@ -8,7 +8,7 @@ import { buildCharacterSystemPrompt } from "@/lib/characters/build-character-sys
 
 const REALTIME_MODEL = process.env.OPENAI_REALTIME_MODEL ?? "gpt-4o-realtime-preview";
 
-const VOICE_CALL_RULES = [
+export const VOICE_CALL_RULES = [
   "You are on a live voice call — speak naturally in short sentences.",
   "Listen when the user speaks; respond after they finish.",
   "Keep replies brief (1-3 sentences). Sound human, warm, and in character.",

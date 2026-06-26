@@ -8,6 +8,7 @@ import "@/styles/globals.css";
 import { AppProviders } from "@/providers/app-providers";
 import { ChunkLoadRecovery } from "@/components/dev/chunk-load-recovery";
 import { OrganizationJsonLd } from "@/components/shared/organization-json-ld";
+import { getClerkAllowedRedirectOrigins } from "@/lib/clerk-allowed-origins";
 import { resolveTenant } from "@/lib/tenant";
 
 const geistSans = Geist({
@@ -43,6 +44,11 @@ export const metadata: Metadata = {
     description:
       "Premium AI companions with memory, voice calls, and emotionally intelligent chat.",
   },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Lucy AI",
+  },
 };
 
 export const viewport: Viewport = {
@@ -58,6 +64,7 @@ export const viewport: Viewport = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const tenant = await resolveTenant();
+  const allowedRedirectOrigins = getClerkAllowedRedirectOrigins();
   return (
     <html
       lang="en"
@@ -70,7 +77,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         suppressHydrationWarning
       >
         <OrganizationJsonLd />
-        <ClerkProvider appearance={{ theme: shadcn }}>
+        <ClerkProvider
+          appearance={{ theme: shadcn }}
+          {...(allowedRedirectOrigins ? { allowedRedirectOrigins } : {})}
+        >
           <ChunkLoadRecovery />
           <AppProviders>{children}</AppProviders>
         </ClerkProvider>
