@@ -34,12 +34,11 @@ function buildOpenRouterHeaders(apiKey: string): Record<string, string> {
 
 function normalizeAudioFormat(format: string): string {
   const f = format.toLowerCase().replace(/^audio\//, "");
-  if (f.includes("webm")) return "webm";
-  if (f.includes("ogg")) return "ogg";
-  if (f.includes("mp4") || f.includes("m4a")) return "m4a";
+  // OpenRouter only accepts 'wav' and 'mp3', so convert unsupported formats
   if (f.includes("mp3")) return "mp3";
   if (f.includes("wav")) return "wav";
-  return f;
+  // All other formats (webm, ogg, m4a, etc.) default to wav
+  return "wav";
 }
 
 type HistoryMessage = { role: "user" | "assistant"; content: string };
@@ -137,7 +136,7 @@ export async function requestOpenRouterVoice(params: {
       messages,
       stream: true,
       modalities: ["text", "audio"],
-      audio: { voice, format: "wav" },
+      audio: { voice, format: "pcm16" },
       temperature: 0.85,
       max_tokens: 600,
     }),

@@ -113,58 +113,133 @@ export function ExplorePage() {
       />
 
       <div className="relative mx-auto max-w-[1600px] px-3 sm:px-5 md:px-6 lg:px-8">
-        {/* Hero banner */}
+        {/* Hero banner - 60/40 split layout */}
         <section
-          className="relative mb-8 overflow-hidden rounded-2xl border border-white/10 sm:rounded-3xl"
+          className="relative mb-8 flex flex-col gap-3 sm:flex-row sm:gap-4"
           aria-label="Create your own"
         >
-          <div className="relative min-h-[200px] sm:min-h-[240px]">
-            <Image
-              src={EXPLORE_HERO_IMAGE}
-              alt=""
-              fill
-              className="object-cover object-[center_20%]"
-              priority
-              sizes="100vw"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/55 to-black/30" />
-            <div className="relative flex h-full min-h-[200px] flex-col justify-between gap-6 p-6 sm:min-h-[240px] sm:flex-row sm:items-center sm:p-8">
-              <div className="max-w-xl">
-                <h1 className="text-2xl font-black uppercase tracking-tight text-white sm:text-3xl md:text-4xl">
-                  Create Your Own
-                  <span className="block text-pink-400">AI Girlfriend</span>
-                </h1>
-                <p className="mt-2 text-sm text-white/70 sm:text-base">
-                  Your fantasy. Your rules. Craft her look, voice, and bond — then bring her to
-                  life.
-                </p>
-                <Button
-                  asChild
-                  className="mt-5 h-11 rounded-full bg-white px-6 text-sm font-semibold text-black hover:bg-pink-50"
-                >
-                  <Link href={createHref}>
-                    Bring her to life
-                    <ArrowRight className="ml-1 h-4 w-4" aria-hidden />
-                  </Link>
-                </Button>
+          {/* Left section - 60% */}
+          <div className="relative flex-[60] overflow-hidden rounded-2xl border border-white/10 sm:rounded-3xl">
+            <div className="relative min-h-[200px] sm:min-h-[240px]">
+              <Image
+                src={EXPLORE_HERO_IMAGE}
+                alt=""
+                fill
+                className="object-cover object-[center_20%]"
+                priority
+                sizes="60vw"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/55 to-black/30" />
+              <div className="relative flex h-full min-h-[200px] flex-col justify-center p-6 sm:min-h-[240px] sm:p-8">
+                <div className="max-w-xl">
+                  <h1 className="text-2xl font-black uppercase tracking-tight text-white sm:text-3xl md:text-4xl">
+                    Create Your Own
+                    <span className="block text-pink-400">AI Girlfriend</span>
+                  </h1>
+                  <p className="mt-2 text-sm text-white/70 sm:text-base">
+                    Your fantasy. Your rules. Craft her look, voice, and bond — then bring her to
+                    life.
+                  </p>
+                  <Button
+                    asChild
+                    className="mt-5 h-11 rounded-full bg-white px-6 text-sm font-semibold text-black hover:bg-pink-50"
+                  >
+                    <Link href={createHref}>
+                      Bring her to life
+                      <ArrowRight className="ml-1 h-4 w-4" aria-hidden />
+                    </Link>
+                  </Button>
+                </div>
               </div>
+            </div>
+          </div>
 
-              <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
-                <p className="text-xs font-semibold uppercase tracking-wider text-white/50">
-                  Join in
-                </p>
-                <div className="flex -space-x-2">
-                  {EXPLORE_JOIN_AVATARS.map((src, i) => (
-                    <span
-                      key={`join-${i}`}
-                      className="relative h-10 w-10 overflow-hidden rounded-full ring-2 ring-black sm:h-11 sm:w-11"
-                    >
-                      <Image src={src} alt="" fill className="object-cover" sizes="44px" />
+          {/* Right section - 40% */}
+          <div className="relative flex-[40] overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-pink-600/30 via-black/50 to-black/60 sm:rounded-3xl">
+            <div className="relative flex h-full min-h-[200px] flex-col justify-center p-6 sm:min-h-[240px] sm:p-8">
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-xl font-bold text-white sm:text-2xl">Join In</h2>
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-pink-500 px-3 py-1 text-xs font-semibold text-white">
+                    <span className="relative flex h-2 w-2">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75"></span>
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-white"></span>
                     </span>
-                  ))}
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-pink-500 text-xs font-bold ring-2 ring-black sm:h-11 sm:w-11">
-                    +2k
+                    Live
                   </span>
+                </div>
+                <p className="text-sm text-white/70">
+                  Models are live — interaction to the next level
+                </p>
+                
+                {/* Character avatars */}
+                <div className="flex items-center gap-3">
+                  {/* Show database characters if available, otherwise show default avatars */}
+                  {filtered.length > 0 && filtered.some(char => char.avatarUrl?.trim()) ? (
+                    <>
+                      {filtered
+                        .filter((char) => char.avatarUrl && char.avatarUrl.trim() !== "")
+                        .slice(0, 5)
+                        .map((char) => (
+                          <Link
+                            key={char.id}
+                            href={`/chat/${char.slug}`}
+                            className="group relative"
+                          >
+                            <div className="relative h-16 w-16 overflow-hidden rounded-full ring-2 ring-white/10 transition-all group-hover:ring-pink-500 sm:h-20 sm:w-20">
+                              <Image
+                                src={char.avatarUrl}
+                                alt={char.name}
+                                fill
+                                className="object-cover"
+                                sizes="80px"
+                              />
+                            </div>
+                            {/* Live indicator */}
+                            <span className="absolute bottom-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-green-500 ring-2 ring-black">
+                              <span className="h-2 w-2 rounded-full bg-white"></span>
+                            </span>
+                          </Link>
+                        ))}
+                      {filtered.filter((char) => char.avatarUrl && char.avatarUrl.trim() !== "").length > 5 && (
+                        <button
+                          type="button"
+                          className="flex h-16 w-16 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 sm:h-20 sm:w-20"
+                          aria-label="View more characters"
+                        >
+                          <ArrowRight className="h-6 w-6" />
+                        </button>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      {/* Fallback: show default avatars */}
+                      {EXPLORE_JOIN_AVATARS.map((src, i) => (
+                        <div key={`avatar-${i}`} className="relative">
+                          <div className="relative h-16 w-16 overflow-hidden rounded-full ring-2 ring-white/10 sm:h-20 sm:w-20">
+                            <Image
+                              src={src}
+                              alt=""
+                              fill
+                              className="object-cover"
+                              sizes="80px"
+                            />
+                          </div>
+                          {/* Live indicator */}
+                          <span className="absolute bottom-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-green-500 ring-2 ring-black">
+                            <span className="h-2 w-2 rounded-full bg-white"></span>
+                          </span>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        className="flex h-16 w-16 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 sm:h-20 sm:w-20"
+                        aria-label="View more characters"
+                      >
+                        <ArrowRight className="h-6 w-6" />
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
