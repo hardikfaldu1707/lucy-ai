@@ -496,28 +496,9 @@ export function ChatWindow({
 
   return (
     <div className={cn("flex h-full min-h-0 flex-1 flex-col", className)}>
-      <div className="relative h-full min-h-0 flex-1">
-        {bgUrl && (
-          <div
-            className="pointer-events-none absolute inset-0 overflow-hidden bg-black"
-            aria-hidden
-          >
-            <Image
-              src={bgUrl}
-              alt=""
-              fill
-              className="object-cover object-center"
-              sizes="(max-width: 768px) 100vw, 50vw"
-            />
-            <div className="absolute inset-0 bg-black/60" />
-            <div
-              className="absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-black/65"
-              aria-hidden
-            />
-          </div>
-        )}
+      <div className="relative h-full min-h-0 flex-1 flex flex-col">
         <ScrollArea ref={scrollRootRef} className="relative z-10 h-full min-h-0 flex-1 px-4">
-          <div className="flex flex-col gap-3 py-4">
+          <div className="flex flex-col gap-3 pb-4 pt-[50px]">
             {hasEarlierMessages && onLoadEarlierMessages && (
               <div className="flex justify-center py-1">
                 <button
@@ -602,38 +583,38 @@ export function ChatWindow({
             <div ref={bottomRef} />
           </div>
         </ScrollArea>
-      </div>
-      {showSuggestions && (
-        <ChatSuggestionChips
-          suggestions={suggestedQuestions}
-          onSelect={setDraft}
+        {showSuggestions && (
+          <ChatSuggestionChips
+            suggestions={suggestedQuestions}
+            onSelect={setDraft}
+            variant={inputVariant}
+          />
+        )}
+        <ChatInput
+          value={draft}
+          onValueChange={setDraft}
+          onSend={(content, options) => void handleSend(content, options)}
+          onSendGif={
+            isGuest
+              ? undefined
+              : (gifUrl) =>
+                  void handleSendMessage({ content: "GIF", type: "image", mediaUrl: gifUrl })
+          }
+          characterName={conversation.characterName}
+          disabled={isTyping || guestInputBlocked}
+          onVoiceCall={onVoiceCall}
+          voiceCallEnabled={voiceCallEnabled}
           variant={inputVariant}
+          mediaRequestEnabled={!isGuest}
+          mediaPaywallEnabled={photosAccess?.paywallEnabled}
+          mediaCostPerItem={photosAccess?.costPerPhoto}
+          placeholder={
+            isGuest && guestRemaining !== null && guestRemaining > 0
+              ? `${guestRemaining} free message${guestRemaining === 1 ? "" : "s"} left`
+              : undefined
+          }
         />
-      )}
-      <ChatInput
-        value={draft}
-        onValueChange={setDraft}
-        onSend={(content, options) => void handleSend(content, options)}
-        onSendGif={
-          isGuest
-            ? undefined
-            : (gifUrl) =>
-                void handleSendMessage({ content: "GIF", type: "image", mediaUrl: gifUrl })
-        }
-        characterName={conversation.characterName}
-        disabled={isTyping || guestInputBlocked}
-        onVoiceCall={onVoiceCall}
-        voiceCallEnabled={voiceCallEnabled}
-        variant={inputVariant}
-        mediaRequestEnabled={!isGuest}
-        mediaPaywallEnabled={photosAccess?.paywallEnabled}
-        mediaCostPerItem={photosAccess?.costPerPhoto}
-        placeholder={
-          isGuest && guestRemaining !== null && guestRemaining > 0
-            ? `${guestRemaining} free message${guestRemaining === 1 ? "" : "s"} left`
-            : undefined
-        }
-      />
+      </div>
       {isGuest && (
         <GuestAuthDialog
           open={authDialogOpen}

@@ -36,7 +36,7 @@ export function ChatCharacterProfileBar({
     useUIStore();
 
   return (
-    <header className="sticky top-0 z-10 shrink-0 border-b border-white/[0.08] bg-[#0c0c0c]/95 pt-[env(safe-area-inset-top)] backdrop-blur-md supports-[backdrop-filter]:bg-[#0c0c0c]/85">
+    <header className="sticky top-0 z-10 shrink-0 border-b border-white/[0.08] bg-[#0c0c0c]/95 pt-[calc(env(safe-area-inset-top)+8px)] backdrop-blur-md supports-[backdrop-filter]:bg-[#0c0c0c]/85">
       <div className="flex h-14 items-center gap-2 px-2 sm:gap-3 sm:px-4">
         <Button
           variant="ghost"

@@ -194,8 +194,8 @@ export function ChatInput({
       className={cn(
         "border-t backdrop-blur-xl",
         isDark
-          ? "border-white/10 bg-[#0a0a0a]/95"
-          : "border-border bg-background/80",
+          ? "border-white/10"
+          : "border-border",
       )}
     >
       {pickerOpen && (

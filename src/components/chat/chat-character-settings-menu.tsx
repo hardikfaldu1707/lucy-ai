@@ -4,6 +4,7 @@ import { useCallback, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import * as SliderPrimitive from "@radix-ui/react-slider";
 import {
   Coins,
   Flag,
@@ -46,6 +47,78 @@ import {
 import { CREATE_VOICE_OPTIONS } from "@/constants/create-voices";
 import { characterProfilePath, ROUTES } from "@/constants/routes";
 import { cn } from "@/lib/utils";
+
+const LUST_EMOJIS = ["🤖", "🙂", "😊", "😉", "🔥"] as const;
+
+const SLIDER_STEPS: ChatSettingsLevel[] = [1, 2, 3, 4, 5];
+
+function ChatSettingsSlider({
+  value,
+  onChange,
+  disabled,
+  variant,
+  label,
+}: {
+  value: ChatSettingsLevel;
+  onChange: (level: ChatSettingsLevel) => void;
+  disabled?: boolean;
+  variant: "lust" | "response";
+  label: string;
+}) {
+  return (
+    <div className="relative px-1 py-2">
+      <div
+        className={cn(
+          "pointer-events-none absolute inset-x-1 top-1/2 h-[9px] -translate-y-1/2 rounded-full",
+          variant === "lust"
+            ? "bg-gradient-to-r from-[#22d3ee] via-[#fbbf24] to-[#ef4444]"
+            : "bg-gradient-to-r from-[#df1a97] via-[#e11d8f] to-[#ef4444]",
+        )}
+        aria-hidden
+      />
+
+      <div
+        className="pointer-events-none absolute inset-x-1 top-1/2 flex -translate-y-1/2 justify-between"
+        aria-hidden
+      >
+        {SLIDER_STEPS.map((step) => (
+          <span
+            key={step}
+            className="h-2 w-2 rounded-full border-[1.5px] border-white/95 bg-black/20"
+          />
+        ))}
+      </div>
+
+      <SliderPrimitive.Root
+        className="relative z-[2] flex w-full touch-none select-none items-center py-2"
+        min={1}
+        max={5}
+        step={1}
+        value={[value]}
+        disabled={disabled}
+        onValueChange={([next]) => onChange(clampChatLevel(next))}
+        aria-label={label}
+      >
+        <SliderPrimitive.Track className="relative h-[9px] w-full grow rounded-full bg-transparent">
+          <SliderPrimitive.Range className="absolute h-full opacity-0" />
+        </SliderPrimitive.Track>
+        <SliderPrimitive.Thumb
+          className={cn(
+            "flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-[#101010] shadow-[0_4px_14px_rgba(0,0,0,0.55)]",
+            "focus:outline-none focus-visible:ring-2 focus-visible:ring-[#df1a97]/70 focus-visible:ring-offset-0",
+            disabled && "opacity-50",
+          )}
+        >
+          <span className="flex gap-[3px]" aria-hidden>
+            <span className="h-3 w-[2px] rounded-full bg-white/75" />
+            <span className="h-3 w-[2px] rounded-full bg-white/75" />
+            <span className="h-3 w-[2px] rounded-full bg-white/75" />
+          </span>
+        </SliderPrimitive.Thumb>
+      </SliderPrimitive.Root>
+    </div>
+  );
+}
 
 interface ChatSettingsResponse extends CharacterChatPrefs {
   effectiveVoicePersonaId: string | null;
@@ -93,6 +166,8 @@ function StepSetting({
   onChange,
   disabled,
   numericMobileLabels,
+  variant,
+  emojis,
 }: {
   title: string;
   description: string;
@@ -101,20 +176,57 @@ function StepSetting({
   onChange: (level: ChatSettingsLevel) => void;
   disabled?: boolean;
   numericMobileLabels?: boolean;
+  variant: "lust" | "response";
+  emojis?: readonly string[];
 }) {
   const active = levels.find((l) => l.level === value) ?? levels[2];
+  const activeIndex = Math.max(0, levels.findIndex((l) => l.level === value));
 
   return (
-    <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-3 sm:p-4">
-      <div className="mb-2 sm:mb-3">
+    <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+      <div className="mb-2">
         <Label className="text-sm font-semibold text-white">{title}</Label>
-        <p className="mt-1 hidden text-xs leading-relaxed text-white/50 sm:block">{description}</p>
+        <p className="mt-1 text-xs leading-relaxed text-white/50">{description}</p>
       </div>
-      <p className="mb-2 hidden text-xs text-primary/90 sm:mb-3 sm:block">
-        <span className="font-semibold text-primary">{active.label}</span>
-        <span className="text-white/40"> · {active.hint}</span>
+      <p className="mb-3 text-xs">
+        <span className="font-semibold text-[#df1a97]">{active.label}</span>
+        <span className="text-white/45"> · {active.hint}</span>
       </p>
-      <div className="grid grid-cols-5 gap-1">
+
+      {emojis && (
+        <div className="mb-1 flex justify-between px-2">
+          {emojis.map((emoji, index) => {
+            const selected = index === activeIndex;
+            return (
+              <button
+                key={`${emoji}-${index}`}
+                type="button"
+                disabled={disabled}
+                onClick={() => onChange(clampChatLevel((index + 1) as ChatSettingsLevel))}
+                className={cn(
+                  "flex h-9 w-9 items-center justify-center rounded-full text-[22px] leading-none transition-all",
+                  selected
+                    ? "bg-amber-400/15 ring-1 ring-amber-300/25"
+                    : "opacity-30 grayscale",
+                )}
+                aria-label={`${title}: ${levels[index]?.label ?? index + 1}`}
+              >
+                {emoji}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      <ChatSettingsSlider
+        value={value}
+        onChange={onChange}
+        disabled={disabled}
+        variant={variant}
+        label={title}
+      />
+
+      <div className="mt-1 grid grid-cols-5 gap-1.5">
         {levels.map((level) => {
           const selected = value === level.level;
           return (
@@ -124,13 +236,13 @@ function StepSetting({
               disabled={disabled}
               onClick={() => onChange(clampChatLevel(level.level))}
               className={cn(
-                "rounded-xl px-0.5 py-2 text-center text-[10px] font-medium leading-tight transition-colors sm:px-1 sm:py-2.5 sm:text-[11px]",
+                "rounded-full px-0.5 py-2 text-center text-[10px] font-medium leading-tight transition-colors sm:py-2.5 sm:text-[11px]",
                 selected
-                  ? "bg-primary text-primary-foreground shadow-sm shadow-primary/30"
-                  : "bg-white/5 text-white/70 hover:bg-white/10 hover:text-white",
+                  ? "bg-[#df1a97] text-white shadow-sm shadow-[#df1a97]/35"
+                  : "bg-white/[0.06] text-white/55 hover:bg-white/10 hover:text-white/80",
                 disabled && "opacity-50",
               )}
-              aria-pressed={selected}
+              aria-pressed={selected ? "true" : "false"}
               aria-label={`${title}: ${level.label}`}
             >
               {numericMobileLabels ? (
@@ -331,13 +443,13 @@ export function ChatCharacterSettingsMenu({
 
           <DialogHeader className="space-y-1 border-b border-white/10 px-4 py-3 text-left sm:px-6 sm:pb-4 sm:pt-6">
             <DialogTitle className="text-base text-white sm:text-lg">Chat settings</DialogTitle>
-            <DialogDescription className="hidden text-white/55 sm:block">
+            <DialogDescription className="text-sm text-white/55">
               Customize how <span className="font-medium text-white/80">{characterName}</span>{" "}
               chats with you.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="overflow-visible px-4 py-3 sm:min-h-0 sm:flex-1 sm:overflow-y-auto sm:overscroll-contain sm:px-6 sm:py-4">
+          <div className="overflow-visible px-4 py-3 sm:min-h-0 sm:flex-1 sm:overflow-y-auto sm:overscroll-contain sm:px-6 sm:py-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {isLoading && !data ? (
               <div className="flex items-center justify-center py-12 text-white/50">
                 <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
@@ -396,6 +508,8 @@ export function ChatCharacterSettingsMenu({
                   value={draft.lustLevel}
                   onChange={(lustLevel) => updateDraft({ lustLevel })}
                   disabled={saveMutation.isPending}
+                  variant="lust"
+                  emojis={LUST_EMOJIS}
                 />
 
                 <StepSetting
@@ -406,8 +520,8 @@ export function ChatCharacterSettingsMenu({
                   onChange={(responseLength) => updateDraft({ responseLength })}
                   disabled={saveMutation.isPending}
                   numericMobileLabels
+                  variant="response"
                 />
-
                 {saveMutation.isPending && (
                   <p className="flex items-center justify-center gap-2 text-xs text-white/45">
                     <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
@@ -415,43 +529,41 @@ export function ChatCharacterSettingsMenu({
                   </p>
                 )}
 
-                <section className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
-                  <div className="grid grid-cols-2 sm:block">
+                <section className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-1">
+                  <SettingsRow
+                    compact
+                    icon={Coins}
+                    label="Get coins"
+                    href={ROUTES.subscriptionCoins}
+                    onClick={() => handleSettingsOpenChange(false)}
+                  />
+                  <SettingsRow
+                    compact
+                    icon={UserRound}
+                    label={
+                      <>
+                        <span className="sm:hidden">View profile</span>
+                        <span className="hidden sm:inline">{`View ${characterName}'s profile`}</span>
+                      </>
+                    }
+                    href={characterProfilePath(characterSlug)}
+                    onClick={() => handleSettingsOpenChange(false)}
+                  />
+                  {voiceEnabled && voiceHref && (
                     <SettingsRow
                       compact
-                      icon={Coins}
-                      label="Get coins"
-                      href={ROUTES.subscriptionCoins}
+                      icon={Phone}
+                      label="Voice call"
+                      href={voiceHref}
                       onClick={() => handleSettingsOpenChange(false)}
                     />
-                    <SettingsRow
-                      compact
-                      icon={UserRound}
-                      label={
-                        <>
-                          <span className="sm:hidden">View profile</span>
-                          <span className="hidden sm:inline">{`View ${characterName}'s profile`}</span>
-                        </>
-                      }
-                      href={characterProfilePath(characterSlug)}
-                      onClick={() => handleSettingsOpenChange(false)}
-                    />
-                    {voiceEnabled && voiceHref && (
-                      <SettingsRow
-                        compact
-                        icon={Phone}
-                        label="Voice call"
-                        href={voiceHref}
-                        onClick={() => handleSettingsOpenChange(false)}
-                      />
-                    )}
-                    <SettingsRow
-                      compact
-                      icon={Flag}
-                      label="Report"
-                      onClick={() => setReportOpen(true)}
-                    />
-                  </div>
+                  )}
+                  <SettingsRow
+                    compact
+                    icon={Flag}
+                    label="Report"
+                    onClick={() => setReportOpen(true)}
+                  />
                   <SettingsRow
                     compact
                     icon={Trash2}
