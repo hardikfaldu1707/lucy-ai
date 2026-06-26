@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Copy, ExternalLink, Trash2, Upload } from "lucide-react";
+import { Copy, ExternalLink, Trash2, HardDrive, Image, Video, FolderOpen, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,8 +25,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { AdminTableHead, AdminTableScroll } from "@/components/admin/admin-table";
+import {
+  AdminTableHead,
+  AdminTableScroll,
+  AdminTableSkeleton,
+  AdminTableEmpty,
+} from "@/components/admin/admin-table";
 import { formatAdminDateTime } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import type { AdminMediaItem, AdminMediaListResult } from "@/lib/data/admin-media";
 import type { StorageUsage } from "@/lib/data/admin-stats";
 
@@ -52,6 +58,18 @@ async function fetchMedia(params: {
   if (!res.ok) throw new Error("Failed to load media");
   return res.json();
 }
+
+const scopeIcons: Record<string, React.ComponentType<{ className?: string }>> = {
+  user: FolderOpen,
+  character: Image,
+  platform: HardDrive,
+};
+
+const scopeStyles: Record<string, string> = {
+  user: "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20",
+  character: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
+  platform: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
+};
 
 export function AdminStorageClient({ initialUsage }: { initialUsage: StorageUsage }) {
   const queryClient = useQueryClient();
@@ -134,30 +152,38 @@ export function AdminStorageClient({ initialUsage }: { initialUsage: StorageUsag
         description="R2 files — user uploads, character images, and platform assets."
       />
 
+      {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">Total used</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold tabular-nums">{formatBytes(initialUsage.totalBytes)}</p>
-            <p className="text-xs text-muted-foreground tabular-nums">{initialUsage.fileCount} files</p>
+          <CardContent className="flex items-center gap-3 p-4">
+            <div className="rounded-lg bg-primary/10 p-2 text-primary">
+              <HardDrive className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold tabular-nums">{formatBytes(initialUsage.totalBytes)}</p>
+              <p className="text-xs text-muted-foreground">{initialUsage.fileCount} files total</p>
+            </div>
           </CardContent>
         </Card>
-        {(["user", "character", "platform"] as const).map((s) => (
-          <Card key={s}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm capitalize text-muted-foreground">{s}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold tabular-nums">
-                {formatBytes(initialUsage.byScope[s] ?? 0)}
-              </p>
-            </CardContent>
-          </Card>
-        ))}
+        {(["user", "character", "platform"] as const).map((s) => {
+          const ScopeIcon = scopeIcons[s] ?? FolderOpen;
+          return (
+            <Card key={s}>
+              <CardContent className="flex items-center gap-3 p-4">
+                <div className={cn("rounded-lg p-2", scopeStyles[s]?.split(" ").slice(0, 2).join(" "))}>
+                  <ScopeIcon className={cn("h-4 w-4", scopeStyles[s]?.split(" ")[1])} />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold tabular-nums">{formatBytes(initialUsage.byScope[s] ?? 0)}</p>
+                  <p className="text-xs capitalize text-muted-foreground">{s}</p>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
+      {/* Upload */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Upload platform asset</CardTitle>
@@ -192,6 +218,7 @@ export function AdminStorageClient({ initialUsage }: { initialUsage: StorageUsag
         </CardContent>
       </Card>
 
+      {/* Filters */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
         <div className="space-y-1">
           <Label htmlFor="media-search">Search files</Label>
@@ -219,13 +246,13 @@ export function AdminStorageClient({ initialUsage }: { initialUsage: StorageUsag
             <SelectTrigger id="media-scope" className="w-[140px]">
               <SelectValue placeholder="Scope" />
             </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All scopes</SelectItem>
-            <SelectItem value="user">User</SelectItem>
-            <SelectItem value="character">Character</SelectItem>
-            <SelectItem value="platform">Platform</SelectItem>
-          </SelectContent>
-        </Select>
+            <SelectContent>
+              <SelectItem value="all">All scopes</SelectItem>
+              <SelectItem value="user">User</SelectItem>
+              <SelectItem value="character">Character</SelectItem>
+              <SelectItem value="platform">Platform</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-1">
           <Label htmlFor="media-type">Type</Label>
@@ -239,26 +266,23 @@ export function AdminStorageClient({ initialUsage }: { initialUsage: StorageUsag
             <SelectTrigger id="media-type" className="w-[140px]">
               <SelectValue placeholder="Type" />
             </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All types</SelectItem>
-            <SelectItem value="image">Image</SelectItem>
-            <SelectItem value="video">Video</SelectItem>
-          </SelectContent>
-        </Select>
+            <SelectContent>
+              <SelectItem value="all">All types</SelectItem>
+              <SelectItem value="image">Image</SelectItem>
+              <SelectItem value="video">Video</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
+      {/* Table */}
       <Card>
         <CardContent className="p-0">
           <AdminTableScroll minWidth="800px">
             <AdminTableHead columns={["Preview", "Scope", "Owner", "Character", "Size", "Date", "Actions"]} />
             <tbody>
               {isLoading ? (
-                <tr>
-                  <td className="p-4 text-muted-foreground" colSpan={7}>
-                    Loading…
-                  </td>
-                </tr>
+                <AdminTableSkeleton columns={7} />
               ) : items.length ? (
                 items.map((item: AdminMediaItem) => (
                   <MediaRow
@@ -269,17 +293,17 @@ export function AdminStorageClient({ initialUsage }: { initialUsage: StorageUsag
                   />
                 ))
               ) : (
-                <tr>
-                  <td className="p-4 text-muted-foreground" colSpan={7}>
-                    No files yet. Upload a platform asset or create a character with an image.
-                  </td>
-                </tr>
+                <AdminTableEmpty
+                  colSpan={7}
+                  message="No files yet. Upload a platform asset or create a character with an image."
+                />
               )}
             </tbody>
           </AdminTableScroll>
         </CardContent>
       </Card>
 
+      {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-2">
           <Button
@@ -288,10 +312,12 @@ export function AdminStorageClient({ initialUsage }: { initialUsage: StorageUsag
             disabled={page <= 1}
             aria-label="Previous page"
             onClick={() => setPage((p) => p - 1)}
+            className="gap-1"
           >
+            <ChevronLeft className="h-3.5 w-3.5" />
             Previous
           </Button>
-          <span className="text-sm text-muted-foreground tabular-nums">
+          <span className="text-sm text-muted-foreground tabular-nums px-2">
             Page {page} of {totalPages}
           </span>
           <Button
@@ -300,12 +326,15 @@ export function AdminStorageClient({ initialUsage }: { initialUsage: StorageUsag
             disabled={page >= totalPages}
             aria-label="Next page"
             onClick={() => setPage((p) => p + 1)}
+            className="gap-1"
           >
             Next
+            <ChevronRight className="h-3.5 w-3.5" />
           </Button>
         </div>
       )}
 
+      {/* Delete Dialog */}
       <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -354,8 +383,8 @@ function MediaRow({
   }
 
   return (
-    <tr className="border-b last:border-0">
-      <td className="p-4">
+    <tr className="border-b last:border-0 transition-colors hover:bg-muted/30">
+      <td className="px-4 py-3">
         {item.type === "image" ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -367,25 +396,32 @@ function MediaRow({
           />
         ) : (
           <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted">
-            <Upload className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+            <Video className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
           </div>
         )}
       </td>
-      <td className="p-4">
-        <Badge variant="outline" className="capitalize">
+      <td className="px-4 py-3">
+        <Badge
+          variant="outline"
+          className={cn("capitalize text-xs", scopeStyles[item.scope] ?? scopeStyles.user)}
+        >
           {item.scope}
         </Badge>
       </td>
-      <td className="p-4 min-w-0"><span className="truncate block">{item.ownerEmail ?? item.profileId.slice(0, 8)}</span></td>
-      <td className="p-4">{item.characterName ?? "—"}</td>
-      <td className="p-4 tabular-nums">{formatBytes(item.sizeBytes)}</td>
-      <td className="p-4 whitespace-nowrap">{formatAdminDateTime(item.createdAt)}</td>
-      <td className="p-4">
+      <td className="px-4 py-3 min-w-0">
+        <span className="truncate block text-sm">{item.ownerEmail ?? item.profileId.slice(0, 8)}</span>
+      </td>
+      <td className="px-4 py-3 text-sm text-muted-foreground">{item.characterName ?? "—"}</td>
+      <td className="px-4 py-3 tabular-nums text-sm font-medium">{formatBytes(item.sizeBytes)}</td>
+      <td className="px-4 py-3 whitespace-nowrap text-xs text-muted-foreground">
+        {formatAdminDateTime(item.createdAt)}
+      </td>
+      <td className="px-4 py-3">
         <div className="flex gap-1">
-          <Button variant="ghost" size="icon" onClick={copyUrl} aria-label="Copy URL">
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={copyUrl} aria-label="Copy URL">
             <Copy className="h-4 w-4" aria-hidden="true" />
           </Button>
-          <Button variant="ghost" size="icon" asChild>
+          <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
             <a href={item.url} target="_blank" rel="noopener noreferrer" aria-label="Open file in new tab">
               <ExternalLink className="h-4 w-4" aria-hidden="true" />
             </a>
@@ -393,6 +429,7 @@ function MediaRow({
           <Button
             variant="ghost"
             size="icon"
+            className="h-8 w-8"
             disabled={deleting}
             onClick={onDeleteRequest}
             aria-label="Delete file"

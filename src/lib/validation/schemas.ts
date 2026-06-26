@@ -100,11 +100,19 @@ const characterAppearanceSchema = z.object({
   outfit: z.string().trim().max(40).optional(),
 });
 
+const characterAvatarUrlSchema = z
+  .string()
+  .trim()
+  .max(2048)
+  .refine((v) => /^https?:\/\//i.test(v) || v.startsWith("/"), {
+    message: "Avatar must be an absolute URL or site path",
+  });
+
 export const createCharacterSchema = z.object({
   name: z.string().trim().min(1).max(80),
   tagline: z.string().trim().max(160).optional(),
   description: z.string().trim().max(2000).optional(),
-  avatarUrl: z.string().url().max(2048),
+  avatarUrl: characterAvatarUrlSchema.optional(),
   tags: z.array(z.string().trim().max(40)).max(20).optional(),
   personality: z.array(z.string().trim().max(40)).max(20).optional(),
   aiModel: z.string().max(128).nullable().optional(),

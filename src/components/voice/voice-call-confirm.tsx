@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { Coins, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -43,14 +43,14 @@ export function VoiceCallConfirm({
   const backHref = ROUTES.publicChatWithCharacter(characterSlug);
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
       className="flex w-full flex-col items-center rounded-3xl border border-white/10 bg-white/[0.04] px-6 py-8 text-center backdrop-blur-md"
     >
       <div className="relative mb-6 flex items-center justify-center">
-        <motion.span
+        <m.span
           aria-hidden
           className="absolute inset-0 rounded-full bg-pink-500/20 blur-xl"
           animate={{ scale: [1, 1.15, 1], opacity: [0.4, 0.7, 0.4] }}
@@ -121,6 +121,6 @@ export function VoiceCallConfirm({
       >
         Back to chat
       </Link>
-    </motion.div>
+    </m.div>
   );
 }

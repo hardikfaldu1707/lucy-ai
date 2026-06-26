@@ -1,14 +1,20 @@
+import dynamic from "next/dynamic";
 import { auth } from "@clerk/nextjs/server";
 import { DashboardSidebar } from "@/components/layout/dashboard-sidebar";
 import { DashboardTopNav } from "@/components/layout/dashboard-top-nav";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { BannedNotice } from "@/components/shared/banned-notice";
 import { CoinBalanceHydrator } from "@/components/shared/coin-balance-hydrator";
-import { OnboardingGate } from "@/components/onboarding/onboarding-gate";
-import { PushSubscribePrompt } from "@/components/push/push-subscribe-prompt";
 import { getBalanceForProfile } from "@/lib/data/coins";
 import { ensureProfile } from "@/lib/ensure-profile";
 import { createServerSupabase } from "@/lib/supabase/server";
+
+const OnboardingGate = dynamic(
+  () => import("@/components/onboarding/onboarding-gate").then((m) => m.OnboardingGate)
+);
+const PushSubscribePrompt = dynamic(
+  () => import("@/components/push/push-subscribe-prompt").then((m) => m.PushSubscribePrompt)
+);
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { userId } = await auth();

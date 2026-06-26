@@ -1,10 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { Plus, Sparkles, AlertCircle, Search, X, SlidersHorizontal } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import { AdminCharacterCard } from "@/components/admin/admin-character-card";
 import {
   CharacterForm,
@@ -23,6 +27,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { AdminCharacter } from "@/lib/data/admin-characters";
 
 async function fetchCharacters(): Promise<AdminCharacter[]> {
@@ -32,12 +43,18 @@ async function fetchCharacters(): Promise<AdminCharacter[]> {
   return json.characters;
 }
 
-export function AdminCharactersClient() {
+interface AdminCharactersClientProps {
+  initialCharacters?: AdminCharacter[];
+}
+
+type FilterType = "all" | "catalog" | "user";
+type PublishFilter = "all" | "published" | "draft";
+
+export function AdminCharactersClient({ initialCharacters }: AdminCharactersClientProps) {
   const queryClient = useQueryClient();
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<AdminCharacter | null>(null);
 
-  // Redesign dialog states
   const [previewCharacter, setPreviewCharacter] = useState<AdminCharacter | null>(null);
   const [deleteCharacter, setDeleteCharacter] = useState<AdminCharacter | null>(null);
   const [photoEditCharacter, setPhotoEditCharacter] = useState<AdminCharacter | null>(null);
@@ -47,10 +64,118 @@ export function AdminCharactersClient() {
     cardDisplayMode: "image",
   });
 
+  // Search & filter state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterType, setFilterType] = useState<FilterType>("all");
+  const [publishFilter, setPublishFilter] = useState<PublishFilter>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [aiModelFilter, setAiModelFilter] = useState<string>("all");
+  const [genderFilter, setGenderFilter] = useState<string>("all");
+  const [styleFilter, setStyleFilter] = useState<string>("all");
+  const [showFilters, setShowFilters] = useState(false);
+
   const { data: characters = [], isLoading, isError, error } = useQuery({
     queryKey: ["admin", "characters"],
     queryFn: fetchCharacters,
+    initialData: initialCharacters,
   });
+
+  // Build unique filter options from data
+  const categories = useMemo(
+    () => Array.from(new Set(characters.map((c) => c.category).filter(Boolean))).sort(),
+    [characters],
+  );
+  const aiModels = useMemo(
+    () => Array.from(new Set(characters.map((c) => c.aiModel).filter((m): m is string => !!m))).sort(),
+    [characters],
+  );
+  const genders = useMemo(
+    () => Array.from(new Set(characters.map((c) => c.gender).filter(Boolean))).sort(),
+    [characters],
+  );
+  const styles = useMemo(
+    () => Array.from(new Set(characters.map((c) => c.style).filter(Boolean))).sort(),
+    [characters],
+  );
+
+  // Filter characters client-side
+  const filteredCharacters = useMemo(() => {
+    let result = characters;
+
+    // Search filter
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      result = result.filter((c) => {
+        const haystack = [
+          c.name,
+          c.tagline,
+          c.description,
+          c.category,
+          ...(c.tags || []),
+          c.slug ?? "",
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        return haystack.includes(q);
+      });
+    }
+
+    // Type filter
+    if (filterType === "catalog") {
+      result = result.filter((c) => !c.createdBy);
+    } else if (filterType === "user") {
+      result = result.filter((c) => !!c.createdBy);
+    }
+
+    // Publish filter
+    if (publishFilter === "published") {
+      result = result.filter((c) => c.isPublished);
+    } else if (publishFilter === "draft") {
+      result = result.filter((c) => !c.isPublished);
+    }
+
+    // Category filter
+    if (categoryFilter !== "all") {
+      result = result.filter((c) => c.category === categoryFilter);
+    }
+
+    // AI Model filter
+    if (aiModelFilter !== "all") {
+      result = result.filter((c) => c.aiModel === aiModelFilter);
+    }
+
+    // Gender filter
+    if (genderFilter !== "all") {
+      result = result.filter((c) => c.gender === genderFilter);
+    }
+
+    // Style filter
+    if (styleFilter !== "all") {
+      result = result.filter((c) => c.style === styleFilter);
+    }
+
+    return result;
+  }, [characters, searchQuery, filterType, publishFilter, categoryFilter, aiModelFilter, genderFilter, styleFilter]);
+
+  const activeFilterCount = [
+    filterType !== "all",
+    publishFilter !== "all",
+    categoryFilter !== "all",
+    aiModelFilter !== "all",
+    genderFilter !== "all",
+    styleFilter !== "all",
+  ].filter(Boolean).length;
+
+  function clearFilters() {
+    setSearchQuery("");
+    setFilterType("all");
+    setPublishFilter("all");
+    setCategoryFilter("all");
+    setAiModelFilter("all");
+    setGenderFilter("all");
+    setStyleFilter("all");
+  }
 
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: ["admin", "characters"] });
@@ -143,22 +268,204 @@ export function AdminCharactersClient() {
       <PageHeader
         title="Characters"
         description="All companions from the database — catalog and user-created. Deletes remove them everywhere on the site."
-        action={<Button onClick={openCreate}>New character</Button>}
+        action={
+          <Button onClick={openCreate} className="gap-2">
+            <Plus className="h-4 w-4" />
+            New character
+          </Button>
+        }
       />
 
+      {/* Search & Filters */}
+      {!isLoading && !isError && characters.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search by name, tagline, category, tags..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 pr-9"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant={showFilters ? "default" : "outline"}
+                size="sm"
+                onClick={() => setShowFilters((s) => !s)}
+                className="gap-2"
+              >
+                <SlidersHorizontal className="h-4 w-4" />
+                Filters
+                {activeFilterCount > 0 && (
+                  <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
+                    {activeFilterCount}
+                  </Badge>
+                )}
+              </Button>
+              {activeFilterCount > 0 && (
+                <Button type="button" variant="ghost" size="sm" onClick={clearFilters}>
+                  Clear
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {showFilters && (
+            <div className="grid grid-cols-1 gap-3 rounded-xl border bg-muted/30 p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">Type</label>
+                <Select value={filterType} onValueChange={(v) => setFilterType(v as FilterType)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="catalog">Catalog (Platform)</SelectItem>
+                    <SelectItem value="user">User Created</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">Status</label>
+                <Select value={publishFilter} onValueChange={(v) => setPublishFilter(v as PublishFilter)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="published">Published</SelectItem>
+                    <SelectItem value="draft">Draft</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">Category</label>
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat} value={cat}>
+                        {cat}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">AI Model</label>
+                <Select value={aiModelFilter} onValueChange={setAiModelFilter}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    {aiModels.map((m) => (
+                      <SelectItem key={m} value={m}>
+                        {m}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">Gender</label>
+                <Select value={genderFilter} onValueChange={setGenderFilter}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    {genders.map((g) => (
+                      <SelectItem key={g} value={g}>
+                        {g.charAt(0).toUpperCase() + g.slice(1)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">Style</label>
+                <Select value={styleFilter} onValueChange={setStyleFilter}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    {styles.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {s.charAt(0).toUpperCase() + s.slice(1)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <span>
+              Showing <strong>{filteredCharacters.length}</strong> of{" "}
+              <strong>{characters.length}</strong> characters
+            </span>
+            {filteredCharacters.length === 0 && characters.length > 0 && (
+              <span>No characters match your filters.</span>
+            )}
+          </div>
+        </div>
+      )}
+
       {isError ? (
-        <p className="text-sm text-destructive" role="alert">
+        <div className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive" role="alert">
+          <AlertCircle className="h-4 w-4 shrink-0" />
           {(error as Error)?.message ?? "Failed to load characters from the database."}
-        </p>
+        </div>
       ) : isLoading ? (
-        <p className="text-sm text-muted-foreground">Loading…</p>
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          {Array.from({ length: 10 }).map((_, i) => (
+            <div key={i} className="space-y-3 rounded-xl border p-3">
+              <Skeleton className="aspect-[3/4] w-full rounded-lg" />
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-3 w-1/2" />
+            </div>
+          ))}
+        </div>
       ) : characters.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          No characters yet. Create your first one.
-        </p>
+        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed py-16 text-center">
+          <div className="rounded-full bg-muted p-4">
+            <Sparkles className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <h3 className="mt-4 text-lg font-semibold">No characters yet</h3>
+          <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+            Create your first character to get started. Characters appear in the explore page and can be chatted with.
+          </p>
+          <Button onClick={openCreate} className="mt-6 gap-2">
+            <Plus className="h-4 w-4" />
+            Create character
+          </Button>
+        </div>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-          {characters.map((c, index) => (
+          {filteredCharacters.map((c, index) => (
             <AdminCharacterCard
               key={c.id}
               character={c}
@@ -208,7 +515,9 @@ export function AdminCharactersClient() {
           <DialogHeader>
             <DialogTitle>Delete Character</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete <span className="font-semibold text-foreground">{deleteCharacter?.name}</span>? This action cannot be undone and will delete all associated conversations.
+              Are you sure you want to delete{" "}
+              <span className="font-semibold text-foreground">{deleteCharacter?.name}</span>? This action cannot be
+              undone and will delete all associated conversations.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0 mt-4">
@@ -229,7 +538,7 @@ export function AdminCharactersClient() {
                   deleteMutation.mutate(deleteCharacter.id, {
                     onSuccess: () => {
                       setDeleteCharacter(null);
-                    }
+                    },
                   });
                 }
               }}

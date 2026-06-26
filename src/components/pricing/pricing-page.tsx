@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Check, Sparkles, X } from "lucide-react";
 import { useAuth } from "@clerk/nextjs";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { LandingFooter } from "@/components/layout/landing-footer";
 import { LandingFaqSection } from "@/components/home/landing-faq-section";
 import { PLANS } from "@/constants/plans";
@@ -71,7 +71,7 @@ export function PricingPage() {
         {/* Plan cards */}
         <section className="grid w-full gap-6 lg:grid-cols-3 lg:gap-8" aria-label="Pricing plans">
           {PLANS.map((plan, i) => (
-            <motion.article
+            <m.article
               key={plan.id}
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
@@ -126,7 +126,7 @@ export function PricingPage() {
               </ul>
 
               <PlanCta planId={plan.id} isSignedIn={!!isSignedIn} />
-            </motion.article>
+            </m.article>
           ))}
         </section>
 

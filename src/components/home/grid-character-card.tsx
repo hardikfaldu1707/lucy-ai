@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import { motion } from "framer-motion";
 import { CharacterPortraitMedia } from "./character-portrait-media";
 import type { LandingCharacter } from "@/constants/landing-characters";
 import { ROUTES } from "@/constants/routes";
@@ -14,11 +13,7 @@ interface GridCharacterCardProps {
 
 export function GridCharacterCard({ character, priority }: GridCharacterCardProps) {
   return (
-    <motion.article
-      whileHover={{ scale: 1.02 }}
-      transition={{ type: "spring", stiffness: 400, damping: 30 }}
-      className="group relative overflow-hidden rounded-3xl"
-    >
+    <article className="group relative overflow-hidden rounded-3xl transition-transform duration-200 ease-out hover:scale-[1.02] motion-reduce:transform-none">
       <CharacterPortraitMedia character={character} priority={priority} />
 
       <div className="pointer-events-none absolute inset-0">
@@ -54,6 +49,6 @@ export function GridCharacterCard({ character, priority }: GridCharacterCardProp
           </div>
         </div>
       </div>
-    </motion.article>
+    </article>
   );
 }

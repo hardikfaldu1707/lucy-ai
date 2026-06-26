@@ -2,39 +2,45 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
 import { X } from "lucide-react";
 import { Logo } from "@/components/shared/logo";
 import { CoinBalanceBadge } from "@/components/shared/coin-balance-badge";
 import { Button } from "@/components/ui/button";
 import { DASHBOARD_NAV } from "@/constants/routes";
 import { useUIStore } from "@/store/ui-store";
+import { useDialogA11y, usePrefersReducedMotion } from "@/hooks/use-dialog-a11y";
 import { cn } from "@/lib/utils";
 import { NavIcon } from "./nav-icon";
 
 export function MobileNav() {
   const pathname = usePathname();
   const { mobileNavOpen, setMobileNavOpen } = useUIStore();
+  const reducedMotion = usePrefersReducedMotion();
+  useDialogA11y(mobileNavOpen, () => setMobileNavOpen(false));
+
+  const slideOffset = reducedMotion ? 0 : "-100%";
 
   return (
     <AnimatePresence>
       {mobileNavOpen && (
         <>
-          <motion.div
-            initial={{ opacity: 0 }}
+          <m.div
+            initial={{ opacity: reducedMotion ? 1 : 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            exit={{ opacity: reducedMotion ? 1 : 0 }}
             className="fixed inset-0 z-50 bg-black/60 lg:hidden"
             onClick={() => setMobileNavOpen(false)}
-            aria-hidden
+            aria-hidden="true"
           />
-          <motion.aside
-            initial={{ x: "-100%" }}
+          <m.aside
+            initial={{ x: slideOffset }}
             animate={{ x: 0 }}
-            exit={{ x: "-100%" }}
-            transition={{ type: "spring", damping: 28, stiffness: 320 }}
-            className="fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r bg-sidebar pt-safe lg:hidden"
+            exit={{ x: slideOffset }}
+            transition={reducedMotion ? { duration: 0 } : { type: "spring", damping: 28, stiffness: 320 }}
+            className="fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col border-r bg-sidebar pt-safe overscroll-contain lg:hidden"
             role="dialog"
+            aria-modal="true"
             aria-label="Mobile navigation"
           >
             <div className="flex h-16 items-center justify-between px-4">
@@ -68,7 +74,7 @@ export function MobileNav() {
             <div className="border-t p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
               <CoinBalanceBadge variant="nav" className="w-full justify-center" />
             </div>
-          </motion.aside>
+          </m.aside>
         </>
       )}
     </AnimatePresence>

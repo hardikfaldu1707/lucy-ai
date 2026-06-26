@@ -3,7 +3,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@clerk/nextjs";
-import { motion } from "framer-motion";
 import { EXPLORE_HERO_IMAGE } from "@/constants/explore-characters";
 import { ROUTES, signInHrefForCreate } from "@/constants/routes";
 
@@ -12,10 +11,7 @@ export function ExploreCreateCard() {
   const href = isLoaded && isSignedIn ? ROUTES.create : signInHrefForCreate();
 
   return (
-    <motion.article
-      whileHover={{ y: -4 }}
-      className="group relative overflow-hidden rounded-2xl ring-2 ring-[#df1a97]/40"
-    >
+    <article className="group relative overflow-hidden rounded-2xl ring-2 ring-[#df1a97]/40 transition-transform duration-200 ease-out hover:-translate-y-1 motion-reduce:transform-none">
       <div className="relative aspect-[15/22] w-full">
         <Image
           src={EXPLORE_HERO_IMAGE}
@@ -47,6 +43,6 @@ export function ExploreCreateCard() {
           </Link>
         </div>
       </div>
-    </motion.article>
+    </article>
   );
 }

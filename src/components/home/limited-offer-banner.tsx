@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Check, Clock, Heart, Sparkles } from "lucide-react";
 import { portraitForId } from "@/constants/character-portraits";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/constants/routes";
 
@@ -105,7 +105,7 @@ export function LimitedOfferBanner({ offerImageUrl }: { offerImageUrl?: string |
               <div className="absolute inset-0 bg-gradient-to-t from-[#4c1d95]/70 to-transparent" />
             </div>
             {[0, 1, 2, 3, 4].map((i) => (
-              <motion.div
+              <m.div
                 key={i}
                 className="absolute text-pink-400"
                 style={{
@@ -117,7 +117,7 @@ export function LimitedOfferBanner({ offerImageUrl }: { offerImageUrl?: string |
                 aria-hidden
               >
                 <Heart className="h-7 w-7 fill-current drop-shadow-[0_0_12px_rgba(236,72,153,0.8)]" />
-              </motion.div>
+              </m.div>
             ))}
           </div>
         </div>

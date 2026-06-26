@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
 import { Mic, MicOff, PhoneOff, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -353,7 +353,7 @@ export function VoiceCallUI({
         aria-hidden
       />
       {(stage === "active" || stage === "ended") && (
-        <motion.div
+        <m.div
           aria-hidden
           className="pointer-events-none absolute left-1/2 top-[38%] h-[140vmin] w-[140vmin] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(236,72,153,0.12),transparent_60%)] blur-3xl"
           animate={
@@ -392,7 +392,7 @@ export function VoiceCallUI({
 
         {(stage === "active" || stage === "ended") && (
           <>
-            <motion.div
+            <m.div
               initial={{ scale: 0.85, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: "spring", stiffness: 200, damping: 20 }}
@@ -400,13 +400,13 @@ export function VoiceCallUI({
             >
               {isSpeaking && (
                 <>
-                  <motion.span
+                  <m.span
                     aria-hidden
                     className="absolute inset-0 rounded-full bg-pink-500/25"
                     animate={{ scale: [1, 1.6], opacity: [0.5, 0] }}
                     transition={{ duration: 1.8, repeat: Infinity, ease: "easeOut" }}
                   />
-                  <motion.span
+                  <m.span
                     aria-hidden
                     className="absolute inset-0 rounded-full bg-pink-500/20"
                     animate={{ scale: [1, 1.6], opacity: [0.5, 0] }}
@@ -415,14 +415,14 @@ export function VoiceCallUI({
                 </>
               )}
               {isListening && (
-                <motion.span
+                <m.span
                   aria-hidden
                   className="absolute -inset-2 rounded-full ring-2 ring-emerald-400/40"
                   animate={{ scale: [1, 1.05, 1], opacity: [0.5, 0.9, 0.5] }}
                   transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
                 />
               )}
-              <motion.div
+              <m.div
                 animate={isSpeaking ? { scale: [1, 1.03, 1] } : { scale: 1 }}
                 transition={{ duration: 1.4, repeat: isSpeaking ? Infinity : 0, ease: "easeInOut" }}
                 className={cn(
@@ -441,8 +441,8 @@ export function VoiceCallUI({
                   className="object-cover"
                   sizes="160px"
                 />
-              </motion.div>
-            </motion.div>
+              </m.div>
+            </m.div>
 
             <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">{characterName}</h2>
 
@@ -510,7 +510,7 @@ export function VoiceCallUI({
 
             <AnimatePresence mode="wait">
               {latestSubtitle && stage === "active" && (
-                <motion.p
+                <m.p
                   key={latestSubtitle}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -519,7 +519,7 @@ export function VoiceCallUI({
                   className="mt-5 max-w-sm rounded-2xl bg-white/[0.03] px-4 py-3 text-center text-sm leading-relaxed text-white/75 italic ring-1 ring-white/5"
                 >
                   &ldquo;{latestSubtitle}&rdquo;
-                </motion.p>
+                </m.p>
               )}
             </AnimatePresence>
 
@@ -561,7 +561,7 @@ export function VoiceCallUI({
                 </div>
 
                 <div className="flex flex-col items-center gap-1.5">
-                  <motion.div whileTap={{ scale: 0.92 }}>
+                  <m.div whileTap={{ scale: 0.92 }}>
                     <Button
                       variant="destructive"
                       size="icon"
@@ -571,7 +571,7 @@ export function VoiceCallUI({
                     >
                       <PhoneOff className="h-6 w-6" />
                     </Button>
-                  </motion.div>
+                  </m.div>
                   <span className="text-[11px] font-medium text-white/45">End</span>
                 </div>
 
@@ -596,7 +596,7 @@ export function VoiceCallUI({
             )}
 
             {stage === "ended" && (
-              <motion.div
+              <m.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
@@ -608,7 +608,7 @@ export function VoiceCallUI({
                 <Button asChild className="rounded-full bg-pink-500 px-8 hover:bg-pink-400">
                   <Link href={backHref}>Back to chat</Link>
                 </Button>
-              </motion.div>
+              </m.div>
             )}
           </>
         )}
