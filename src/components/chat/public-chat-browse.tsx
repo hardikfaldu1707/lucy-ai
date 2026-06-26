@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@clerk/nextjs";
 import { ExploreCharacterCard } from "@/components/explore/explore-character-card";
+import { useProgressiveRender } from "@/hooks/use-progressive-render";
 import { ExploreCreateCard } from "@/components/explore/explore-create-card";
 import type { ExploreCharacter } from "@/constants/explore-characters";
 import { ROUTES, signInHrefForCreate } from "@/constants/routes";
@@ -88,25 +89,38 @@ function CharacterGrid({
   priorityFirst?: boolean;
   showCreateCard?: boolean;
 }) {
+  const { visibleItems, hasMore, sentinelRef } = useProgressiveRender(characters);
+
   return (
-    <div
-      className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
-      role="list"
-    >
-      {showCreateCard && (
-        <div role="listitem" className="min-w-0">
-          <ExploreCreateCard />
+    <>
+      <div
+        className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+        role="list"
+      >
+        {showCreateCard && (
+          <div role="listitem" className="min-w-0">
+            <ExploreCreateCard />
+          </div>
+        )}
+        {visibleItems.map((character, index) => (
+          <div key={character.id} role="listitem" className="min-w-0">
+            <ExploreCharacterCard
+              character={character}
+              priority={priorityFirst && index < 4}
+            />
+          </div>
+        ))}
+      </div>
+      {hasMore && (
+        <div
+          ref={sentinelRef}
+          className="flex h-14 items-center justify-center text-sm text-white/40"
+          aria-hidden
+        >
+          Loading more…
         </div>
       )}
-      {characters.map((character, index) => (
-        <div key={character.id} role="listitem" className="min-w-0">
-          <ExploreCharacterCard
-            character={character}
-            priority={priorityFirst && index < 4}
-          />
-        </div>
-      ))}
-    </div>
+    </>
   );
 }
 
