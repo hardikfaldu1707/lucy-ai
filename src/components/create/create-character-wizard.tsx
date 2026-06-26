@@ -50,7 +50,6 @@ import {
   shouldAutoSubmitCreate,
   type CreateCharacterDraft,
 } from "@/lib/characters/create-draft";
-import { startChatWithCharacter } from "@/lib/chat/client";
 import { cn } from "@/lib/utils";
 import { useFlag } from "@/hooks/use-flags";
 
@@ -91,7 +90,7 @@ function OptionPreviewImage({
   if (!src || failed) {
     return (
       <div
-        className="absolute inset-0 bg-gradient-to-br from-pink-500/25 via-white/5 to-fuchsia-900/40"
+        className="absolute inset-0 bg-gradient-to-br from-primary/25 via-white/5 to-fuchsia-900/40"
         aria-hidden
       />
     );
@@ -139,7 +138,7 @@ function AppearanceGrid({
             className={cn(
               "group relative overflow-hidden rounded-2xl text-left ring-2 transition-all",
               selected
-                ? "ring-pink-500 shadow-[0_0_32px_-8px_rgba(236,72,153,0.5)]"
+                ? "ring-primary shadow-[0_0_32px_-8px_rgba(124,58,237,0.5)]"
                 : "ring-white/10 hover:ring-white/25",
             )}
             aria-pressed={selected}
@@ -152,14 +151,14 @@ function AppearanceGrid({
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
               {selected && (
-                <span className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-pink-500 text-white shadow-lg sm:h-7 sm:w-7">
+                <span className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white shadow-lg sm:h-7 sm:w-7">
                   <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4" strokeWidth={3} aria-hidden />
                 </span>
               )}
               <span
                 className={cn(
                   "absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-1 text-xs font-semibold sm:text-sm",
-                  selected ? "bg-pink-500 text-white" : "bg-black/60 text-white/90",
+                  selected ? "bg-primary text-white" : "bg-black/60 text-white/90",
                 )}
               >
                 {item.label}
@@ -172,13 +171,23 @@ function AppearanceGrid({
   );
 }
 
-export function CreateCharacterWizard() {
+export interface CreateCharacterWizardProps {
+  mode?: "create" | "edit";
+  characterId?: string;
+  initialDraft?: CreateCharacterDraft;
+}
+
+export function CreateCharacterWizard({
+  mode = "create",
+  characterId,
+  initialDraft,
+}: CreateCharacterWizardProps = {}) {
   const router = useRouter();
   const { isSignedIn, isLoaded } = useAuth();
   const canCreate = useFlag("user_created_characters");
 
   const [step, setStep] = useState(0);
-  const [draft, setDraft] = useState<CreateCharacterDraft>(DEFAULT_CREATE_DRAFT);
+  const [draft, setDraft] = useState<CreateCharacterDraft>(initialDraft || DEFAULT_CREATE_DRAFT);
   const [submitting, setSubmitting] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [previewingVoice, setPreviewingVoice] = useState<string | null>(null);
@@ -187,16 +196,22 @@ export function CreateCharacterWizard() {
   const updateDraft = useCallback((patch: Partial<CreateCharacterDraft>) => {
     setDraft((prev) => {
       const next = { ...prev, ...patch };
-      saveCreateDraft(next);
+      if (mode === "create") {
+        saveCreateDraft(next);
+      }
       return next;
     });
-  }, []);
+  }, [mode]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setDraft(loadCreateDraft());
+    if (mode === "create") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setDraft(loadCreateDraft());
+    } else if (initialDraft) {
+      setDraft(initialDraft);
+    }
     setHydrated(true);
-  }, []);
+  }, [mode, initialDraft]);
 
   const runSubmit = useCallback(async () => {
     if (!isDraftReadyForSubmit(draft)) {
@@ -205,19 +220,35 @@ export function CreateCharacterWizard() {
     }
     setSubmitting(true);
     try {
-      const { slug } = await submitUserCharacter(draftToPayload(draft));
-      clearCreateDraft();
-      toast.success("Your AI girl is ready!");
-      const chatHref = await startChatWithCharacter(slug);
-      router.push(chatHref);
+      if (mode === "edit" && characterId) {
+        const res = await fetch(`/api/characters/${encodeURIComponent(characterId)}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(draftToPayload(draft)),
+        });
+        if (!res.ok) {
+          const err = (await res.json().catch(() => ({}))) as { error?: string };
+          throw new Error(err.error ?? "Failed to update character");
+        }
+        toast.success("Your AI girl is updated!");
+        const json = (await res.json()) as { character: { slug?: string; id: string } };
+        router.push(ROUTES.myGirl(json.character.slug ?? json.character.id));
+      } else {
+        const { slug } = await submitUserCharacter(draftToPayload(draft));
+        clearCreateDraft();
+        toast.success("Your AI girl is ready!");
+        router.push(ROUTES.myGirl(slug));
+      }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to create");
+      toast.error(err instanceof Error ? err.message : "Failed to save");
     } finally {
       setSubmitting(false);
     }
-  }, [draft, router]);
+  }, [draft, router, mode, characterId]);
 
   useEffect(() => {
+    if (mode !== "create") return;
     if (!hydrated || !isLoaded || !isSignedIn) return;
     if (!shouldAutoSubmitCreate()) return;
     const loaded = loadCreateDraft();
@@ -229,15 +260,14 @@ export function CreateCharacterWizard() {
         const { slug } = await submitUserCharacter(draftToPayload(loaded));
         clearCreateDraft();
         toast.success("Your AI girl is ready!");
-        const chatHref = await startChatWithCharacter(slug);
-        router.push(chatHref);
+        router.push(ROUTES.myGirl(slug));
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Failed to create");
       } finally {
         setSubmitting(false);
       }
     })();
-  }, [hydrated, isLoaded, isSignedIn, router]);
+  }, [hydrated, isLoaded, isSignedIn, router, mode]);
 
   function toggleTrait(trait: string) {
     const next = draft.personality.includes(trait)
@@ -326,14 +356,14 @@ export function CreateCharacterWizard() {
     void runSubmit();
   }
 
-  if (canCreate === false) {
+  if (mode === "create" && canCreate === false) {
     return (
       <div className="mx-auto max-w-md px-4 py-20 text-center text-white">
         <p className="text-lg font-semibold">Character creation is unavailable</p>
         <p className="mt-2 text-sm text-white/60">
           This feature has been disabled. Browse existing companions instead.
         </p>
-        <Button asChild className="mt-6 rounded-full bg-pink-500 hover:bg-pink-400">
+        <Button asChild className="mt-6 rounded-full bg-primary hover:bg-primary/95 text-white">
           <a href={ROUTES.publicChatNew}>Browse companions</a>
         </Button>
       </div>
@@ -371,9 +401,9 @@ export function CreateCharacterWizard() {
                     className={cn(
                       "flex h-8 w-8 items-center justify-center rounded-full border transition-colors sm:h-9 sm:w-9",
                       active
-                        ? "border-pink-500 bg-pink-500/20 text-pink-400"
+                        ? "border-primary bg-primary/20 text-primary"
                         : done
-                          ? "border-pink-500/50 bg-pink-500/10 text-pink-300"
+                          ? "border-primary/50 bg-primary/10 text-primary"
                           : "border-white/15 bg-white/5 text-white/40",
                     )}
                   >
@@ -390,8 +420,8 @@ export function CreateCharacterWizard() {
 
           <header className="mb-8 text-center">
             <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Create Your{" "}
-              <span className="bg-gradient-to-r from-pink-400 to-fuchsia-400 bg-clip-text text-transparent">
+              {mode === "edit" ? "Edit Your " : "Create Your "}
+              <span className="bg-gradient-to-r from-primary to-violet-400 bg-clip-text text-transparent">
                 AI Girl
               </span>
             </h1>
@@ -413,7 +443,7 @@ export function CreateCharacterWizard() {
                       className={cn(
                         "group relative overflow-hidden rounded-2xl text-left ring-2 transition-all sm:rounded-3xl",
                         selected
-                          ? "ring-pink-500 shadow-[0_0_32px_-8px_rgba(236,72,153,0.5)]"
+                          ? "ring-primary shadow-[0_0_32px_-8px_rgba(124,58,237,0.5)]"
                           : "ring-white/10 hover:ring-white/25",
                       )}
                       aria-pressed={selected}
@@ -426,14 +456,14 @@ export function CreateCharacterWizard() {
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
                         {selected && (
-                          <span className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-pink-500 text-white shadow-lg">
+                          <span className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-white shadow-lg">
                             <Check className="h-4 w-4" strokeWidth={3} aria-hidden />
                           </span>
                         )}
                         <span
                           className={cn(
                             "absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full px-5 py-1.5 text-sm font-semibold",
-                            selected ? "bg-pink-500 text-white" : "bg-black/60 text-white/90",
+                            selected ? "bg-primary text-white" : "bg-black/60 text-white/90",
                           )}
                         >
                           {item.label}
@@ -541,7 +571,7 @@ export function CreateCharacterWizard() {
                       className={cn(
                         "rounded-full px-4 py-2 text-sm font-medium transition-colors",
                         selected
-                          ? "bg-pink-500 text-white"
+                          ? "bg-primary text-white"
                           : "bg-white/10 text-white/70 hover:bg-white/15",
                       )}
                     >
@@ -581,7 +611,7 @@ export function CreateCharacterWizard() {
                       className={cn(
                         "flex items-center gap-2 rounded-xl border p-3 transition-colors",
                         selected
-                          ? "border-pink-500 bg-pink-500/15"
+                          ? "border-primary bg-primary/15"
                           : "border-white/10 bg-white/5",
                       )}
                     >
@@ -640,7 +670,7 @@ export function CreateCharacterWizard() {
                       className={cn(
                         "rounded-full px-4 py-2 text-sm font-medium transition-colors",
                         selected
-                          ? "bg-pink-500 text-white"
+                          ? "bg-primary text-white"
                           : "bg-white/10 text-white/70 hover:bg-white/15",
                       )}
                     >
@@ -669,7 +699,7 @@ export function CreateCharacterWizard() {
                     <dt className="text-white/50">Photo</dt>
                     <dd>
                       {draft.avatarUrl ? (
-                        <span className="text-pink-300">Uploaded</span>
+                        <span className="text-primary">Uploaded</span>
                       ) : (
                         "—"
                       )}
@@ -735,7 +765,7 @@ export function CreateCharacterWizard() {
               type="button"
               onClick={handleNext}
               disabled={!canAdvance()}
-              className="h-11 rounded-full bg-gradient-to-r from-pink-500 to-fuchsia-600 px-8 text-sm font-semibold"
+              className="h-11 rounded-full bg-gradient-to-r from-primary to-violet-600 px-8 text-sm font-semibold text-white"
             >
               Continue
               <ChevronRight className="ml-1 h-4 w-4" aria-hidden />
@@ -745,9 +775,11 @@ export function CreateCharacterWizard() {
               type="button"
               onClick={handleCreate}
               disabled={!canAdvance() || submitting}
-              className="h-11 rounded-full bg-gradient-to-r from-pink-500 to-fuchsia-600 px-8 text-sm font-semibold"
+              className="h-11 rounded-full bg-gradient-to-r from-primary to-violet-600 px-8 text-sm font-semibold text-white"
             >
-              {submitting ? "Creating…" : "Create & Chat"}
+              {submitting 
+                ? (mode === "edit" ? "Saving…" : "Creating…") 
+                : (mode === "edit" ? "Save Changes" : "Create & Chat")}
             </Button>
           )}
         </div>

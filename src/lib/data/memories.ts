@@ -59,6 +59,11 @@ export async function listMemories(
   return (data as MemoryRow[]).map(fromRow);
 }
 
+function startOfCurrentMonthIso(): string {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
+}
+
 export async function getMemoriesForPrompt(
   profileId: string,
   characterId: string,
@@ -69,6 +74,7 @@ export async function getMemoriesForPrompt(
     .select("id, type, title, content, is_pinned, created_at, updated_at, character_id")
     .eq("profile_id", profileId)
     .or(`character_id.eq.${characterId},character_id.is.null`)
+    .gte("created_at", startOfCurrentMonthIso())
     .order("is_pinned", { ascending: false })
     .order("updated_at", { ascending: false })
     .limit(limit);
@@ -211,6 +217,51 @@ export async function deleteMemory(profileId: string, id: string): Promise<boole
     return false;
   }
   return true;
+}
+
+export async function getMemoryById(
+  profileId: string,
+  id: string,
+): Promise<{ characterId: string | null } | null> {
+  const { data, error } = await supabaseAdmin()
+    .from("memories")
+    .select("character_id")
+    .eq("id", id)
+    .eq("profile_id", profileId)
+    .maybeSingle();
+
+  if (error || !data) return null;
+  return { characterId: (data as { character_id: string | null }).character_id };
+}
+
+export async function purgeMemoriesForCharacter(
+  profileId: string,
+  characterId: string,
+): Promise<void> {
+  const { error } = await supabaseAdmin()
+    .from("memories")
+    .delete()
+    .eq("profile_id", profileId)
+    .eq("character_id", characterId);
+
+  if (error) {
+    console.error("[purgeMemoriesForCharacter] failed", error.message);
+  }
+}
+
+export async function listCharacterIdsWithMemories(profileId: string): Promise<string[]> {
+  const { data } = await supabaseAdmin()
+    .from("memories")
+    .select("character_id")
+    .eq("profile_id", profileId)
+    .not("character_id", "is", null);
+
+  const ids = new Set<string>();
+  for (const row of data ?? []) {
+    const id = (row as { character_id: string | null }).character_id;
+    if (id) ids.add(id);
+  }
+  return [...ids];
 }
 
 export async function memoryStats(profileId: string): Promise<{ total: number; pinned: number }> {

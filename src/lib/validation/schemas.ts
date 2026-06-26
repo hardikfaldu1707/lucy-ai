@@ -1,9 +1,20 @@
 import { z } from "zod";
+import {
+  maxUploadBytesForContentType,
+  maxUploadLabelForContentType,
+} from "@/lib/storage/upload-limits";
 
 // Centralized request-body schemas for API routes. Every schema enforces hard
 // length/enum bounds so a route never processes unbounded or malformed input
 // (defense against payload abuse, DB bloat, and prompt-stuffing). Keep these in
 // sync with the domain types in src/types and the DB column limits.
+
+export const requestMediaSchema = z.object({
+  type: z.enum(["image", "video"]),
+  prompt: z.string().trim().min(1).max(500),
+  saveUserMessage: z.boolean().optional().default(true),
+});
+export type RequestMediaInput = z.infer<typeof requestMediaSchema>;
 
 export const chatCharacterPhotoSchema = z.object({
   index: z.number().int().min(0),
@@ -106,6 +117,9 @@ export const createCharacterSchema = z.object({
   voicePersonaId: z.string().trim().max(40).optional(),
 });
 
+export const updateUserCharacterSchema = createCharacterSchema.partial();
+export type UpdateUserCharacterInput = z.infer<typeof updateUserCharacterSchema>;
+
 export const subscriptionUpgradeSchema = z.object({
   plan: z.enum(["free", "premium", "ultimate"]),
 });
@@ -145,15 +159,25 @@ export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 
 export const mediaScopeSchema = z.enum(["user", "character", "platform"]);
 
-export const uploadMetaSchema = z.object({
+function refineUploadSize(
+  data: { contentType: string; size: number },
+  ctx: z.RefinementCtx,
+) {
+  const max = maxUploadBytesForContentType(data.contentType);
+  if (data.size > max) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: `File too large (max ${maxUploadLabelForContentType(data.contentType)})`,
+      path: ["size"],
+    });
+  }
+}
+
+export const uploadMetaBaseSchema = z.object({
   contentType: z
     .string()
     .regex(/^(image|video)\/[a-z0-9.+-]+$/i, "Only image/* and video/* uploads are allowed"),
-  size: z
-    .number()
-    .int()
-    .positive()
-    .max(15 * 1024 * 1024, "File too large (max 15MB)"),
+  size: z.number().int().positive(),
   characterId: z.string().max(128).optional(),
   scope: mediaScopeSchema.optional().default("user"),
   platformName: z
@@ -163,3 +187,17 @@ export const uploadMetaSchema = z.object({
     .max(80)
     .optional(),
 });
+
+export const uploadMetaSchema = uploadMetaBaseSchema.superRefine(refineUploadSize);
+
+export const platformUploadMetaSchema = uploadMetaBaseSchema
+  .extend({
+    scope: z.literal("platform"),
+    platformName: z
+      .string()
+      .trim()
+      .regex(/^[a-z0-9-]+$/, "Use lowercase letters, numbers, and hyphens")
+      .min(1)
+      .max(80),
+  })
+  .superRefine(refineUploadSize);

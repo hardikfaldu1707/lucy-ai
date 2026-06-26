@@ -254,7 +254,7 @@ export function ChatEmojiGifPanel({
                     onClick={() => onGifSelect(gif.url)}
                     className={cn(
                       "relative aspect-square overflow-hidden rounded-lg",
-                      isDark ? "bg-white/5 hover:ring-2 hover:ring-pink-500/50" : "bg-muted hover:ring-2 hover:ring-primary/40",
+                      isDark ? "bg-white/5 hover:ring-2 hover:ring-primary/50" : "bg-muted hover:ring-2 hover:ring-primary/40",
                     )}
                     aria-label={gif.title}
                   >

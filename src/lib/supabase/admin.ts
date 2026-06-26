@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { requireSupabaseConfig } from "@/lib/supabase/config";
 
 // Service-role Supabase client. Bypasses RLS — use ONLY in trusted server code
 // (Clerk webhook sync, admin aggregates across all users). The `server-only`
@@ -13,11 +14,10 @@ let cached: SupabaseClient | null = null;
 
 export function supabaseAdmin(): SupabaseClient {
   if (!cached) {
-    cached = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      { auth: { persistSession: false, autoRefreshToken: false } },
-    );
+    const { url, serviceRoleKey } = requireSupabaseConfig();
+    cached = createClient(url, serviceRoleKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
   }
   return cached;
 }

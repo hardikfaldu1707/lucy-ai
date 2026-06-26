@@ -110,8 +110,8 @@ function StepSetting({
         <Label className="text-sm font-semibold text-white">{title}</Label>
         <p className="mt-1 hidden text-xs leading-relaxed text-white/50 sm:block">{description}</p>
       </div>
-      <p className="mb-2 hidden text-xs text-pink-400/90 sm:mb-3 sm:block">
-        <span className="font-semibold text-pink-400">{active.label}</span>
+      <p className="mb-2 hidden text-xs text-primary/90 sm:mb-3 sm:block">
+        <span className="font-semibold text-primary">{active.label}</span>
         <span className="text-white/40"> · {active.hint}</span>
       </p>
       <div className="grid grid-cols-5 gap-1">
@@ -126,7 +126,7 @@ function StepSetting({
               className={cn(
                 "rounded-xl px-0.5 py-2 text-center text-[10px] font-medium leading-tight transition-colors sm:px-1 sm:py-2.5 sm:text-[11px]",
                 selected
-                  ? "bg-pink-500 text-white shadow-sm shadow-pink-500/30"
+                  ? "bg-primary text-primary-foreground shadow-sm shadow-primary/30"
                   : "bg-white/5 text-white/70 hover:bg-white/10 hover:text-white",
                 disabled && "opacity-50",
               )}
@@ -317,7 +317,7 @@ export function ChatCharacterSettingsMenu({
         size="icon"
         aria-label={`${characterName} chat settings`}
         className={cn(
-          "border-white/15 bg-white/5 text-white hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-pink-500",
+          "border-white/15 bg-white/5 text-white hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-primary",
           triggerClassName,
         )}
         onClick={() => handleSettingsOpenChange(true)}

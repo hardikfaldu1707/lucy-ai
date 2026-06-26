@@ -4,20 +4,35 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Trash2 } from "lucide-react";
+import { Loader2, Plus, Sparkles, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+
+export interface SuggestedQuestionsGenerateContext {
+  name: string;
+  tagline?: string;
+  description?: string;
+  personality?: string[];
+  tags?: string[];
+  category?: string;
+  style?: string;
+  age?: number;
+}
 
 interface SuggestedQuestionsEditorProps {
   value: string[];
   onChange: (questions: string[]) => void;
   max?: number;
+  generateContext?: SuggestedQuestionsGenerateContext;
 }
 
 export function SuggestedQuestionsEditor({
   value,
   onChange,
   max = 6,
+  generateContext,
 }: SuggestedQuestionsEditorProps) {
   const [draft, setDraft] = useState("");
+  const [generating, setGenerating] = useState(false);
 
   const add = () => {
     const q = draft.trim();
@@ -35,9 +50,61 @@ export function SuggestedQuestionsEditor({
     onChange(value.filter((_, i) => i !== index));
   };
 
+  const handleGenerate = async () => {
+    if (!generateContext?.name.trim()) {
+      toast.error("Add a character name first");
+      return;
+    }
+
+    setGenerating(true);
+    try {
+      const res = await fetch("/api/admin/characters/generate-questions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(generateContext),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        questions?: string[];
+        error?: string;
+      };
+      if (!res.ok) {
+        throw new Error(data.error ?? "Generation failed");
+      }
+      const questions = (data.questions ?? []).slice(0, max);
+      if (!questions.length) {
+        throw new Error("No questions returned");
+      }
+      onChange(questions);
+      toast.success(`Generated ${questions.length} starter questions`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to generate questions");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   return (
     <div className="space-y-3">
-      <Label>Chat starter questions ({value.length}/{max})</Label>
+      <div className="flex items-center justify-between gap-2">
+        <Label>Chat starter questions ({value.length}/{max})</Label>
+        {generateContext && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1.5 text-xs"
+            disabled={generating}
+            onClick={handleGenerate}
+          >
+            {generating ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Sparkles className="h-3.5 w-3.5" />
+            )}
+            Generate with AI
+          </Button>
+        )}
+      </div>
       <p className="text-[10px] text-muted-foreground">
         Shown as clickable chips above the message box when the chat is empty.
       </p>

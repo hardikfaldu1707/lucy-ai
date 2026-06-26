@@ -120,3 +120,30 @@ export function isDraftReadyForSubmit(draft: CreateCharacterDraft): boolean {
     draft.relationship.length > 0
   );
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function characterToDraft(char: any): CreateCharacterDraft {
+  const app = char.appearance || {};
+  let relationship = char.relationship || "";
+  if (!relationship && char.tags) {
+    relationship = char.tags.find((t: string) =>
+      ["Girlfriend", "Best friend", "Crush", "Wife", "Roommate", "Mentor", "Secret admirer", "Fling"].includes(t)
+    ) || "";
+  }
+
+  return {
+    gender: "female",
+    style: char.style === "anime" ? "anime" : "realistic",
+    hairStyle: app.hairStyle || "",
+    hairColor: app.hairColor || "",
+    bodyType: app.bodyType || "",
+    outfit: app.outfit || "",
+    name: char.name || "",
+    age: char.age || 24,
+    personality: char.personality || [],
+    description: char.description || "",
+    voicePersonaId: char.voiceId || char.voicePersonaId || DEFAULT_CREATE_VOICE_ID,
+    avatarUrl: char.avatarUrl || "",
+    relationship: relationship,
+  };
+}

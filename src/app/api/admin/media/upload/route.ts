@@ -1,22 +1,11 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { isAdminRequest } from "@/lib/auth/require-admin";
 import { presignUpload, isR2Configured } from "@/lib/storage/r2";
 import { buildUploadKey } from "@/lib/storage/upload-keys";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { parseBody } from "@/lib/validation/parse";
-import { uploadMetaSchema } from "@/lib/validation/schemas";
-
-const platformUploadSchema = uploadMetaSchema.extend({
-  scope: z.literal("platform"),
-  platformName: z
-    .string()
-    .trim()
-    .regex(/^[a-z0-9-]+$/)
-    .min(1)
-    .max(80),
-});
+import { platformUploadMetaSchema } from "@/lib/validation/schemas";
 
 export async function POST(req: Request) {
   if (!(await isAdminRequest())) {
@@ -30,7 +19,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "R2 storage is not configured" }, { status: 503 });
   }
 
-  const parsed = await parseBody(req, platformUploadSchema);
+  const parsed = await parseBody(req, platformUploadMetaSchema);
   if (!parsed.ok) return parsed.response;
 
   const { contentType, size, platformName } = parsed.data;

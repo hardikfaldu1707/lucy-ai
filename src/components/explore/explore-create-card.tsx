@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Plus } from "lucide-react";
 import { useAuth } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import { EXPLORE_HERO_IMAGE } from "@/constants/explore-characters";
@@ -15,30 +14,36 @@ export function ExploreCreateCard() {
   return (
     <motion.article
       whileHover={{ y: -4 }}
-      className="group relative overflow-hidden rounded-2xl ring-2 ring-pink-500/40"
+      className="group relative overflow-hidden rounded-2xl ring-2 ring-[#df1a97]/40"
     >
-      <div className="relative aspect-[3/4] w-full">
+      <div className="relative aspect-[15/22] w-full">
         <Image
           src={EXPLORE_HERO_IMAGE}
           alt=""
           fill
-          className="object-cover object-center blur-[2px] brightness-50"
+          className="object-cover object-center transition-transform duration-300 motion-reduce:transition-none group-hover:scale-[1.02]"
           sizes="20vw"
           aria-hidden
         />
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-black/55 p-4 text-center backdrop-blur-[2px]">
-          <span className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-dashed border-pink-400/80 bg-pink-500/20 text-pink-300">
-            <Plus className="h-7 w-7" strokeWidth={2} aria-hidden />
-          </span>
-          <div>
-            <p className="text-lg font-bold text-white sm:text-xl">Create Your Own</p>
-            <p className="mt-1 text-xs text-white/60">Design a companion that&apos;s uniquely yours</p>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 flex flex-col p-4 sm:p-5">
+          <div className="mb-2 leading-tight">
+            <div className="font-black italic uppercase tracking-wide text-white text-xl sm:text-2xl">
+              Create your
+            </div>
+            <div className="font-black italic uppercase tracking-wide text-[#E5F22B] text-xl sm:text-2xl">
+              Own AI Girlfriend
+            </div>
           </div>
+          <p className="mb-4 text-xs font-medium text-white/80">
+            Your fantasy. Your rules. No limits.
+          </p>
           <Link
             href={href}
-            className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-black transition-colors hover:bg-pink-50"
+            className="inline-flex items-center justify-center gap-1.5 self-start rounded-full bg-white px-4 py-2 text-xs font-bold text-black transition-colors hover:bg-gray-200"
           >
             Create Now
+            <span aria-hidden>→</span>
           </Link>
         </div>
       </div>

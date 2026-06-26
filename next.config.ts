@@ -11,9 +11,6 @@ function r2PublicHost(): string | null {
   }
 }
 
-const r2Host = r2PublicHost();
-const r2ImgSrc = r2Host ? ` https://${r2Host}` : " https://*.r2.dev";
-
 function r2PresignConnectSrc(): string {
   const accountId = process.env.R2_ACCOUNT_ID;
   const bucket = process.env.R2_BUCKET;
@@ -23,35 +20,46 @@ function r2PresignConnectSrc(): string {
   return "";
 }
 
-const securityHeaders = [
-  { key: "X-Frame-Options", value: "DENY" },
-  { key: "X-Content-Type-Options", value: "nosniff" },
-  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  {
-    key: "Strict-Transport-Security",
-    value: "max-age=63072000; includeSubDomains; preload",
-  },
-  {
-    key: "Permissions-Policy",
-    value: "camera=(), microphone=(self), geolocation=()",
-  },
-  {
-    key: "Content-Security-Policy",
-    value: [
-      "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' https://clerk.lucyai.com https://*.clerk.accounts.dev",
-      "style-src 'self' 'unsafe-inline'",
-      `img-src 'self' data: blob: https://img.clerk.com https://api.dicebear.com https://*.supabase.co https://images.unsplash.com https://picsum.photos${r2ImgSrc}`,
-      `media-src 'self' blob:${r2ImgSrc}`,
-      "font-src 'self' https://fonts.gstatic.com",
-      "connect-src 'self' https://*.supabase.co https://*.clerk.accounts.dev wss://*.supabase.co https://vitals.vercel-insights.com https://*.r2.cloudflarestorage.com" +
-        r2PresignConnectSrc() +
-        r2ImgSrc,
-      "frame-src https://clerk.lucyai.com https://*.clerk.accounts.dev",
-      "frame-ancestors 'none'",
-    ].join("; "),
-  },
-];
+const r2Host = r2PublicHost();
+const r2ImgSrc = r2Host ? ` https://${r2Host}` : " https://*.r2.dev";
+
+function buildSecurityHeaders() {
+  const isDev = process.env.NODE_ENV !== "production";
+  const scriptSrcDirective =
+    "script-src 'self' 'unsafe-inline'" +
+    (isDev ? " 'unsafe-eval'" : "") +
+    " https://clerk.lucyailove.com https://*.clerk.accounts.dev";
+
+  return [
+    { key: "X-Frame-Options", value: "DENY" },
+    { key: "X-Content-Type-Options", value: "nosniff" },
+    { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+    {
+      key: "Strict-Transport-Security",
+      value: "max-age=63072000; includeSubDomains; preload",
+    },
+    {
+      key: "Permissions-Policy",
+      value: "camera=(), microphone=(self), geolocation=()",
+    },
+    {
+      key: "Content-Security-Policy",
+      value: [
+        "default-src 'self'",
+        scriptSrcDirective,
+        "style-src 'self' 'unsafe-inline'",
+        `img-src 'self' data: blob: https://img.clerk.com https://api.dicebear.com https://*.supabase.co https://images.unsplash.com https://picsum.photos${r2ImgSrc}`,
+        `media-src 'self' blob:${r2ImgSrc}`,
+        "font-src 'self' https://fonts.gstatic.com",
+        "connect-src 'self' https://*.supabase.co https://*.clerk.accounts.dev wss://*.supabase.co https://vitals.vercel-insights.com https://*.r2.cloudflarestorage.com" +
+          r2PresignConnectSrc() +
+          r2ImgSrc,
+        "frame-src https://clerk.lucyailove.com https://*.clerk.accounts.dev",
+        "frame-ancestors 'none'",
+      ].join("; "),
+    },
+  ];
+}
 
 const imageRemotePatterns: NonNullable<NextConfig["images"]>["remotePatterns"] = [
   { protocol: "https", hostname: "img.clerk.com" },
@@ -79,18 +87,27 @@ if (r2Host) {
   });
 }
 
+const isDev = process.env.NODE_ENV !== "production";
+
 const nextConfig: NextConfig = {
+  experimental: {
+    optimizePackageImports: ["lucide-react", "@radix-ui/react-icons"],
+    // Clerk proxy buffers request bodies; default 10MB truncates admin video uploads.
+    proxyClientMaxBodySize: "55mb",
+  },
   async headers() {
     return [
       {
         source: "/(.*)",
-        headers: securityHeaders,
+        headers: buildSecurityHeaders(),
       },
     ];
   },
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: imageRemotePatterns,
+    // Avoid Next image optimizer upstream timeouts to R2 during local dev.
+    unoptimized: isDev,
   },
 };
 

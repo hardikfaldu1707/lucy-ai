@@ -9,8 +9,9 @@ import {
   getOrCreateConversation,
   getPublicCharacterBySlug,
 } from "@/lib/data/chat";
-import { ensureProfile } from "@/lib/ensure-profile";
+import { cachedEnsureProfile } from "@/lib/server/request-cache";
 import { trackEvent } from "@/lib/analytics/track";
+import { ensureOpeningMessage } from "@/lib/ai/opening-message";
 import { guestConversationId, GUEST_COOKIE_NAME } from "@/lib/guest-chat/config";
 import { mergeGuestTranscript } from "@/lib/guest-chat/merge";
 import {
@@ -55,6 +56,7 @@ export default async function PublicChatConversationPage({ params }: PageProps) 
       characterId: character.slug,
       characterName: character.name,
       characterAvatar: character.avatarUrl,
+      characterVoiceId: character.voiceId,
       lastMessage: initialMessages.at(-1)?.content ?? "Start a conversation",
       lastMessageAt: initialMessages.at(-1)?.createdAt ?? new Date(0).toISOString(),
       unreadCount: 0,
@@ -70,19 +72,28 @@ export default async function PublicChatConversationPage({ params }: PageProps) 
     );
   }
 
-  await ensureProfile({ skipAllowance: true });
+  await cachedEnsureProfile({ skipAllowance: true });
 
-  const character = await getCharacterBySlug(characterSlug, userId);
+  const [character] = await Promise.all([
+    getCharacterBySlug(characterSlug, userId),
+    mergeGuestTranscript(userId, characterSlug),
+  ]);
   if (!character) notFound();
-
-  await mergeGuestTranscript(userId, characterSlug);
 
   const conversation = await getOrCreateConversation(userId, character.id);
   if (!conversation) notFound();
 
-  const messages = await getMessages(conversation.id, userId);
+  let messages = await getMessages(conversation.id, userId);
 
   if (messages.length === 0) {
+    const opening = await ensureOpeningMessage({
+      profileId: userId,
+      conversationId: conversation.id,
+      character,
+    });
+    if (opening) {
+      messages = [opening];
+    }
     await trackEvent("first_chat", userId, {
       characterSlug,
       conversationId: conversation.id,

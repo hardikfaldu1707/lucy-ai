@@ -76,7 +76,7 @@ export function DeleteChatDialog({
             variant="outline"
             size="icon"
             aria-label="Delete chat"
-            className="border-white/15 bg-transparent text-white hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-pink-500"
+            className="border-white/15 bg-transparent text-white hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-primary"
           >
             <Trash2 className="h-4 w-4" />
           </Button>

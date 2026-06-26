@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { CoinCharacterUsageSection } from "@/components/subscription/coin-character-usage-section";
 import { cn } from "@/lib/utils";
 
 export interface CoinPackOption {
@@ -44,25 +45,31 @@ export function CoinPacksSection({ packs, enabled }: CoinPacksSectionProps) {
 
   if (!enabled) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Buy coins</CardTitle>
-          <CardDescription>Coin pack purchases are temporarily unavailable.</CardDescription>
-        </CardHeader>
-      </Card>
+      <div className="space-y-6">
+        <CoinCharacterUsageSection />
+        <Card>
+          <CardHeader>
+            <CardTitle>Buy coins</CardTitle>
+            <CardDescription>Coin pack purchases are temporarily unavailable.</CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
     );
   }
 
   if (packs.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Buy coins</CardTitle>
-          <CardDescription>
-            No coin packs are available yet. Check back soon or upgrade your subscription plan.
-          </CardDescription>
-        </CardHeader>
-      </Card>
+      <div className="space-y-6">
+        <CoinCharacterUsageSection />
+        <Card>
+          <CardHeader>
+            <CardTitle>Buy coins</CardTitle>
+            <CardDescription>
+              No coin packs are available yet. Check back soon or upgrade your subscription plan.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
     );
   }
 
@@ -94,7 +101,9 @@ export function CoinPacksSection({ packs, enabled }: CoinPacksSectionProps) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      <CoinCharacterUsageSection />
+      <div className="space-y-4">
       <div>
         <h2 className="text-lg font-semibold">Buy coins</h2>
         <p className="text-sm text-muted-foreground">
@@ -144,6 +153,7 @@ export function CoinPacksSection({ packs, enabled }: CoinPacksSectionProps) {
             </CardContent>
           </Card>
         ))}
+      </div>
       </div>
     </div>
   );

@@ -67,6 +67,18 @@ export function formatBubbleTime(date: string | Date): string {
   return d.toLocaleTimeString(undefined, CHAT_TIME);
 }
 
+/** Compact time for chat sidebar rows (today = time only, else short date). */
+export function formatChatListTime(date: string | Date): string {
+  const d = typeof date === "string" ? new Date(date) : date;
+  const now = new Date();
+  const diffDays = Math.floor((startOfDay(now) - startOfDay(d)) / 86400000);
+
+  if (diffDays === 0) return d.toLocaleTimeString(undefined, CHAT_TIME);
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays < 7) return d.toLocaleDateString(undefined, { weekday: "short" });
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
 export function formatChatDateLabel(date: string | Date): string {
   const d = typeof date === "string" ? new Date(date) : date;
   const now = new Date();

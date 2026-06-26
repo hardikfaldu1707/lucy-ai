@@ -17,6 +17,7 @@ interface MessageListenButtonProps {
   messageId: string;
   text: string;
   characterName?: string;
+  voicePersonaId?: string | null;
   variant?: "light" | "dark";
   className?: string;
 }
@@ -25,6 +26,7 @@ export function MessageListenButton({
   messageId,
   text,
   characterName,
+  voicePersonaId,
   variant = "light",
   className,
 }: MessageListenButtonProps) {
@@ -58,7 +60,9 @@ export function MessageListenButton({
 
   async function handleClick() {
     warmMessageSpeech();
-    const ok = await speakMessageText(messageId, text);
+    const ok = await speakMessageText(messageId, text, {
+      voicePersonaId: voicePersonaId ?? undefined,
+    });
     if (!ok) {
       toast.error("Could not play audio. Check your volume or try again.");
     }
@@ -72,10 +76,10 @@ export function MessageListenButton({
       className={cn(
         "h-8 w-8 shrink-0 rounded-full",
         isDark
-          ? "text-white/50 hover:bg-white/10 hover:text-pink-300"
+          ? "text-white/50 hover:bg-white/10 hover:text-primary"
           : "text-muted-foreground hover:bg-muted hover:text-foreground",
         (isPlaying || isLoading) &&
-          (isDark ? "bg-pink-500/15 text-pink-300" : "bg-primary/10 text-primary"),
+          (isDark ? "bg-primary/15 text-primary" : "bg-primary/10 text-primary"),
         className,
       )}
       aria-label={label}

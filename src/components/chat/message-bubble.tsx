@@ -1,6 +1,8 @@
 "use client";
 
-import { Mic, Info } from "lucide-react";
+import { useState } from "react";
+import { Mic, Info, Sparkles } from "lucide-react";
+import { HeartLoader } from "@/components/shared/heart-loader";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MessageListenButton } from "@/components/chat/message-listen-button";
 import { MessageStatusTicks } from "@/components/chat/message-status-ticks";
@@ -12,8 +14,10 @@ interface MessageBubbleProps {
   message: ChatMessage;
   characterAvatar?: string;
   characterName?: string;
+  voicePersonaId?: string | null;
   variant?: "light" | "dark";
   deliveryStatus?: MessageDeliveryStatus;
+  groupPosition?: "single" | "first" | "middle" | "last";
 }
 
 function BubbleMeta({
@@ -57,17 +61,45 @@ function BubbleMeta({
   );
 }
 
+function ShimmerImage({ src, alt }: { src: string; alt: string }) {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <div className="relative w-full h-full bg-zinc-950 flex items-center justify-center overflow-hidden">
+      {!loaded && (
+        <div className="absolute inset-0 bg-zinc-900 animate-pulse flex items-center justify-center">
+          <Sparkles className="h-6 w-6 text-white/20 animate-spin" style={{ animationDuration: "3s" }} />
+        </div>
+      )}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt={alt}
+        onLoad={() => setLoaded(true)}
+        className={cn(
+          "w-full h-full object-cover transition-all duration-500",
+          loaded ? "opacity-100 scale-100 blur-0" : "opacity-0 scale-95 blur-md"
+        )}
+      />
+    </div>
+  );
+}
+
 export function MessageBubble({
   message,
   characterAvatar,
   characterName,
+  voicePersonaId,
   variant = "light",
   deliveryStatus,
+  groupPosition = "single",
 }: MessageBubbleProps) {
   const isUser = message.role === "user";
   const isSystem = message.role === "system" || message.type === "system";
   const isDark = variant === "dark";
   const isText = message.type === "text" || !message.type;
+  const isImage = message.type === "image";
+  const isVideo = message.type === "video";
+  const isMedia = isImage || isVideo;
   const showListenButton =
     !isUser && isText && !message.isStreaming && message.content.trim().length > 0;
 
@@ -89,109 +121,158 @@ export function MessageBubble({
     );
   }
 
+  const showAvatar = !isUser && (groupPosition === "first" || groupPosition === "single");
+  const gapClass = (groupPosition === "middle" || groupPosition === "last") ? "py-0.5" : "py-2";
+
   return (
     <div
-      className={cn("flex w-full gap-3 py-2", isUser ? "flex-row-reverse" : "flex-row")}
+      className={cn(
+        "flex w-full gap-3",
+        isUser ? "justify-end" : "justify-start",
+        gapClass
+      )}
       role="article"
       aria-label={`${isUser ? "You" : characterName ?? "AI"} message`}
     >
+      {/* Left Avatar column for AI */}
       {!isUser && (
-        <Avatar className="h-8 w-8 shrink-0 ring-1 ring-white/20">
-          <AvatarImage src={characterAvatar} alt={characterName} />
-          <AvatarFallback>{characterName?.slice(0, 1) ?? "L"}</AvatarFallback>
-        </Avatar>
+        showAvatar ? (
+          <Avatar className="h-8 w-8 shrink-0 ring-1 ring-white/20">
+            <AvatarImage src={characterAvatar} alt={characterName} />
+            <AvatarFallback>{characterName?.slice(0, 1) ?? "L"}</AvatarFallback>
+          </Avatar>
+        ) : (
+          <div className="w-8 shrink-0" aria-hidden />
+        )
       )}
+
+      {/* Bubble container */}
       <div
         className={cn(
-          "flex min-w-0 flex-col gap-0.5",
-          isUser ? "ml-auto max-w-[75%] items-end" : "max-w-[75%] items-start",
+          "flex min-w-0 flex-col gap-1",
+          isUser ? "items-end" : "items-start",
+          "max-w-[min(82%,22rem)]"
         )}
       >
-        <div className="flex items-end gap-1">
-        <div
-          className={cn(
-            "w-fit max-w-full rounded-2xl px-3.5 py-2 text-sm shadow-sm sm:max-w-[70%]",
-            isUser
-              ? isDark
-                ? "rounded-br-md bg-pink-600/90 text-white"
-                : "rounded-tr-md bg-primary text-primary-foreground"
-              : isDark
-                ? "rounded-bl-md border border-white/[0.06] bg-zinc-900/85 text-white/95"
-                : "rounded-tl-md bg-muted text-foreground",
-            message.isStreaming && "animate-pulse",
-          )}
-        >
-          {message.type === "voice" && (
-            <>
-              <div className="flex items-center gap-2 py-0.5">
-                <Mic className="h-4 w-4" aria-hidden />
-                <span>Voice message</span>
-                {message.duration != null && (
-                  <span className="text-xs opacity-70">{formatDuration(message.duration)}</span>
-                )}
+        {isMedia ? (
+          /* Media bubble */
+          <div
+            className={cn(
+              "w-52 relative overflow-hidden aspect-[3/4] border border-white/10 bg-zinc-950 shadow-md",
+              isUser
+                ? groupPosition === "last" || groupPosition === "single"
+                  ? "rounded-2xl rounded-br-md"
+                  : "rounded-2xl"
+                : groupPosition === "last" || groupPosition === "single"
+                  ? "rounded-2xl rounded-bl-md"
+                  : "rounded-2xl",
+            )}
+          >
+            {message.isStreaming && !message.mediaUrl ? (
+              <div className="absolute inset-0 flex items-center justify-center bg-zinc-900/90">
+                <HeartLoader size="md" />
               </div>
-              <div className="mt-0.5 flex justify-end">
+            ) : message.mediaUrl && isVideo ? (
+              <video
+                src={message.mediaUrl}
+                controls
+                playsInline
+                preload="metadata"
+                className="h-full w-full object-cover"
+              />
+            ) : message.mediaUrl ? (
+              <ShimmerImage
+                src={message.mediaUrl}
+                alt={isUser ? "Shared GIF" : `Photo from ${characterName ?? "AI"}`}
+              />
+            ) : null}
+
+            {/* Overlaid timestamp + ticks */}
+            {!(message.isStreaming && !message.mediaUrl) && (
+              <div className="absolute bottom-2 right-2 rounded-md bg-black/60 px-1.5 py-0.5 flex items-center gap-1 backdrop-blur-[2px] z-10">
                 <BubbleMeta
                   createdAt={message.createdAt}
                   deliveryStatus={deliveryStatus}
                   isUser={isUser}
-                  variant={variant}
+                  variant="dark"
                   inline
                 />
               </div>
-            </>
-          )}
-          {message.type === "image" && message.mediaUrl && (
-            <>
-              <div className="relative w-full max-w-52 overflow-hidden rounded-xl">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={message.mediaUrl}
-                  alt={isUser ? "Shared GIF" : `Photo from ${characterName ?? "AI"}`}
-                  className="max-h-48 w-full object-contain"
-                />
-              </div>
-              <div className="mt-0.5 flex justify-end">
-                <BubbleMeta
-                  createdAt={message.createdAt}
-                  deliveryStatus={deliveryStatus}
-                  isUser={isUser}
-                  variant={variant}
-                  inline
-                />
-              </div>
-            </>
-          )}
-          {isText && (
-            <div className="inline-grid max-w-full grid-cols-[minmax(0,1fr)]">
-              <p className="col-start-1 row-start-1 min-w-0 whitespace-pre-wrap break-words leading-[1.35] [overflow-wrap:anywhere]">
-                {message.content}
-                <span className="inline-block w-[4.75rem] select-none" aria-hidden="true" />
-              </p>
-              <div className="col-start-1 row-start-1 mb-px justify-self-end self-end">
-                <BubbleMeta
-                  createdAt={message.createdAt}
-                  deliveryStatus={deliveryStatus}
-                  isUser={isUser}
-                  variant={variant}
-                  inline
-                />
-              </div>
+            )}
+          </div>
+        ) : (
+          /* Standard text bubble + listen control beside it */
+          <div className="flex max-w-full items-end gap-0.5">
+            <div
+              className={cn(
+                "w-fit max-w-full px-3.5 py-2 text-sm shadow-sm",
+                isUser
+                  ? groupPosition === "last" || groupPosition === "single"
+                    ? "rounded-2xl rounded-br-md bg-primary text-primary-foreground"
+                    : "rounded-2xl bg-primary text-primary-foreground"
+                  : groupPosition === "last" || groupPosition === "single"
+                    ? "rounded-2xl rounded-bl-md"
+                    : "rounded-2xl",
+                !isUser &&
+                  (isDark
+                    ? "border border-white/[0.06] bg-zinc-900/85 text-white/95"
+                    : "bg-muted text-foreground"),
+                message.isStreaming && "animate-pulse",
+              )}
+            >
+              {message.type === "voice" && (
+                <>
+                  <div className="flex items-center gap-2 py-0.5">
+                    <Mic className="h-4 w-4" aria-hidden />
+                    <span>Voice message</span>
+                    {message.duration != null && (
+                      <span className="text-xs opacity-70">{formatDuration(message.duration)}</span>
+                    )}
+                  </div>
+                  <div className="mt-0.5 flex justify-end">
+                    <BubbleMeta
+                      createdAt={message.createdAt}
+                      deliveryStatus={deliveryStatus}
+                      isUser={isUser}
+                      variant={variant}
+                      inline
+                    />
+                  </div>
+                </>
+              )}
+              {isText && (
+                <div className="inline-grid max-w-full grid-cols-[minmax(0,1fr)]">
+                  <p className="col-start-1 row-start-1 min-w-0 whitespace-pre-wrap break-words leading-[1.35] [overflow-wrap:anywhere]">
+                    {message.content}
+                    <span className="inline-block w-[4.75rem] select-none" aria-hidden="true" />
+                  </p>
+                  <div className="col-start-1 row-start-1 mb-px justify-self-end self-end">
+                    <BubbleMeta
+                      createdAt={message.createdAt}
+                      deliveryStatus={deliveryStatus}
+                      isUser={isUser}
+                      variant={variant}
+                      inline
+                    />
+                  </div>
+                </div>
+              )}
+              {!isText && message.type !== "voice" && (
+                <p className="whitespace-pre-wrap break-words">{message.content}</p>
+              )}
             </div>
-          )}
-          {!isText && message.type !== "voice" && message.type !== "image" && (
-            <p className="whitespace-pre-wrap break-words">{message.content}</p>
-          )}
-        </div>
-        {showListenButton && (
-          <MessageListenButton
-            messageId={message.id}
-            text={message.content}
-            characterName={characterName}
-            variant={variant}
-          />
+            {showListenButton && (
+              <MessageListenButton
+                messageId={message.id}
+                text={message.content}
+                characterName={characterName}
+                voicePersonaId={voicePersonaId}
+                variant={variant}
+                className="mb-0.5"
+              />
+            )}
+          </div>
         )}
-        </div>
       </div>
     </div>
   );

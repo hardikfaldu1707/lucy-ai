@@ -335,6 +335,7 @@ export type Database = {
           created_by: string | null
           description: string
           gallery_urls: string[]
+          gallery_items: Json
           gender: string
           id: string
           is_published: boolean
@@ -365,6 +366,7 @@ export type Database = {
           created_by?: string | null
           description?: string
           gallery_urls?: string[]
+          gallery_items?: Json
           gender?: string
           id?: string
           is_published?: boolean
@@ -395,6 +397,7 @@ export type Database = {
           created_by?: string | null
           description?: string
           gallery_urls?: string[]
+          gallery_items?: Json
           gender?: string
           id?: string
           is_published?: boolean
@@ -1249,7 +1252,7 @@ export type Database = {
       media_type: "image" | "video"
       memory_type: "personality" | "relationship" | "semantic" | "episodic"
       message_role: "user" | "assistant" | "system"
-      message_type: "text" | "voice" | "image" | "system"
+      message_type: "text" | "voice" | "image" | "video" | "system"
       relationship_status:
         | "stranger"
         | "acquaintance"

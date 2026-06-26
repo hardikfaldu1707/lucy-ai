@@ -14,6 +14,10 @@ import { checkUserRateLimit } from "@/lib/rate-limit";
 import { parseBody } from "@/lib/validation/parse";
 import { uploadMetaSchema, mediaScopeSchema } from "@/lib/validation/schemas";
 import { resolveImageContentType, resolveVideoContentType } from "@/lib/upload-client";
+import {
+  IMAGE_MAX_UPLOAD_BYTES,
+  VIDEO_MAX_UPLOAD_BYTES,
+} from "@/lib/storage/upload-limits";
 
 async function assertScopeAllowed(
   scope: "user" | "character" | "platform",
@@ -80,7 +84,18 @@ export async function POST(req: Request) {
   const contentTypeHeader = req.headers.get("content-type") ?? "";
 
   if (contentTypeHeader.includes("multipart/form-data")) {
-    const form = await req.formData();
+    let form: FormData;
+    try {
+      form = await req.formData();
+    } catch {
+      return NextResponse.json(
+        {
+          error:
+            "Upload body too large for server upload. Videos over 4MB use direct storage upload automatically — retry, or use a smaller file.",
+        },
+        { status: 413 },
+      );
+    }
     const file = form.get("file");
     if (!(file instanceof File)) {
       return NextResponse.json({ error: "file is required" }, { status: 400 });
@@ -96,10 +111,10 @@ export async function POST(req: Request) {
     }
 
     const isVideo = resolvedContentType.startsWith("video/");
-    const maxSize = isVideo ? 15 * 1024 * 1024 : 10 * 1024 * 1024;
+    const maxSize = isVideo ? VIDEO_MAX_UPLOAD_BYTES : IMAGE_MAX_UPLOAD_BYTES;
     if (file.size > maxSize) {
       return NextResponse.json(
-        { error: isVideo ? "Video too large (max 15MB)" : "File too large (max 10MB)" },
+        { error: isVideo ? "Video too large (max 50MB)" : "File too large (max 10MB)" },
         { status: 400 },
       );
     }
@@ -180,6 +195,14 @@ export async function POST(req: Request) {
   if (scopeBlocked) return scopeBlocked;
 
   const resolvedScope = scope ?? "user";
+
+  const isVideo = contentType.startsWith("video/");
+  if (isVideo && resolvedScope !== "character" && resolvedScope !== "platform") {
+    return NextResponse.json(
+      { error: "Video uploads are only allowed for character or platform scope" },
+      { status: 400 },
+    );
+  }
 
   const key = buildUploadKey({
     scope: resolvedScope,

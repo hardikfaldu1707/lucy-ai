@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 /** Shared icon-button styling for the chat profile bar. */
 export const chatHeaderIconClass = cn(
   "h-9 w-9 shrink-0 rounded-xl border-white/15 bg-white/5 text-white",
-  "hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-pink-500",
+  "hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-primary",
 );
 
 export const chatSettingsSheetClass = cn(

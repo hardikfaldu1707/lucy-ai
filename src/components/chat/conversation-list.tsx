@@ -5,18 +5,18 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 import { MessageCircle } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ROUTES } from "@/constants/routes";
 import { GuestCharacterSidebarList } from "@/components/chat/guest-character-sidebar-list";
 import { useConversations } from "@/hooks/use-conversations";
 import type { Conversation } from "@/types";
-import { cn, formatRelativeTime } from "@/lib/utils";
+import { cn, formatChatListTime } from "@/lib/utils";
 
 interface ConversationListProps {
   initialConversations?: Conversation[];
   variant?: "light" | "dark";
   collapsed?: boolean;
+  search?: string;
   onSelect?: () => void;
 }
 
@@ -25,10 +25,20 @@ function formatUnread(count: number): string {
   return String(count);
 }
 
+function matchesSearch(conv: Conversation, query: string): boolean {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  return (
+    conv.characterName.toLowerCase().includes(q) ||
+    conv.lastMessage.toLowerCase().includes(q)
+  );
+}
+
 export function ConversationList({
   initialConversations,
   variant = "light",
   collapsed = false,
+  search = "",
   onSelect,
 }: ConversationListProps) {
   const pathname = usePathname();
@@ -48,11 +58,11 @@ export function ConversationList({
 
   if (isLoading && conversations.length === 0) {
     return (
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <div className="space-y-1 p-2" aria-busy="true" aria-label="Loading conversations">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-3 rounded-xl px-3 py-2.5">
-              <Skeleton className={cn("h-11 w-11 shrink-0 rounded-full", isDark && "bg-white/10")} />
+      <div className="min-h-0 flex-1 overflow-y-auto scrollbar-thin">
+        <div className="divide-y divide-white/[0.06]" aria-busy="true" aria-label="Loading conversations">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-3 px-3 py-3">
+              <Skeleton className={cn("h-12 w-12 shrink-0 rounded-full", isDark && "bg-white/10")} />
               <div className="min-w-0 flex-1 space-y-2">
                 <Skeleton className={cn("h-4 w-28", isDark && "bg-white/10")} />
                 <Skeleton className={cn("h-3 w-full", isDark && "bg-white/10")} />
@@ -77,9 +87,9 @@ export function ConversationList({
     );
   }
 
-  const list = conversations;
+  const list = conversations.filter((conv) => matchesSearch(conv, search));
 
-  if (list.length === 0) {
+  if (conversations.length === 0) {
     return (
       <div
         className={cn(
@@ -90,7 +100,7 @@ export function ConversationList({
         <div
           className={cn(
             "mb-4 flex h-14 w-14 items-center justify-center rounded-2xl",
-            isDark ? "bg-pink-500/15 text-pink-400" : "bg-primary/10 text-primary",
+            "bg-primary/10 text-primary",
           )}
         >
           <MessageCircle className="h-7 w-7" aria-hidden />
@@ -101,9 +111,7 @@ export function ConversationList({
           href={ROUTES.publicChatNew}
           className={cn(
             "mt-5 rounded-full px-4 py-2 text-sm font-medium transition-colors",
-            isDark
-              ? "bg-pink-500/15 text-pink-300 hover:bg-pink-500/25"
-              : "bg-primary/10 text-primary hover:bg-primary/15",
+            "bg-primary/10 text-primary hover:bg-primary/15",
           )}
         >
           Browse companions
@@ -112,16 +120,35 @@ export function ConversationList({
     );
   }
 
-  return (
-    <ScrollArea className="h-full min-h-0 flex-1">
+  if (list.length === 0) {
+    return (
       <div
-        className={cn(collapsed ? "space-y-1 p-1.5" : "space-y-0.5 p-2")}
-        role="list"
-        aria-label="Conversations"
+        className={cn(
+          "flex flex-1 items-center justify-center px-4 py-8 text-center text-sm",
+          isDark ? "text-white/45" : "text-muted-foreground",
+        )}
       >
+        No chats match your search.
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={cn(
+        "min-h-0 flex-1 overflow-y-auto scrollbar-thin",
+        isDark && "[&::-webkit-scrollbar-thumb]:bg-white/20",
+      )}
+      role="list"
+      aria-label="Conversations"
+    >
+      <div className={cn("divide-y", isDark ? "divide-white/[0.06]" : "divide-border/60")}>
         {list.map((conv) => {
           const href = ROUTES.publicChatWithCharacter(conv.characterId);
           const active = pathname === href || decodeURIComponent(pathname) === href;
+          const hasUnread = conv.unreadCount > 0;
+          const showPreview = conv.lastMessage !== "Start a conversation";
+
           return (
             <Link
               key={conv.id}
@@ -131,13 +158,12 @@ export function ConversationList({
               role="listitem"
               title={collapsed ? conv.characterName : undefined}
               className={cn(
-                "relative flex items-center rounded-xl transition-colors",
-                collapsed ? "justify-center p-1.5" : "gap-3 px-3 py-2.5",
-                isDark ? "hover:bg-white/[0.08]" : "hover:bg-muted/80",
+                "relative flex items-center transition-colors",
+                collapsed ? "justify-center p-2" : "gap-3 px-3 py-2.5",
+                isDark ? "hover:bg-white/[0.06]" : "hover:bg-muted/60",
+                active && (isDark ? "bg-white/[0.08]" : "bg-muted/80"),
                 active &&
-                  (isDark
-                    ? "bg-pink-500/10 before:absolute before:inset-y-1.5 before:left-0 before:w-0.5 before:rounded-full before:bg-pink-500"
-                    : "bg-muted before:absolute before:inset-y-1.5 before:left-0 before:w-0.5 before:rounded-full before:bg-primary"),
+                  "before:absolute before:inset-y-0 before:left-0 before:w-0.5 before:bg-primary",
               )}
               aria-current={active ? "page" : undefined}
               aria-label={collapsed ? conv.characterName : undefined}
@@ -145,11 +171,8 @@ export function ConversationList({
               <Avatar
                 className={cn(
                   "shrink-0",
-                  collapsed ? "h-10 w-10" : "h-11 w-11",
-                  active &&
-                    (isDark
-                      ? "ring-2 ring-pink-500/60 ring-offset-1 ring-offset-[#0a0a0a]"
-                      : "ring-2 ring-primary/50 ring-offset-1 ring-offset-background"),
+                  collapsed ? "h-10 w-10" : "h-12 w-12",
+                  active && isDark && "ring-2 ring-primary/50 ring-offset-1 ring-offset-[#111111]",
                 )}
               >
                 <AvatarImage src={conv.characterAvatar} alt="" />
@@ -158,46 +181,56 @@ export function ConversationList({
               {!collapsed && (
                 <>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-baseline justify-between gap-2">
                       <span
                         className={cn(
-                          "truncate text-sm font-medium",
-                          active && isDark && "text-white",
+                          "truncate text-[15px]",
+                          hasUnread ? "font-semibold" : "font-medium",
+                          isDark ? "text-white" : "text-foreground",
                         )}
                       >
                         {conv.characterName}
                       </span>
-                      {conv.lastMessageAt && conv.lastMessage !== "Start a conversation" && (
+                      {conv.lastMessageAt && (
                         <span
                           className={cn(
                             "shrink-0 text-[11px] tabular-nums",
-                            isDark ? "text-white/40" : "text-muted-foreground",
+                            hasUnread
+                              ? "text-primary"
+                              : isDark
+                                ? "text-white/45"
+                                : "text-muted-foreground",
                           )}
                         >
-                          {formatRelativeTime(conv.lastMessageAt)}
+                          {formatChatListTime(conv.lastMessageAt)}
                         </span>
                       )}
                     </div>
                     <p
                       className={cn(
-                        "truncate text-sm leading-snug",
-                        isDark ? "text-white/50" : "text-muted-foreground",
-                        active && isDark && "text-white/65",
+                        "truncate text-[13px] leading-snug",
+                        hasUnread
+                          ? isDark
+                            ? "font-medium text-white/75"
+                            : "font-medium text-foreground/80"
+                          : isDark
+                            ? "text-white/50"
+                            : "text-muted-foreground",
                       )}
                     >
-                      {conv.lastMessage}
+                      {showPreview ? conv.lastMessage : "Tap to start chatting"}
                     </p>
                   </div>
-                  {conv.unreadCount > 0 && (
-                    <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-pink-500 px-1.5 text-[10px] font-bold text-white">
+                  {hasUnread && (
+                    <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-white">
                       {formatUnread(conv.unreadCount)}
                     </span>
                   )}
                 </>
               )}
-              {collapsed && conv.unreadCount > 0 && (
+              {collapsed && hasUnread && (
                 <span
-                  className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-pink-500 px-1 text-[9px] font-bold text-white"
+                  className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-white"
                   aria-label={`${conv.unreadCount} unread`}
                 >
                   {formatUnread(conv.unreadCount)}
@@ -207,6 +240,6 @@ export function ConversationList({
           );
         })}
       </div>
-    </ScrollArea>
+    </div>
   );
 }

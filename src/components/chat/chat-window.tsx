@@ -1,14 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import Image from "next/image";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { MessageBubble } from "./message-bubble";
-import { ChatInput } from "./chat-input";
+import { ChatInput, type ChatSendOptions } from "./chat-input";
+import { TypingIndicator } from "./typing-indicator";
 import { ChatSuggestionChips } from "./chat-suggestion-chips";
 import { GuestAuthDialog } from "./guest-auth-dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { InsufficientCoinsError, streamChatMessage } from "@/lib/chat/client";
+import { requestChatMedia } from "@/lib/chat/request-media";
+import type { CharacterPhotosAccess } from "@/lib/data/character-photo-unlocks";
 import {
   fetchGuestChatStatus,
   GuestAuthRequiredError,
@@ -21,6 +24,17 @@ import type { ChatMessage, Conversation } from "@/types";
 import { chatDateKey, cn, formatChatDateLabel } from "@/lib/utils";
 import { getUserMessageDeliveryStatus } from "@/lib/chat/message-delivery-status";
 import { stopMessageSpeech } from "@/lib/speech/message-speech";
+import type { GalleryMediaType } from "@/types/gallery";
+
+const MEDIA_GENERATION_DELAY_MS = 2500;
+
+async function fetchPhotosAccess(slug: string): Promise<CharacterPhotosAccess> {
+  const res = await fetch(`/api/characters/${encodeURIComponent(slug)}/photos`, {
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Failed to load media settings");
+  return res.json() as Promise<CharacterPhotosAccess>;
+}
 
 export interface ChatSendError {
   message: string;
@@ -42,6 +56,7 @@ interface ChatWindowProps {
   loadingEarlierMessages?: boolean;
   onLoadEarlierMessages?: () => void;
   mode?: "guest" | "authenticated";
+  voicePersonaId?: string | null;
 }
 
 export function ChatWindow({
@@ -59,6 +74,7 @@ export function ChatWindow({
   loadingEarlierMessages,
   onLoadEarlierMessages,
   mode = "authenticated",
+  voicePersonaId,
 }: ChatWindowProps) {
   const isGuest = mode === "guest";
   const scrollRootRef = useRef<HTMLDivElement>(null);
@@ -76,6 +92,19 @@ export function ChatWindow({
   const bgUrl = backgroundImageUrl ?? conversation.characterAvatar;
   const bubbleVariant = inputVariant;
 
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = "auto") => {
+    const viewport = scrollRootRef.current?.querySelector(
+      "[data-radix-scroll-area-viewport]",
+    ) as HTMLElement | null;
+
+    if (viewport) {
+      viewport.scrollTo({ top: viewport.scrollHeight, behavior });
+      return;
+    }
+
+    bottomRef.current?.scrollIntoView({ behavior, block: "end" });
+  }, []);
+
   useEffect(() => {
     if (!isGuest) return;
     void fetchGuestChatStatus(conversation.characterId).then((status) => {
@@ -85,6 +114,13 @@ export function ChatWindow({
   }, [isGuest, conversation.characterId]);
 
   const guestInputBlocked = isGuest && (guestRemaining === 0 || authDialogOpen);
+
+  const { data: photosAccess } = useQuery({
+    queryKey: ["character-photos", conversation.characterId],
+    queryFn: () => fetchPhotosAccess(conversation.characterId),
+    enabled: !isGuest,
+    staleTime: 30_000,
+  });
 
   const hasUserMessages = messages.some((m) => m.role === "user");
   const showSuggestions = !hasUserMessages && suggestedQuestions.length > 0;
@@ -106,6 +142,13 @@ export function ChatWindow({
     }
     return groups;
   }, [messages]);
+
+  // Open every chat at the latest message.
+  useEffect(() => {
+    scrollToBottom("auto");
+    const t = window.setTimeout(() => scrollToBottom("auto"), 120);
+    return () => window.clearTimeout(t);
+  }, [conversation.id, scrollToBottom]);
 
   useEffect(() => {
     const active = document.activeElement;
@@ -132,6 +175,7 @@ export function ChatWindow({
 
     bottomRef.current?.scrollIntoView({
       behavior: isStreamingRef.current ? "auto" : "smooth",
+      block: "end",
     });
   }, [messages, isTyping]);
 
@@ -326,6 +370,41 @@ export function ChatWindow({
           onMessagesChange?.(working);
         },
         onCoins: (balance) => setCoinBalance(balance),
+        onMediaGenerating: (mediaType) => {
+          setTypingConversation(null);
+          const tempId = nextTempId("temp-media");
+          working = [
+            ...working,
+            {
+              id: tempId,
+              conversationId: conversation.id,
+              role: "assistant",
+              type: mediaType,
+              content: "",
+              mediaUrl: "",
+              isStreaming: true,
+              createdAt: new Date().toISOString(),
+            },
+          ];
+          onMessagesChange?.(working);
+        },
+        onMedia: (mediaMessage, balance) => {
+          working = working.filter((m) => !m.id.startsWith("temp-media"));
+          working = [...working, mediaMessage];
+          onMessagesChange?.(working);
+          if (typeof balance === "number") {
+            setCoinBalance(balance);
+            applyCoinBalance(queryClient, balance);
+          }
+          void queryClient.invalidateQueries({
+            queryKey: ["character-photos", conversation.characterId],
+          });
+        },
+        onMediaError: (error, insufficientCoins) => {
+          working = working.filter((m) => !m.id.startsWith("temp-media"));
+          onMessagesChange?.(working);
+          onError?.({ message: error, insufficientCoins });
+        },
       });
     } catch (err) {
       onMessagesChange?.(preSend);
@@ -339,42 +418,80 @@ export function ChatWindow({
     }
   };
 
-  const handleSendCharacterPhoto = async (photoIndex: number) => {
+  const handleRequestMedia = async (mediaType: GalleryMediaType, prompt: string) => {
     onError?.(null);
+    const preSend = messages;
+    isStreamingRef.current = true;
+
+    const optimisticUserId = nextTempId("optimistic");
+    const optimisticUser: ChatMessage = {
+      id: optimisticUserId,
+      conversationId: conversation.id,
+      role: "user",
+      type: "text",
+      content: prompt,
+      createdAt: new Date().toISOString(),
+    };
+
+    const tempMediaId = nextTempId("temp-media");
+    const placeholderMsg: ChatMessage = {
+      id: tempMediaId,
+      conversationId: conversation.id,
+      role: "assistant",
+      type: mediaType,
+      content: "",
+      mediaUrl: "",
+      isStreaming: true,
+      createdAt: new Date().toISOString(),
+    };
+
+    let working: ChatMessage[] = [...messages, optimisticUser, placeholderMsg];
+    onMessagesChange?.(working);
+    setTypingConversation(conversation.id);
+
+    await new Promise((resolve) => setTimeout(resolve, MEDIA_GENERATION_DELAY_MS));
+    setTypingConversation(null);
+
     try {
-      const res = await fetch(`/api/chat/${conversation.id}/character-photo`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ index: photoIndex }),
+      const result = await requestChatMedia(conversation.id, {
+        type: mediaType,
+        prompt,
+        saveUserMessage: true,
       });
-      const json = (await res.json().catch(() => ({}))) as {
-        error?: string;
-        message?: ChatMessage;
-        balance?: number;
-      };
-      if (!res.ok) {
-        const message = json.error ?? "Failed to send photo";
-        if (res.status === 402) throw new InsufficientCoinsError(message);
-        throw new Error(message);
-      }
-      if (typeof json.balance === "number") {
-        setCoinBalance(json.balance);
-        applyCoinBalance(queryClient, json.balance);
-      }
-      if (json.message) {
-        onMessagesChange?.([...messages, json.message]);
+
+      working = working
+        .filter((m) => m.id !== optimisticUserId && m.id !== tempMediaId)
+        .concat(
+          result.userMessage ? [result.userMessage] : [],
+          [{ ...result.message, isStreaming: false }],
+        );
+      onMessagesChange?.(working);
+
+      if (typeof result.balance === "number") {
+        setCoinBalance(result.balance);
+        applyCoinBalance(queryClient, result.balance);
       }
       void queryClient.invalidateQueries({
         queryKey: ["character-photos", conversation.characterId],
       });
     } catch (err) {
+      onMessagesChange?.(preSend);
       onError?.({
-        message: err instanceof Error ? err.message : "Failed to send photo",
+        message: err instanceof Error ? err.message : "Failed to generate media",
         insufficientCoins: err instanceof InsufficientCoinsError,
       });
-      throw err;
+    } finally {
+      isStreamingRef.current = false;
+      setTypingConversation(null);
     }
+  };
+
+  const handleSend = async (content: string, options?: ChatSendOptions) => {
+    if (options?.mediaType) {
+      await handleRequestMedia(options.mediaType, content);
+      return;
+    }
+    await handleSendMessage(content);
   };
 
   return (
@@ -389,7 +506,7 @@ export function ChatWindow({
               src={bgUrl}
               alt=""
               fill
-              className="object-contain object-center"
+              className="object-cover object-center"
               sizes="(max-width: 768px) 100vw, 50vw"
             />
             <div className="absolute inset-0 bg-black/60" />
@@ -432,18 +549,56 @@ export function ChatWindow({
                     {group.label}
                   </span>
                 </div>
-                {group.messages.map((msg) => (
-                  <MessageBubble
-                    key={msg.id}
-                    message={msg}
-                    characterAvatar={conversation.characterAvatar}
-                    characterName={conversation.characterName}
-                    variant={bubbleVariant}
-                    deliveryStatus={getUserMessageDeliveryStatus(msg, messages, isTyping)}
-                  />
-                ))}
+                {group.messages.map((msg, msgIndex) => {
+                  const prev = group.messages[msgIndex - 1];
+                  const next = group.messages[msgIndex + 1];
+                  
+                  const isSameRoleAsPrev = prev && prev.role === msg.role && msg.type !== 'system' && prev.type !== 'system';
+                  const isWithin2MinOfPrev = prev && (new Date(msg.createdAt).getTime() - new Date(prev.createdAt).getTime()) <= 120000;
+                  const isPrevGrouped = isSameRoleAsPrev && isWithin2MinOfPrev;
+
+                  const isSameRoleAsNext = next && next.role === msg.role && msg.type !== 'system' && next.type !== 'system';
+                  const isWithin2MinOfNext = next && (new Date(next.createdAt).getTime() - new Date(msg.createdAt).getTime()) <= 120000;
+                  const isNextGrouped = isSameRoleAsNext && isWithin2MinOfNext;
+
+                  let groupPosition: "single" | "first" | "middle" | "last" = "single";
+                  if (isPrevGrouped && isNextGrouped) {
+                    groupPosition = "middle";
+                  } else if (isPrevGrouped) {
+                    groupPosition = "last";
+                  } else if (isNextGrouped) {
+                    groupPosition = "first";
+                  }
+
+                  return (
+                    <MessageBubble
+                      key={msg.id}
+                      message={msg}
+                      characterAvatar={conversation.characterAvatar}
+                      characterName={conversation.characterName}
+                      voicePersonaId={voicePersonaId}
+                      variant={bubbleVariant}
+                      deliveryStatus={getUserMessageDeliveryStatus(msg, messages, isTyping)}
+                      groupPosition={groupPosition}
+                    />
+                  );
+                })}
               </div>
             ))}
+            {isTyping && (
+              <div className="flex gap-3 items-center py-2 justify-start max-w-[min(82%,22rem)]">
+                <div className="w-8 h-8 rounded-full shrink-0 overflow-hidden relative border border-white/20">
+                  {conversation.characterAvatar && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={conversation.characterAvatar} alt={conversation.characterName} className="object-cover w-full h-full" />
+                  )}
+                </div>
+                <TypingIndicator
+                  characterName={conversation.characterName}
+                  variant={bubbleVariant}
+                />
+              </div>
+            )}
             <div ref={bottomRef} />
           </div>
         </ScrollArea>
@@ -458,20 +613,21 @@ export function ChatWindow({
       <ChatInput
         value={draft}
         onValueChange={setDraft}
-        onSend={(content) => handleSendMessage(content)}
+        onSend={(content, options) => void handleSend(content, options)}
         onSendGif={
           isGuest
             ? undefined
             : (gifUrl) =>
-                handleSendMessage({ content: "GIF", type: "image", mediaUrl: gifUrl })
+                void handleSendMessage({ content: "GIF", type: "image", mediaUrl: gifUrl })
         }
-        onSendCharacterPhoto={isGuest ? undefined : handleSendCharacterPhoto}
-        characterSlug={conversation.characterId}
         characterName={conversation.characterName}
         disabled={isTyping || guestInputBlocked}
         onVoiceCall={onVoiceCall}
         voiceCallEnabled={voiceCallEnabled}
         variant={inputVariant}
+        mediaRequestEnabled={!isGuest}
+        mediaPaywallEnabled={photosAccess?.paywallEnabled}
+        mediaCostPerItem={photosAccess?.costPerPhoto}
         placeholder={
           isGuest && guestRemaining !== null && guestRemaining > 0
             ? `${guestRemaining} free message${guestRemaining === 1 ? "" : "s"} left`

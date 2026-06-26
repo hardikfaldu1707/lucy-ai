@@ -1,7 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { createMemory, listMemories } from "@/lib/data/memories";
-import { syncMemoryMdToR2 } from "@/lib/memory/memory-md";
+import { ensureCurrentMonthMemory, syncMemoryMdToR2 } from "@/lib/memory/memory-md";
 import type { MemoryType } from "@/types";
 import { bannedResponse } from "@/lib/auth/require-not-banned";
 import { parseBody } from "@/lib/validation/parse";
@@ -36,10 +36,14 @@ export async function POST(req: Request) {
   if (!parsed.ok) return parsed.response;
   const { type, title, content, characterId } = parsed.data;
 
+  if (characterId) {
+    await ensureCurrentMonthMemory(userId, characterId);
+  }
+
   const memory = await createMemory({ type, title, content, characterId }, userId);
   if (!memory) return NextResponse.json({ error: "Failed to create memory" }, { status: 500 });
   if (characterId) {
-    void syncMemoryMdToR2(userId, characterId);
+    await syncMemoryMdToR2(userId, characterId);
   }
   return NextResponse.json({ memory });
 }

@@ -36,7 +36,7 @@ const PUBLIC_NAV_ITEMS: NavItem[] = [
   { label: "Create", icon: Plus, href: ROUTES.create },
   { label: "Explore", icon: Compass, href: ROUTES.explore },
   { label: "Chat", icon: MessageCircle, href: ROUTES.publicChat },
-  { label: "My AI", icon: UserCircle, href: ROUTES.dashboard },
+  { label: "Profile", icon: UserCircle, href: ROUTES.dashboard },
   { label: "Premium", icon: Crown, href: ROUTES.pricing, badge: "70%" },
 ];
 
@@ -44,7 +44,7 @@ const SIGNED_IN_NAV_ITEMS: NavItem[] = [
   { label: "Create", icon: Plus, href: ROUTES.create },
   { label: "Explore", icon: Compass, href: ROUTES.explore },
   { label: "Chat", icon: MessageCircle, href: ROUTES.publicChat },
-  { label: "My AI", icon: UserCircle, href: ROUTES.dashboard },
+  { label: "Profile", icon: UserCircle, href: ROUTES.dashboard },
   { label: "Premium", icon: Crown, href: ROUTES.pricing, badge: "70%" },
 ];
 
@@ -300,7 +300,7 @@ function SidebarContent({
               onClick={onNavigate}
               className="text-xs font-medium text-white/80 hover:text-white"
             >
-              My AI
+              Profile
             </Link>
           )}
           <UserButton />

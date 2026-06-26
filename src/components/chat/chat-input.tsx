@@ -1,22 +1,28 @@
 "use client";
 
-import { useState, useRef, KeyboardEvent, useCallback, useEffect, useMemo } from "react";
-import { AudioLines, Mic, Plus, Send, Smile } from "lucide-react";
+import { useState, useRef, KeyboardEvent, useCallback, useEffect } from "react";
+import { Mic, Plus, Send, Smile } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ChatEmojiGifPanel } from "@/components/chat/chat-emoji-gif-panel";
-import { ChatSendPhotoPanel } from "@/components/chat/chat-send-photo-panel";
+import {
+  ChatAttachmentSheet,
+  type AttachmentMode,
+} from "@/components/chat/chat-attachment-sheet";
 import { ChatDictationPermission } from "@/components/chat/chat-dictation-permission";
 import { useSpeechDictation } from "@/hooks/use-speech-dictation";
 import { appendTranscriptToDraft } from "@/lib/speech/browser-speech-recognition";
 import { cn } from "@/lib/utils";
+import type { GalleryMediaType } from "@/types/gallery";
+
+export type ChatSendOptions = {
+  mediaType?: GalleryMediaType;
+};
 
 interface ChatInputProps {
-  onSend: (content: string) => void;
+  onSend: (content: string, options?: ChatSendOptions) => void;
   onSendGif?: (gifUrl: string) => void;
-  onSendCharacterPhoto?: (photoIndex: number) => Promise<void>;
-  characterSlug?: string;
   characterName?: string;
   disabled?: boolean;
   placeholder?: string;
@@ -25,6 +31,9 @@ interface ChatInputProps {
   variant?: "light" | "dark";
   value?: string;
   onValueChange?: (value: string) => void;
+  mediaRequestEnabled?: boolean;
+  mediaPaywallEnabled?: boolean;
+  mediaCostPerItem?: number;
 }
 
 function insertAtCursor(
@@ -47,20 +56,20 @@ function insertAtCursor(
 export function ChatInput({
   onSend,
   onSendGif,
-  onSendCharacterPhoto,
-  characterSlug,
   characterName,
   disabled,
   placeholder = "Message Lucy...",
-  onVoiceCall,
-  voiceCallEnabled,
   variant = "light",
   value: controlledValue,
   onValueChange,
+  mediaRequestEnabled = false,
+  mediaPaywallEnabled = false,
+  mediaCostPerItem = 0,
 }: ChatInputProps) {
   const [internalValue, setInternalValue] = useState("");
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [photoPanelOpen, setPhotoPanelOpen] = useState(false);
+  const [attachmentSheetOpen, setAttachmentSheetOpen] = useState(false);
+  const [attachmentMode, setAttachmentMode] = useState<AttachmentMode>(null);
   const isControlled = controlledValue !== undefined;
   const value = isControlled ? controlledValue : internalValue;
 
@@ -79,39 +88,46 @@ export function ChatInput({
     valueRef.current = value;
   }, [value]);
 
-  const onFinalTranscript = useCallback(
-    (segment: string) => {
-      setValue(appendTranscriptToDraft(valueRef.current, segment));
-    },
-    [setValue],
-  );
-
   const dictation = useSpeechDictation({
-    onFinalTranscript,
     disabled,
+    onFinalTranscript: (segment) => {
+      setValue(appendTranscriptToDraft(valueRef.current, segment));
+      requestAnimationFrame(() => textareaRef.current?.focus());
+    },
   });
 
-  const displayValue = useMemo(() => {
-    if (!dictation.isListening || !dictation.interimText) return value;
-    return appendTranscriptToDraft(value, dictation.interimText);
-  }, [dictation.interimText, dictation.isListening, value]);
-
-  const { status: dictationStatus, stop: stopDictation } = dictation;
-
   useEffect(() => {
-    if (dictationStatus === "unsupported") {
-      toast.error("Voice typing isn't supported in this browser. Try Chrome or Safari.");
-      stopDictation();
+    if (dictation.status === "unsupported") return;
+    if (dictation.status === "error") {
+      toast.error(
+        dictation.errorKind === "network"
+          ? "Voice input needs an internet connection."
+          : "Could not capture speech. Try again.",
+      );
     }
-  }, [dictationStatus, stopDictation]);
+  }, [dictation.status, dictation.errorKind]);
+
+  const displayValue =
+    dictation.isListening && dictation.interimText
+      ? appendTranscriptToDraft(value, dictation.interimText)
+      : value;
+
+  const mediaPlaceholder =
+    attachmentMode === "video"
+      ? "Describe the video you want..."
+      : attachmentMode === "image"
+        ? "Describe the photo you want..."
+        : placeholder;
 
   const handleSend = () => {
-    dictation.stop();
-    const trimmed = displayValue.trim();
+    if (dictation.isListening) dictation.stop();
+    const trimmed = value.trim();
     if (!trimmed || disabled) return;
-    onSend(trimmed);
+    onSend(trimmed, attachmentMode ? { mediaType: attachmentMode } : undefined);
     setValue("");
     setPickerOpen(false);
+    setAttachmentSheetOpen(false);
+    setAttachmentMode(null);
     requestAnimationFrame(() => textareaRef.current?.focus());
   };
 
@@ -124,7 +140,6 @@ export function ChatInput({
 
   const handleEmojiSelect = useCallback(
     (emoji: string) => {
-      dictation.stop();
       const textarea = textareaRef.current;
       if (!textarea) {
         setValue(value + emoji);
@@ -132,90 +147,47 @@ export function ChatInput({
       }
       insertAtCursor(textarea, value, emoji, setValue);
     },
-    [dictation, setValue, value],
+    [setValue, value],
   );
 
   const handleGifSelect = useCallback(
     (gifUrl: string) => {
       if (disabled || !onSendGif) return;
-      dictation.stop();
       onSendGif(gifUrl);
       setPickerOpen(false);
     },
-    [dictation, disabled, onSendGif],
+    [disabled, onSendGif],
   );
 
   const togglePicker = () => {
     if (!pickerOpen) {
-      dictation.stop();
-      setPhotoPanelOpen(false);
+      setAttachmentSheetOpen(false);
+      setAttachmentMode(null);
     }
     setPickerOpen((open) => !open);
   };
 
-  const togglePhotoPanel = () => {
-    if (!onSendCharacterPhoto || !characterSlug) return;
-    if (!photoPanelOpen) {
-      dictation.stop();
+  const toggleAttachmentSheet = () => {
+    if (!mediaRequestEnabled || !characterName) return;
+    if (!attachmentSheetOpen) {
       setPickerOpen(false);
+      setAttachmentMode(null);
     }
-    setPhotoPanelOpen((open) => !open);
+    setAttachmentSheetOpen((open) => !open);
   };
 
-  const handleVoiceCallClick = () => {
-    if (!onVoiceCall) return;
-    dictation.stop();
-    setPickerOpen(false);
-    setPhotoPanelOpen(false);
-    if (!voiceCallEnabled) {
-      toast.error("Voice calls are not available right now. Check admin settings or OPENROUTER_API_KEY.");
-      return;
-    }
-    onVoiceCall();
-  };
-
-  const handleDictationToggle = () => {
-    if (!dictation.isSupported) {
-      toast.error("Voice typing isn't supported in this browser. Try Chrome or Safari.");
-      return;
-    }
-    if (dictation.status === "denied") {
-      dictation.confirmPermission();
-      return;
-    }
-    dictation.toggle();
-  };
-
-  const handleTextareaChange = (next: string) => {
-    if (dictation.isListening) dictation.stop();
-    setValue(next);
+  const handleAttachmentSelect = (type: GalleryMediaType) => {
+    setAttachmentMode(type);
+    setAttachmentSheetOpen(false);
+    requestAnimationFrame(() => textareaRef.current?.focus());
   };
 
   const ghostBtnClass = cn(
     isDark && "text-white hover:bg-white/10 hover:text-white",
   );
 
-  const voiceBtnClass = cn(
-    ghostBtnClass,
-    voiceCallEnabled &&
-      isDark &&
-      "text-pink-300 hover:bg-pink-500/20 hover:text-pink-200",
-  );
-
   const emojiBtnActive = pickerOpen;
-  const photoBtnActive = photoPanelOpen;
-  const dictationActive = dictation.isListening;
-  const photoFeatureEnabled = Boolean(onSendCharacterPhoto && characterSlug && characterName);
-
-  const permissionMode =
-    dictation.status === "requesting-permission"
-      ? "requesting"
-      : dictation.status === "denied"
-        ? "denied"
-        : "prompt";
-
-  const showPermissionBar =
-    dictation.showPermissionPrompt || dictation.status === "denied";
+  const attachBtnActive = attachmentSheetOpen || attachmentMode !== null;
 
   return (
     <div
@@ -233,33 +205,40 @@ export function ChatInput({
           onGifSelect={handleGifSelect}
         />
       )}
-      {photoPanelOpen && photoFeatureEnabled && (
-        <ChatSendPhotoPanel
-          characterSlug={characterSlug!}
-          characterName={characterName!}
+      {attachmentSheetOpen && mediaRequestEnabled && characterName && (
+        <ChatAttachmentSheet
+          characterName={characterName}
           variant={variant}
           disabled={disabled}
-          onPhotoSent={onSendCharacterPhoto!}
-          onClose={() => setPhotoPanelOpen(false)}
+          paywallEnabled={mediaPaywallEnabled}
+          costPerPhoto={mediaCostPerItem}
+          onSelect={handleAttachmentSelect}
+          onClose={() => setAttachmentSheetOpen(false)}
         />
       )}
-      <div className="p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-4 sm:pb-4">
-        {showPermissionBar && (
+      {(dictation.showPermissionPrompt || dictation.status === "denied") && (
+        <div className="px-3 pt-2 sm:px-4">
           <ChatDictationPermission
             variant={variant}
-            mode={permissionMode}
+            mode={
+              dictation.status === "denied"
+                ? "denied"
+                : dictation.status === "requesting-permission"
+                  ? "requesting"
+                  : "prompt"
+            }
             onAllow={dictation.confirmPermission}
             onCancel={dictation.dismissPermission}
           />
-        )}
+        </div>
+      )}
+      <div className="p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-4 sm:pb-4">
         <div
           className={cn(
             "mx-auto flex max-w-3xl items-end gap-1 rounded-[1.35rem] border p-1.5 sm:gap-1.5 sm:p-2",
             isDark
               ? "border-white/[0.08] bg-white/[0.04]"
               : "border-border bg-muted/30",
-            dictationActive && isDark && "border-pink-500/25",
-            dictationActive && !isDark && "border-primary/30",
           )}
         >
           <div className="flex shrink-0 items-center gap-0.5">
@@ -271,7 +250,7 @@ export function ChatInput({
                 "h-9 w-9 shrink-0 rounded-full",
                 ghostBtnClass,
                 emojiBtnActive &&
-                  (isDark ? "bg-white/10 text-pink-300" : "bg-muted text-foreground"),
+                  (isDark ? "bg-white/10 text-primary" : "bg-muted text-foreground"),
               )}
               aria-label={pickerOpen ? "Close emoji picker" : "Open emoji picker"}
               aria-expanded={pickerOpen}
@@ -280,24 +259,7 @@ export function ChatInput({
             >
               <Smile className="h-4 w-4" />
             </Button>
-            {onVoiceCall && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className={cn(
-                  "h-9 w-9 shrink-0 rounded-full",
-                  voiceBtnClass,
-                  !voiceCallEnabled && "opacity-45",
-                )}
-                aria-label="Voice call"
-                disabled={disabled}
-                onClick={handleVoiceCallClick}
-              >
-                <Mic className="h-4 w-4" />
-              </Button>
-            )}
-            {photoFeatureEnabled && (
+            {mediaRequestEnabled && characterName && (
               <Button
                 type="button"
                 variant="ghost"
@@ -305,13 +267,13 @@ export function ChatInput({
                 className={cn(
                   "h-9 w-9 shrink-0 rounded-full",
                   ghostBtnClass,
-                  photoBtnActive &&
-                    (isDark ? "bg-white/10 text-pink-300" : "bg-muted text-foreground"),
+                  attachBtnActive &&
+                    (isDark ? "bg-white/10 text-primary" : "bg-muted text-foreground"),
                 )}
-                aria-label={photoPanelOpen ? "Close send photo" : "Send a photo"}
-                aria-expanded={photoPanelOpen}
+                aria-label={attachmentSheetOpen ? "Close attachments" : "Request photo or video"}
+                aria-expanded={attachmentSheetOpen}
                 disabled={disabled}
-                onClick={togglePhotoPanel}
+                onClick={toggleAttachmentSheet}
               >
                 <Plus className="h-4 w-4" />
               </Button>
@@ -321,56 +283,53 @@ export function ChatInput({
             <Textarea
               ref={textareaRef}
               value={displayValue}
-              onChange={(e) => handleTextareaChange(e.target.value)}
+              onChange={(e) => setValue(e.target.value)}
               onKeyDown={onKeyDown}
               placeholder={
-                dictationActive ? "Listening… speak your message" : placeholder
+                dictation.isListening ? "Listening… speak your message" : mediaPlaceholder
               }
               disabled={disabled}
+              readOnly={dictation.isListening}
               rows={1}
               className={cn(
-                "min-h-[40px] max-h-32 min-w-0 flex-1 resize-none border-0 bg-transparent px-1 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0",
-                dictation.isSupported ? "pr-10" : "pr-1",
+                "min-h-[40px] max-h-32 min-w-0 flex-1 resize-none border-0 bg-transparent px-1 pr-1 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0",
                 isDark && "text-white placeholder:text-white/40",
+                dictation.isListening && "placeholder:text-primary/80",
               )}
               aria-label="Message input"
             />
-            {dictation.isSupported && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className={cn(
-                  "absolute bottom-0.5 right-0 h-8 w-8 shrink-0 rounded-full",
-                  isDark
-                    ? "text-white/70 hover:bg-white/10 hover:text-white"
-                    : "text-muted-foreground hover:text-foreground",
-                  dictationActive &&
-                    (isDark
-                      ? "bg-pink-500/20 text-pink-300"
-                      : "bg-primary/10 text-primary"),
-                )}
-                aria-label={
-                  dictationActive ? "Stop voice typing" : "Speak to type"
-                }
-                aria-pressed={dictationActive}
-                disabled={disabled}
-                onClick={handleDictationToggle}
-              >
-                <AudioLines className="h-4 w-4" />
-              </Button>
-            )}
           </div>
+          {dictation.isSupported && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className={cn(
+                "h-9 w-9 shrink-0 rounded-full",
+                ghostBtnClass,
+                dictation.isListening &&
+                  (isDark
+                    ? "bg-red-500/20 text-red-400 hover:bg-red-500/25 hover:text-red-300"
+                    : "bg-red-500/10 text-red-600 hover:bg-red-500/15"),
+              )}
+              aria-label={dictation.isListening ? "Stop voice input" : "Speak your message"}
+              aria-pressed={dictation.isListening}
+              disabled={disabled}
+              onClick={() => dictation.toggle()}
+            >
+              <Mic className={cn("h-4 w-4", dictation.isListening && "animate-pulse")} />
+            </Button>
+          )}
           <Button
             size="icon"
             className={cn(
               "h-9 w-9 shrink-0 rounded-full",
               isDark
-                ? "bg-pink-500 text-white hover:bg-pink-400 disabled:bg-white/10 disabled:text-white/30"
+                ? "bg-primary text-primary-foreground hover:bg-primary/90 disabled:bg-white/10 disabled:text-white/30"
                 : undefined,
             )}
             onClick={handleSend}
-            disabled={disabled || !displayValue.trim()}
+            disabled={disabled || !value.trim()}
             aria-label="Send message"
           >
             <Send className="h-4 w-4" />

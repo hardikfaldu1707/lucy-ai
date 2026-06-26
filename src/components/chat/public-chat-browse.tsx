@@ -1,9 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { motion, useReducedMotion } from "framer-motion";
 import {
   ArrowLeft,
   MessageCircle,
@@ -84,12 +83,10 @@ function CharacterGrid({
   characters,
   priorityFirst,
   showCreateCard,
-  reducedMotion,
 }: {
   characters: ExploreCharacter[];
   priorityFirst?: boolean;
   showCreateCard?: boolean;
-  reducedMotion: boolean;
 }) {
   return (
     <div
@@ -102,23 +99,12 @@ function CharacterGrid({
         </div>
       )}
       {characters.map((character, index) => (
-        <motion.div
-          key={character.id}
-          role="listitem"
-          className="min-w-0"
-          initial={reducedMotion ? false : { opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{
-            duration: 0.35,
-            delay: reducedMotion ? 0 : Math.min(index * 0.04, 0.4),
-            ease: [0.22, 1, 0.36, 1],
-          }}
-        >
+        <div key={character.id} role="listitem" className="min-w-0">
           <ExploreCharacterCard
             character={character}
             priority={priorityFirst && index < 4}
           />
-        </motion.div>
+        </div>
       ))}
     </div>
   );
@@ -151,23 +137,24 @@ export function PublicChatBrowse({ initialCharacters }: PublicChatBrowseProps) {
   const { isSignedIn, isLoaded } = useAuth();
   const createHref = isLoaded && isSignedIn ? ROUTES.create : signInHrefForCreate();
   const queryClient = useQueryClient();
-  const reducedMotion = useReducedMotion();
   const [search, setSearch] = useState("");
+  const wasSignedInRef = useRef(false);
 
   const { data: characters, isLoading, isError, isFetching, refetch } = useQuery({
     queryKey: CHAT_BROWSE_QUERY_KEY,
     queryFn: fetchChatBrowseCharacters,
-    placeholderData: initialCharacters,
-    staleTime: 0,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
+    initialData: initialCharacters,
+    staleTime: 60_000,
+    refetchOnMount: initialCharacters === undefined,
+    refetchOnWindowFocus: false,
     enabled: isLoaded,
   });
 
   useEffect(() => {
-    if (isLoaded && isSignedIn) {
+    if (isLoaded && isSignedIn && !wasSignedInRef.current) {
       void queryClient.invalidateQueries({ queryKey: CHAT_BROWSE_QUERY_KEY });
     }
+    wasSignedInRef.current = Boolean(isSignedIn);
   }, [isLoaded, isSignedIn, queryClient]);
 
   const mine = useMemo(
@@ -228,7 +215,7 @@ export function PublicChatBrowse({ initialCharacters }: PublicChatBrowseProps) {
         {isSignedIn && (
           <Link
             href={ROUTES.publicChat}
-            className="mb-6 inline-flex items-center gap-1.5 rounded-lg px-1 py-1 text-sm text-white/50 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#080808]"
+            className="mb-6 inline-flex items-center gap-1.5 rounded-lg px-1 py-1 text-sm text-white/50 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[#080808]"
           >
             <ArrowLeft className="h-4 w-4" aria-hidden />
             Back to chats
@@ -249,7 +236,7 @@ export function PublicChatBrowse({ initialCharacters }: PublicChatBrowseProps) {
                 translate="no"
               >
                 Who do you want to{" "}
-                <span className="text-pink-400/95">talk to</span>?
+                <span className="text-primary/95">talk to</span>?
               </h1>
               <p className="mt-2.5 text-pretty text-sm leading-relaxed text-white/50 sm:text-[15px]">
                 {isSignedIn
@@ -272,7 +259,7 @@ export function PublicChatBrowse({ initialCharacters }: PublicChatBrowseProps) {
                 )}
                 {isSignedIn && mine.length > 0 && (
                   <div className="text-center">
-                    <p className="text-2xl font-bold tabular-nums text-pink-300">{mine.length}</p>
+                    <p className="text-2xl font-bold tabular-nums text-primary">{mine.length}</p>
                     <p className="text-[11px] uppercase tracking-wide text-white/45">Your girls</p>
                   </div>
                 )}
@@ -299,7 +286,7 @@ export function PublicChatBrowse({ initialCharacters }: PublicChatBrowseProps) {
                   onChange={(e) => setSearch(e.target.value)}
                   autoComplete="off"
                   spellCheck={false}
-                  className="h-10 rounded-xl border-white/[0.08] bg-white/[0.04] pl-10 text-white placeholder:text-white/35 focus-visible:border-pink-500/40 focus-visible:ring-pink-500/20"
+                  className="h-10 rounded-xl border-white/[0.08] bg-white/[0.04] pl-10 text-white placeholder:text-white/35 focus-visible:border-primary/40 focus-visible:ring-primary/20"
                 />
               </div>
             </div>
@@ -330,14 +317,14 @@ export function PublicChatBrowse({ initialCharacters }: PublicChatBrowseProps) {
 
         {showEmpty && (
           <div className="mx-auto max-w-md rounded-2xl border border-white/10 bg-white/[0.04] p-8 text-center backdrop-blur-sm">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-pink-500/15 ring-1 ring-pink-500/25">
-              <Sparkles className="h-6 w-6 text-pink-400" aria-hidden />
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/15 ring-1 ring-primary/25">
+              <Sparkles className="h-6 w-6 text-primary" aria-hidden />
             </div>
             <p className="text-lg font-semibold text-white">No companions yet</p>
             <p className="mt-2 text-sm text-white/55">
               Create your own AI girl or check back once more are published.
             </p>
-            <Button asChild className="mt-6 rounded-full bg-pink-500 hover:bg-pink-400">
+            <Button asChild className="mt-6 rounded-full bg-primary hover:bg-primary/95 text-white">
               <Link href={createHref}>
                 <Plus className="mr-2 h-4 w-4" aria-hidden />
                 Create Your AI Girl
@@ -375,7 +362,6 @@ export function PublicChatBrowse({ initialCharacters }: PublicChatBrowseProps) {
                   characters={mine}
                   priorityFirst
                   showCreateCard
-                  reducedMotion={reducedMotion ?? false}
                 />
               </section>
             )}
@@ -394,7 +380,6 @@ export function PublicChatBrowse({ initialCharacters }: PublicChatBrowseProps) {
                   characters={everyone}
                   priorityFirst={!isSignedIn || mine.length === 0}
                   showCreateCard={isSignedIn && mine.length === 0}
-                  reducedMotion={reducedMotion ?? false}
                 />
               </section>
             )}

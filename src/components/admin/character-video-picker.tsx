@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { uploadVideoToR2, isAllowedVideoFile } from "@/lib/upload-client";
+import { VIDEO_MAX_UPLOAD_BYTES } from "@/lib/storage/upload-limits";
 import { toast } from "sonner";
 import { Upload, Link2, Film, Loader2, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -27,8 +28,8 @@ export function CharacterVideoPicker({ value, onChange, characterId }: Character
       toast.error("Please upload MP4 or WebM video");
       return;
     }
-    if (file.size > 15 * 1024 * 1024) {
-      toast.error("Video must be less than 15MB");
+    if (file.size > VIDEO_MAX_UPLOAD_BYTES) {
+      toast.error("Video must be less than 50MB");
       return;
     }
 
@@ -132,7 +133,7 @@ export function CharacterVideoPicker({ value, onChange, characterId }: Character
                   <Upload className="mb-2 h-6 w-6 text-muted-foreground" aria-hidden />
                   <p className="text-xs font-semibold">Drag & drop or click to upload</p>
                   <p className="mt-1 text-[10px] text-muted-foreground">
-                    Short loop MP4/WebM, max 15MB
+                    Short loop MP4/WebM, max 50MB
                   </p>
                 </div>
               </TabsContent>

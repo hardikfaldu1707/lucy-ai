@@ -2,7 +2,6 @@
 
 import { memo } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { DeleteCharacterDialog } from "@/components/character/delete-character-dialog";
 import { CharacterPortraitMedia } from "@/components/home/character-portrait-media";
 import type { ExploreCharacter } from "@/constants/explore-characters";
@@ -25,21 +24,23 @@ function CardContent({
   compact?: boolean;
 }) {
   return (
-    <div className="relative aspect-[3/4] w-full overflow-hidden bg-zinc-900">
+    <div className="relative aspect-[15/22] w-full overflow-hidden bg-zinc-900">
       <CharacterPortraitMedia
         character={character}
         priority={priority}
+        className="!aspect-auto h-full w-full"
         sizes={
           compact
             ? "(max-width: 640px) 33vw, (max-width: 1024px) 25vw, 16vw"
             : "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
         }
       />
+      <div className="absolute inset-0 z-0 bg-gradient-to-t from-[#df1a97] from-[0%] via-[#df1a97]/80 via-[15%] to-transparent to-[35%] opacity-0 transition-opacity duration-300 group-hover/card:opacity-100" />
 
       {character.isNew && (
         <span
           className={cn(
-            "absolute left-2.5 top-2.5 z-10 rounded-md bg-pink-500 font-bold uppercase tracking-wide text-white shadow-lg",
+            "absolute left-2.5 top-2.5 z-10 rounded-md bg-[#df1a97] font-bold uppercase tracking-wide text-white shadow-lg",
             compact ? "px-1.5 py-0.5 text-[8px]" : "px-2 py-0.5 text-[10px]",
           )}
         >
@@ -69,7 +70,7 @@ function CardContent({
           <span className="font-semibold text-white/80">{character.age}</span>
         </h3>
         {!compact && (
-          <p className="line-clamp-2 text-[11px] leading-snug text-white/70 sm:text-xs">
+          <p className="line-clamp-2 text-[11px] leading-snug text-white/90 sm:text-xs">
             {character.bio}
           </p>
         )}
@@ -78,7 +79,7 @@ function CardContent({
             <span
               key={tag}
               className={cn(
-                "rounded-full bg-white/12 font-medium text-white/90 backdrop-blur-sm",
+                "rounded-full bg-white/12 font-medium text-white/90 backdrop-blur-sm transition-colors group-hover/card:bg-white/20 group-hover/card:text-white",
                 compact ? "px-1.5 py-0.5 text-[9px]" : "px-2 py-0.5 text-[10px]",
               )}
             >
@@ -97,14 +98,12 @@ export const ExploreCharacterCard = memo(function ExploreCharacterCard({
   compact = false,
 }: ExploreCharacterCardProps) {
   const linkClass =
-    "group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500";
+    "group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#df1a97]";
 
   return (
-    <motion.article
-      whileHover={{ y: -4 }}
-      transition={{ type: "spring", stiffness: 420, damping: 28 }}
+    <article
       className={cn(
-        "group/card relative overflow-hidden ring-1 ring-white/10",
+        "group/card relative overflow-hidden ring-1 ring-white/10 transition-transform duration-200 will-change-transform hover:-translate-y-1",
         compact ? "rounded-xl" : "rounded-2xl",
       )}
     >
@@ -124,6 +123,6 @@ export const ExploreCharacterCard = memo(function ExploreCharacterCard({
       >
         <CardContent character={character} priority={priority} compact={compact} />
       </Link>
-    </motion.article>
+    </article>
   );
 });

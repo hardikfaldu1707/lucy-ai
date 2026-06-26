@@ -37,7 +37,7 @@ export function ChatDictationPermission({
             mode === "denied"
               ? "bg-red-500/15 text-red-400"
               : isDark
-                ? "bg-pink-500/15 text-pink-300"
+                ? "bg-primary/15 text-primary"
                 : "bg-primary/10 text-primary",
           )}
         >
@@ -74,7 +74,7 @@ export function ChatDictationPermission({
         <Button
           type="button"
           size="sm"
-          className={cn(isDark && "bg-pink-500 hover:bg-pink-400")}
+          className={cn(isDark && "bg-primary hover:bg-primary/95 text-white")}
           onClick={onAllow}
           disabled={mode === "requesting"}
         >

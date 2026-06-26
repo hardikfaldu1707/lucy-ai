@@ -68,7 +68,7 @@ export function ChatCharacterProfileBar({
 
         <Link
           href={characterProfilePath(characterSlug)}
-          className="flex min-w-0 flex-1 items-center gap-2.5 overflow-hidden rounded-lg py-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500/60 sm:gap-3"
+          className="flex min-w-0 flex-1 items-center gap-2.5 overflow-hidden rounded-lg py-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 sm:gap-3"
           aria-label={`View ${characterName}'s profile`}
         >
           <Avatar className="h-9 w-9 shrink-0 ring-1 ring-white/10 sm:h-10 sm:w-10">

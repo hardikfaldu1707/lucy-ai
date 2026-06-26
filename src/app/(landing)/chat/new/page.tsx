@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { ChatNewRedirect } from "@/components/chat/chat-new-redirect";
 import { PublicChatBrowse } from "@/components/chat/public-chat-browse";
 import { listChatBrowseCharacters } from "@/lib/data/characters-public";
-import { ensureProfile } from "@/lib/ensure-profile";
+import { cachedEnsureProfile } from "@/lib/server/request-cache";
 
 export const metadata: Metadata = {
   title: "New Chat",
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 export default async function PublicChatNewPage() {
   const { userId } = await auth();
   if (userId) {
-    await ensureProfile({ skipAllowance: true });
+    await cachedEnsureProfile({ skipAllowance: true });
   }
   const initialCharacters = await listChatBrowseCharacters(userId ?? undefined);
 

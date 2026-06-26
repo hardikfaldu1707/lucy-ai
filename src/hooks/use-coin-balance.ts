@@ -15,9 +15,9 @@ export function useCoinBalance() {
     queryKey: COIN_BALANCE_QUERY_KEY,
     queryFn: fetchCoinBalance,
     enabled: isLoaded && isSignedIn,
-    staleTime: 5_000,
-    refetchOnWindowFocus: true,
-    refetchOnMount: "always",
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
     placeholderData: (prev) => prev,
   });
 }

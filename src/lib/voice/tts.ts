@@ -33,7 +33,7 @@ export async function synthesizeSpeech(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "tts-1",
+        model: "tts-1-hd",
         input: trimmed,
         voice,
         response_format: "mp3",

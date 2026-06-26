@@ -274,18 +274,19 @@ export async function speakMessageText(
   clearAllPlayback();
   markLoading(messageId);
 
+  // Prefer realistic OpenAI TTS; fall back to browser speech when unavailable (e.g. guests).
+  const serverOk = await speakViaServer(messageId, trimmed, options);
+  if (serverOk) return true;
+
+  clearAllPlayback();
+  markLoading(messageId);
+
   const browserOk =
     typeof window !== "undefined" &&
     "speechSynthesis" in window &&
     (await speakViaBrowser(messageId, trimmed, options));
 
   if (browserOk) return true;
-
-  clearAllPlayback();
-  markLoading(messageId);
-
-  const serverOk = await speakViaServer(messageId, trimmed, options);
-  if (serverOk) return true;
 
   markStopped();
   return false;

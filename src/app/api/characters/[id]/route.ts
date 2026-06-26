@@ -6,6 +6,10 @@ import { ensureProfile } from "@/lib/ensure-profile";
 import { bannedResponse } from "@/lib/auth/require-not-banned";
 import { checkUserRateLimit } from "@/lib/rate-limit";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { parseBody } from "@/lib/validation/parse";
+import { updateUserCharacterSchema } from "@/lib/validation/schemas";
+import { buildCharacterSystemPrompt } from "@/lib/characters/build-character-system-prompt";
+import { CREATE_VOICE_OPTIONS } from "@/constants/create-voices";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -23,7 +27,7 @@ async function getOwnedCharacterId(profileId: string, slugOrId: string): Promise
   return data?.id ?? null;
 }
 
-// User updates their own AI girl (model change, etc.).
+// User updates their own AI girl (name, personality, appearance, etc.).
 export async function PATCH(req: Request, context: RouteContext) {
   const { userId } = await auth();
   if (!userId) return new NextResponse("Unauthorized", { status: 401 });
@@ -41,7 +45,9 @@ export async function PATCH(req: Request, context: RouteContext) {
     return NextResponse.json({ error: "Character not found" }, { status: 404 });
   }
 
-  const body = (await req.json().catch(() => ({}))) as { aiModel?: string | null };
+  const parsed = await parseBody(req, updateUserCharacterSchema);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data;
 
   if (body.aiModel !== undefined && body.aiModel !== null) {
     if (!(await isValidUserModel(body.aiModel))) {
@@ -52,8 +58,64 @@ export async function PATCH(req: Request, context: RouteContext) {
     }
   }
 
+  if (body.voicePersonaId !== undefined && body.voicePersonaId !== null) {
+    if (!CREATE_VOICE_OPTIONS.some((v) => v.id === body.voicePersonaId)) {
+      return NextResponse.json({ error: "Invalid voice selection" }, { status: 400 });
+    }
+  }
+
+  // Get current character configuration to build the system prompt
+  const { data: current, error: getErr } = await supabaseAdmin()
+    .from("characters")
+    .select("name, age, gender, style, personality, tags, description, appearance, voice_id")
+    .eq("id", characterId)
+    .single();
+
+  if (getErr || !current) {
+    return NextResponse.json({ error: "Character details lookup failed" }, { status: 504 });
+  }
+
+  const mergedName = body.name !== undefined ? body.name : current.name;
+  const mergedAge = body.age !== undefined ? body.age : current.age;
+  const mergedGender = body.gender !== undefined ? body.gender : current.gender;
+  const mergedStyle = body.style !== undefined ? body.style : current.style;
+  const mergedPersonality = body.personality !== undefined ? body.personality : (current.personality ?? []);
+  const mergedTags = body.tags !== undefined ? body.tags : (current.tags ?? []);
+  const mergedRelationship = body.relationship !== undefined 
+    ? body.relationship 
+    : (mergedTags.find((t: string) =>
+        ["Girlfriend", "Best friend", "Crush", "Wife", "Roommate", "Mentor", "Secret admirer", "Fling"].includes(t),
+      ) ?? "");
+  const mergedDescription = body.description !== undefined ? body.description : current.description;
+  const mergedAppearance = body.appearance !== undefined ? body.appearance : current.appearance;
+  const mergedVoicePersonaId = body.voicePersonaId !== undefined ? body.voicePersonaId : current.voice_id;
+
+  const systemPrompt = buildCharacterSystemPrompt({
+    name: mergedName,
+    age: mergedAge ?? 24,
+    gender: (mergedGender as "female" | "trans") ?? "female",
+    style: (mergedStyle as "realistic" | "anime") ?? "realistic",
+    personality: mergedPersonality ?? [],
+    relationship: mergedRelationship ?? "",
+    description: mergedDescription ?? "",
+    appearance: mergedAppearance ?? {},
+    voicePersonaId: mergedVoicePersonaId ?? undefined,
+  });
+
   const character = await updateCharacter(characterId, {
+    name: mergedName,
+    tagline: body.tagline,
+    description: mergedDescription,
+    avatarUrl: body.avatarUrl,
+    tags: mergedTags,
+    personality: mergedPersonality,
     aiModel: body.aiModel === undefined ? undefined : body.aiModel,
+    systemPrompt: systemPrompt,
+    gender: mergedGender,
+    style: mergedStyle,
+    age: mergedAge,
+    appearance: mergedAppearance,
+    voiceId: mergedVoicePersonaId === undefined ? undefined : mergedVoicePersonaId,
   });
 
   if (!character) {
