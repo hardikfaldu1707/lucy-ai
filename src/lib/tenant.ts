@@ -2,6 +2,7 @@ import "server-only";
 
 import { unstable_cache } from "next/cache";
 import { headers } from "next/headers";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export interface TenantConfig {
@@ -83,6 +84,10 @@ function getCachedTenantByDomain(host: string) {
 }
 
 export async function resolveTenant(): Promise<TenantConfig> {
+  if (!isSupabaseConfigured()) {
+    return DEFAULT_TENANT;
+  }
+
   const h = await headers();
   const host = h.get("x-forwarded-host") ?? h.get("host") ?? "";
   const slugHeader = h.get("x-tenant-slug");

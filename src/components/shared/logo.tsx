@@ -15,6 +15,7 @@ export function LogoMark({ className, size = 36 }: LogoMarkProps) {
       alt="Lucy AI"
       width={size}
       height={size}
+      style={{ width: size, height: "auto" }}
       className={cn("rounded-full object-cover", className)}
       priority
     />

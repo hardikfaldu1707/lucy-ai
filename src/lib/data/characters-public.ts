@@ -3,6 +3,7 @@ import "server-only";
 import { revalidatePath, unstable_cache, revalidateTag } from "next/cache";
 import { resolveCharacterImageUrl } from "@/constants/character-portraits";
 import type { ExploreCharacter } from "@/constants/explore-characters";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export const PUBLIC_CHARACTERS_TAG = "public-characters";
@@ -58,6 +59,8 @@ function toExplore(r: PublicCharacterDbRow, isMine = false): ExploreCharacter {
 }
 
 async function loadPublicCharactersFromDb(): Promise<PublicCharacterDbRow[]> {
+  if (!isSupabaseConfigured()) return [];
+
   const { data, error } = await supabaseAdmin()
     .from("characters")
     .select(SELECT)
@@ -70,6 +73,8 @@ async function loadPublicCharactersFromDb(): Promise<PublicCharacterDbRow[]> {
 }
 
 async function loadPrivateCatalogCharactersFromDb(): Promise<PublicCharacterDbRow[]> {
+  if (!isSupabaseConfigured()) return [];
+
   const { data, error } = await supabaseAdmin()
     .from("characters")
     .select(SELECT)
@@ -83,6 +88,8 @@ async function loadPrivateCatalogCharactersFromDb(): Promise<PublicCharacterDbRo
 }
 
 async function loadUserCharactersFromDb(profileId: string): Promise<PublicCharacterDbRow[]> {
+  if (!isSupabaseConfigured()) return [];
+
   const { data, error } = await supabaseAdmin()
     .from("characters")
     .select(SELECT)
@@ -200,6 +207,8 @@ export async function listAuthenticatedCatalogCharactersLive(
 
 // A user's own created girls (any visibility), for their profile/dashboard.
 export async function listMyCharacters(profileId: string): Promise<ExploreCharacter[]> {
+  if (!isSupabaseConfigured()) return [];
+
   const { data, error } = await supabaseAdmin()
     .from("characters")
     .select(SELECT)

@@ -159,28 +159,45 @@ export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 
 export const mediaScopeSchema = z.enum(["user", "character", "platform"]);
 
-export const uploadMetaSchema = z
-  .object({
-    contentType: z
-      .string()
-      .regex(/^(image|video)\/[a-z0-9.+-]+$/i, "Only image/* and video/* uploads are allowed"),
-    size: z.number().int().positive(),
-    characterId: z.string().max(128).optional(),
-    scope: mediaScopeSchema.optional().default("user"),
+function refineUploadSize(
+  data: { contentType: string; size: number },
+  ctx: z.RefinementCtx,
+) {
+  const max = maxUploadBytesForContentType(data.contentType);
+  if (data.size > max) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: `File too large (max ${maxUploadLabelForContentType(data.contentType)})`,
+      path: ["size"],
+    });
+  }
+}
+
+export const uploadMetaBaseSchema = z.object({
+  contentType: z
+    .string()
+    .regex(/^(image|video)\/[a-z0-9.+-]+$/i, "Only image/* and video/* uploads are allowed"),
+  size: z.number().int().positive(),
+  characterId: z.string().max(128).optional(),
+  scope: mediaScopeSchema.optional().default("user"),
+  platformName: z
+    .string()
+    .trim()
+    .regex(/^[a-z0-9-]+$/, "Use lowercase letters, numbers, and hyphens")
+    .max(80)
+    .optional(),
+});
+
+export const uploadMetaSchema = uploadMetaBaseSchema.superRefine(refineUploadSize);
+
+export const platformUploadMetaSchema = uploadMetaBaseSchema
+  .extend({
+    scope: z.literal("platform"),
     platformName: z
       .string()
       .trim()
       .regex(/^[a-z0-9-]+$/, "Use lowercase letters, numbers, and hyphens")
-      .max(80)
-      .optional(),
+      .min(1)
+      .max(80),
   })
-  .superRefine((data, ctx) => {
-    const max = maxUploadBytesForContentType(data.contentType);
-    if (data.size > max) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: `File too large (max ${maxUploadLabelForContentType(data.contentType)})`,
-        path: ["size"],
-      });
-    }
-  });
+  .superRefine(refineUploadSize);

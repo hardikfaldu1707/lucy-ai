@@ -56,3 +56,6 @@ supabase/.temp/
 
 # Misc
 *.pem
+
+# clerk configuration (can include secrets)
+/.clerk/
