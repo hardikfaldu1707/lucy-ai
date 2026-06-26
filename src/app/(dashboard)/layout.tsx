@@ -6,7 +6,7 @@ import { BannedNotice } from "@/components/shared/banned-notice";
 import { CoinBalanceHydrator } from "@/components/shared/coin-balance-hydrator";
 import { OnboardingGate } from "@/components/onboarding/onboarding-gate";
 import { PushSubscribePrompt } from "@/components/push/push-subscribe-prompt";
-import { getBalance } from "@/lib/data/coins";
+import { getBalanceForProfile } from "@/lib/data/coins";
 import { ensureProfile } from "@/lib/ensure-profile";
 import { createServerSupabase } from "@/lib/supabase/server";
 
@@ -26,7 +26,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
     try {
       await ensureProfile();
-      coinBalance = await getBalance();
+      coinBalance = await getBalanceForProfile(userId);
     } catch {
       // Supabase not configured
     }

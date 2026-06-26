@@ -1,28 +1,62 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useInView } from "@/hooks/use-in-view";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-export const CHARACTER_GRID_PAGE_SIZE = 12;
+/** Cards revealed per scroll batch (keep small for mobile RAM). */
+export const CHARACTER_GRID_PAGE_SIZE = 8;
+
+function listFingerprint<T extends { id?: string }>(items: T[]): string {
+  if (items.length === 0) return "0";
+  return `${items.length}:${items[0]?.id ?? ""}:${items[items.length - 1]?.id ?? ""}`;
+}
 
 /** Reveal list items in batches as the user scrolls (reduces DOM + media load). */
-export function useProgressiveRender<T>(
+export function useProgressiveRender<T extends { id?: string }>(
   items: T[],
   pageSize = CHARACTER_GRID_PAGE_SIZE,
 ) {
-  const [visibleCount, setVisibleCount] = useState(pageSize);
-  const { ref: sentinelRef, inView } = useInView<HTMLDivElement>({
-    rootMargin: "240px",
-  });
+  const [visibleCount, setVisibleCount] = useState(() =>
+    Math.min(pageSize, items.length),
+  );
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const fingerprintRef = useRef(listFingerprint(items));
+  const pendingRef = useRef(false);
 
+  // Reset when filters/sort change the list — keyed by length + ends, not array reference.
   useEffect(() => {
-    setVisibleCount(pageSize);
+    const next = listFingerprint(items);
+    if (fingerprintRef.current === next) return;
+    fingerprintRef.current = next;
+    setVisibleCount(Math.min(pageSize, items.length));
   }, [items, pageSize]);
 
+  const loadMore = useCallback(() => {
+    setVisibleCount((count) => {
+      if (count >= items.length) return count;
+      return Math.min(count + pageSize, items.length);
+    });
+  }, [items.length, pageSize]);
+
   useEffect(() => {
-    if (!inView || visibleCount >= items.length) return;
-    setVisibleCount((count) => Math.min(count + pageSize, items.length));
-  }, [inView, items.length, pageSize, visibleCount]);
+    const el = sentinelRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        if (pendingRef.current) return;
+        pendingRef.current = true;
+        loadMore();
+        requestAnimationFrame(() => {
+          pendingRef.current = false;
+        });
+      },
+      { rootMargin: "80px", threshold: 0 },
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [loadMore]);
 
   return {
     visibleItems: items.slice(0, visibleCount),

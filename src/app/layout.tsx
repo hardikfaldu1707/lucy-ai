@@ -6,6 +6,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "@/styles/globals.css";
 import { AppProviders } from "@/providers/app-providers";
+import { ChunkLoadRecovery } from "@/components/dev/chunk-load-recovery";
 import { OrganizationJsonLd } from "@/components/shared/organization-json-ld";
 import { resolveTenant } from "@/lib/tenant";
 
@@ -48,6 +49,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  interactiveWidget: "resizes-content",
   themeColor: [
     { media: "(prefers-color-scheme: dark)", color: "#1a1625" },
     { media: "(prefers-color-scheme: light)", color: "#faf9fc" },
@@ -62,9 +64,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       suppressHydrationWarning
       style={{ "--tenant-primary": tenant.primaryColor } as Record<string, string>}
     >
-      <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`} data-tenant={tenant.slug}>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}
+        data-tenant={tenant.slug}
+        suppressHydrationWarning
+      >
         <OrganizationJsonLd />
         <ClerkProvider appearance={{ theme: shadcn }}>
+          <ChunkLoadRecovery />
           <AppProviders>{children}</AppProviders>
         </ClerkProvider>
         <Analytics />

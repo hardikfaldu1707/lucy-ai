@@ -11,7 +11,10 @@ import {
   type CharacterFormValues,
 } from "@/components/admin/character-form";
 import { CharacterPreviewDialog } from "@/components/admin/character-preview-dialog";
-import { CharacterAvatarPicker } from "@/components/admin/character-avatar-picker";
+import {
+  CharacterProfileMediaPicker,
+  type ProfileMediaState,
+} from "@/components/admin/character-profile-media-picker";
 import {
   Dialog,
   DialogContent,
@@ -38,7 +41,11 @@ export function AdminCharactersClient() {
   const [previewCharacter, setPreviewCharacter] = useState<AdminCharacter | null>(null);
   const [deleteCharacter, setDeleteCharacter] = useState<AdminCharacter | null>(null);
   const [photoEditCharacter, setPhotoEditCharacter] = useState<AdminCharacter | null>(null);
-  const [quickPhotoUrl, setQuickPhotoUrl] = useState<string>("");
+  const [quickProfileMedia, setQuickProfileMedia] = useState<ProfileMediaState>({
+    avatarUrl: "",
+    previewVideoUrl: "",
+    cardDisplayMode: "image",
+  });
 
   const { data: characters = [], isLoading, isError, error } = useQuery({
     queryKey: ["admin", "characters"],
@@ -76,21 +83,29 @@ export function AdminCharactersClient() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  // Dedicated mutation for quick photo change
-  const changePhotoMutation = useMutation({
-    mutationFn: async ({ id, avatarUrl }: { id: string; avatarUrl: string }) => {
+  const changeProfileMediaMutation = useMutation({
+    mutationFn: async ({
+      id,
+      avatarUrl,
+      previewVideoUrl,
+      cardDisplayMode,
+    }: ProfileMediaState & { id: string }) => {
       const res = await fetch(`/api/admin/characters/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ avatarUrl }),
+        body: JSON.stringify({
+          avatarUrl,
+          previewVideoUrl: previewVideoUrl || null,
+          cardDisplayMode,
+        }),
       });
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(err.error ?? "Failed to update photo");
+        throw new Error(err.error ?? "Failed to update profile media");
       }
     },
     onSuccess: () => {
-      toast.success("Companion photo updated");
+      toast.success("Profile media updated");
       setPhotoEditCharacter(null);
       invalidate();
     },
@@ -153,7 +168,11 @@ export function AdminCharactersClient() {
               onDelete={() => setDeleteCharacter(c)}
               onChangePhoto={() => {
                 setPhotoEditCharacter(c);
-                setQuickPhotoUrl(c.avatarUrl);
+                setQuickProfileMedia({
+                  avatarUrl: c.avatarUrl,
+                  previewVideoUrl: c.previewVideoUrl ?? "",
+                  cardDisplayMode: c.cardDisplayMode,
+                });
               }}
             />
           ))}
@@ -221,27 +240,28 @@ export function AdminCharactersClient() {
         </DialogContent>
       </Dialog>
 
-      {/* Quick Photo Change Dialog */}
+      {/* Quick profile media change */}
       <Dialog open={!!photoEditCharacter} onOpenChange={(open) => !open && setPhotoEditCharacter(null)}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Change Avatar for {photoEditCharacter?.name}</DialogTitle>
+            <DialogTitle>Change profile media for {photoEditCharacter?.name}</DialogTitle>
             <DialogDescription>
-              Upload a new photo, select a system preset, or paste a custom URL.
+              Upload a photo or video for the browse card. Video mode auto-creates a poster image.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <CharacterAvatarPicker
-              value={quickPhotoUrl}
-              onChange={setQuickPhotoUrl}
+            <CharacterProfileMediaPicker
+              value={quickProfileMedia}
+              onChange={(patch) => setQuickProfileMedia((prev) => ({ ...prev, ...patch }))}
               characterId={photoEditCharacter?.id}
+              previewSeed={photoEditCharacter?.id ?? "preview-seed"}
             />
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
             <Button
               type="button"
               variant="outline"
-              disabled={changePhotoMutation.isPending}
+              disabled={changeProfileMediaMutation.isPending}
               onClick={() => setPhotoEditCharacter(null)}
             >
               Cancel
@@ -249,17 +269,20 @@ export function AdminCharactersClient() {
             <Button
               type="button"
               variant="default"
-              disabled={changePhotoMutation.isPending}
+              disabled={
+                changeProfileMediaMutation.isPending ||
+                !quickProfileMedia.avatarUrl.trim()
+              }
               onClick={() => {
                 if (photoEditCharacter) {
-                  changePhotoMutation.mutate({
+                  changeProfileMediaMutation.mutate({
                     id: photoEditCharacter.id,
-                    avatarUrl: quickPhotoUrl,
+                    ...quickProfileMedia,
                   });
                 }
               }}
             >
-              {changePhotoMutation.isPending ? "Saving…" : "Save Photo"}
+              {changeProfileMediaMutation.isPending ? "Saving…" : "Save"}
             </Button>
           </DialogFooter>
         </DialogContent>

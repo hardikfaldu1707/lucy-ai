@@ -66,18 +66,19 @@ export function HomeExploreGallerySection({
     queryKey: ["home", "characters"],
     queryFn: fetchHomeCharacters,
     initialData: initialCharacters,
-    staleTime: 60_000,
-    refetchOnMount: initialCharacters === undefined,
+    staleTime: 5 * 60_000,
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
     enabled: isLoaded,
   });
 
   useEffect(() => {
-    if (isLoaded && isSignedIn && !wasSignedInRef.current) {
+    if (!isLoaded || !isSignedIn || wasSignedInRef.current) return;
+    wasSignedInRef.current = true;
+    if (initialCharacters === undefined) {
       void queryClient.invalidateQueries({ queryKey: ["home", "characters"] });
     }
-    wasSignedInRef.current = Boolean(isSignedIn);
-  }, [isLoaded, isSignedIn, queryClient]);
+  }, [isLoaded, isSignedIn, initialCharacters, queryClient]);
 
   const baseList = useMemo(
     () => dbCharacters ?? initialCharacters ?? [],

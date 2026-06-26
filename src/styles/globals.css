@@ -151,3 +151,7 @@
 @utility animate-heart-pulse {
   animation: heart-pulse 0.85s ease-in-out infinite;
 }
+
+.chat-surface {
+  touch-action: manipulation;
+}

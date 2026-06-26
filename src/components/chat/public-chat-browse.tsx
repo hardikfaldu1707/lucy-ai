@@ -300,7 +300,7 @@ export function PublicChatBrowse({ initialCharacters }: PublicChatBrowseProps) {
                   onChange={(e) => setSearch(e.target.value)}
                   autoComplete="off"
                   spellCheck={false}
-                  className="h-10 rounded-xl border-white/[0.08] bg-white/[0.04] pl-10 text-white placeholder:text-white/35 focus-visible:border-primary/40 focus-visible:ring-primary/20"
+                  className="h-10 rounded-xl border-white/[0.08] bg-white/[0.04] pl-10 text-base text-white placeholder:text-white/35 focus-visible:border-primary/40 focus-visible:ring-primary/20"
                 />
               </div>
             </div>
