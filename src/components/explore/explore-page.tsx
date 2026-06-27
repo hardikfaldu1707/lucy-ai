@@ -2,10 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, useEffect, useRef, type ReactNode } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, Search, SlidersHorizontal } from "lucide-react";
+import { ArrowRight, Search, SlidersHorizontal, Loader2 } from "lucide-react";
 import { ExploreCharacterCard } from "./explore-character-card";
 import { ExploreCreateCard } from "./explore-create-card";
 import { ExplorePromoCard } from "./explore-promo-card";
@@ -34,6 +34,8 @@ import { cn } from "@/lib/utils";
 
 type SortMode = "newest" | "popular";
 
+const ITEMS_PER_PAGE = 20;
+
 async function fetchExploreCharacters(): Promise<ExploreCharacter[]> {
   const res = await fetch("/api/characters", { cache: "no-store", credentials: "include" });
   if (!res.ok) throw new Error("Failed to load characters");
@@ -50,6 +52,9 @@ export function ExplorePage() {
   const [ageRange, setAgeRange] = useState<ExploreAgeRange>("any");
   const [activeTag, setActiveTag] = useState<ExploreFilterTag>("All");
   const [sort, setSort] = useState<SortMode>("newest");
+  const [displayCount, setDisplayCount] = useState(ITEMS_PER_PAGE);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
 
   const { data: dbCharacters } = useQuery({
     queryKey: ["explore", "characters"],
@@ -88,9 +93,54 @@ export function ExplorePage() {
     return list;
   }, [baseList, query, gender, style, ageRange, activeTag, sort]);
 
+  // Reset display count when filters change
+  useEffect(() => {
+    setDisplayCount(ITEMS_PER_PAGE);
+  }, [query, gender, style, ageRange, activeTag, sort]);
+
+  // Intersection Observer for infinite scroll
+  useEffect(() => {
+    if (!loadMoreRef.current || isLoadingMore || displayCount >= filtered.length) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const first = entries[0];
+        if (first.isIntersecting && !isLoadingMore && displayCount < filtered.length) {
+          console.log('Loading more characters...', { displayCount, total: filtered.length });
+          setIsLoadingMore(true);
+          // Simulate loading delay for smooth UX
+          setTimeout(() => {
+            setDisplayCount((prev) => {
+              const newCount = Math.min(prev + ITEMS_PER_PAGE, filtered.length);
+              console.log('Loaded more characters', { from: prev, to: newCount });
+              return newCount;
+            });
+            setIsLoadingMore(false);
+          }, 300);
+        }
+      },
+      { threshold: 0, rootMargin: "400px" }
+    );
+
+    const currentRef = loadMoreRef.current;
+    observer.observe(currentRef);
+
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef);
+      }
+    };
+  }, [isLoadingMore, displayCount, filtered.length]);
+
+  const visibleCharacters = useMemo(() => {
+    return filtered.slice(0, displayCount);
+  }, [filtered, displayCount]);
+
   const gridItems = useMemo(() => {
     const items: ReactNode[] = [<ExploreCreateCard key="create" />];
-    filtered.forEach((character, index) => {
+    visibleCharacters.forEach((character, index) => {
       items.push(
         <ExploreCharacterCard
           key={character.id}
@@ -103,7 +153,7 @@ export function ExplorePage() {
       }
     });
     return items;
-  }, [filtered]);
+  }, [visibleCharacters]);
 
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-black text-white md:pb-12 md:pt-6">
@@ -127,6 +177,7 @@ export function ExplorePage() {
                 fill
                 className="object-cover object-[center_20%]"
                 priority
+                loading="eager"
                 sizes="60vw"
               />
               <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/55 to-black/30" />
@@ -160,10 +211,13 @@ export function ExplorePage() {
               <div className="flex flex-col gap-4">
                 <div className="flex items-center gap-3">
                   <h2 className="text-xl font-bold text-white sm:text-2xl">Join In</h2>
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-pink-500 px-3 py-1 text-xs font-semibold text-white">
-                    <span className="relative flex h-2 w-2">
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75"></span>
-                      <span className="relative inline-flex h-2 w-2 rounded-full bg-white"></span>
+                  <span className="inline-flex items-center gap-2 rounded-full bg-pink-500 px-3 py-1.5 text-xs font-semibold text-white">
+                    {/* Audio wave animation */}
+                    <span className="flex items-center gap-0.5">
+                      <span className="h-2.5 w-0.5 animate-pulse rounded-full bg-white" style={{ animationDelay: '0ms', animationDuration: '600ms' }}></span>
+                      <span className="h-3 w-0.5 animate-pulse rounded-full bg-white" style={{ animationDelay: '150ms', animationDuration: '600ms' }}></span>
+                      <span className="h-2 w-0.5 animate-pulse rounded-full bg-white" style={{ animationDelay: '300ms', animationDuration: '600ms' }}></span>
+                      <span className="h-3.5 w-0.5 animate-pulse rounded-full bg-white" style={{ animationDelay: '450ms', animationDuration: '600ms' }}></span>
                     </span>
                     Live
                   </span>
@@ -173,25 +227,68 @@ export function ExplorePage() {
                 </p>
                 
                 {/* Character avatars */}
-                <div className="flex items-center gap-3">
-                  {/* Show database characters if available, otherwise show default avatars */}
-                  {filtered.length > 0 && filtered.some(char => char.avatarUrl?.trim()) ? (
-                    <>
-                      {filtered
-                        .filter((char) => char.avatarUrl && char.avatarUrl.trim() !== "")
-                        .slice(0, 5)
-                        .map((char) => (
-                          <Link
-                            key={char.id}
-                            href={`/chat/${char.slug}`}
-                            className="group relative"
+                <div className="relative">
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    {/* Show database characters if available, otherwise show default avatars */}
+                    {filtered.length > 0 && filtered.some(char => char.image?.trim()) ? (
+                      <>
+                        {filtered
+                          .filter((char) => char.image && char.image.trim() !== "")
+                          .slice(0, 5)
+                          .map((char, index) => (
+                            <Link
+                              key={char.id}
+                              href={`/chat/${char.id}`}
+                              className="group relative shrink-0 transition-opacity"
+                              style={{ 
+                                opacity: 1 - (index * 0.15),
+                              }}
+                            >
+                              <div className="relative h-16 w-16 overflow-hidden rounded-full ring-2 ring-white/10 transition-all group-hover:ring-pink-500 sm:h-20 sm:w-20">
+                                <Image
+                                  src={char.image}
+                                  alt={char.name}
+                                  fill
+                                  className="object-cover"
+                                  loading="lazy"
+                                  sizes="80px"
+                                />
+                              </div>
+                              {/* Live indicator */}
+                              <span className="absolute bottom-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-green-500 ring-2 ring-black">
+                                <span className="h-2 w-2 rounded-full bg-white"></span>
+                              </span>
+                            </Link>
+                          ))}
+                        {filtered.filter((char) => char.image && char.image.trim() !== "").length > 5 && (
+                          <button
+                            type="button"
+                            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-2 border-white/20 bg-transparent text-white transition-colors hover:border-white/40 hover:bg-white/10 sm:h-20 sm:w-20"
+                            aria-label="View more characters"
+                            style={{ opacity: 0.3 }}
                           >
-                            <div className="relative h-16 w-16 overflow-hidden rounded-full ring-2 ring-white/10 transition-all group-hover:ring-pink-500 sm:h-20 sm:w-20">
+                            <ArrowRight className="h-6 w-6" />
+                          </button>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        {/* Fallback: show default avatars */}
+                        {EXPLORE_JOIN_AVATARS.map((src, i) => (
+                          <div 
+                            key={`avatar-${i}`} 
+                            className="relative shrink-0 transition-opacity"
+                            style={{ 
+                              opacity: 1 - (i * 0.15),
+                            }}
+                          >
+                            <div className="relative h-16 w-16 overflow-hidden rounded-full ring-2 ring-white/10 sm:h-20 sm:w-20">
                               <Image
-                                src={char.avatarUrl}
-                                alt={char.name}
+                                src={src}
+                                alt=""
                                 fill
                                 className="object-cover"
+                                loading="lazy"
                                 sizes="80px"
                               />
                             </div>
@@ -199,47 +296,21 @@ export function ExplorePage() {
                             <span className="absolute bottom-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-green-500 ring-2 ring-black">
                               <span className="h-2 w-2 rounded-full bg-white"></span>
                             </span>
-                          </Link>
+                          </div>
                         ))}
-                      {filtered.filter((char) => char.avatarUrl && char.avatarUrl.trim() !== "").length > 5 && (
                         <button
                           type="button"
-                          className="flex h-16 w-16 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 sm:h-20 sm:w-20"
+                          className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-2 border-white/20 bg-transparent text-white transition-colors hover:border-white/40 hover:bg-white/10 sm:h-20 sm:w-20"
                           aria-label="View more characters"
+                          style={{ opacity: 0.3 }}
                         >
                           <ArrowRight className="h-6 w-6" />
                         </button>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      {/* Fallback: show default avatars */}
-                      {EXPLORE_JOIN_AVATARS.map((src, i) => (
-                        <div key={`avatar-${i}`} className="relative">
-                          <div className="relative h-16 w-16 overflow-hidden rounded-full ring-2 ring-white/10 sm:h-20 sm:w-20">
-                            <Image
-                              src={src}
-                              alt=""
-                              fill
-                              className="object-cover"
-                              sizes="80px"
-                            />
-                          </div>
-                          {/* Live indicator */}
-                          <span className="absolute bottom-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-green-500 ring-2 ring-black">
-                            <span className="h-2 w-2 rounded-full bg-white"></span>
-                          </span>
-                        </div>
-                      ))}
-                      <button
-                        type="button"
-                        className="flex h-16 w-16 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 sm:h-20 sm:w-20"
-                        aria-label="View more characters"
-                      >
-                        <ArrowRight className="h-6 w-6" />
-                      </button>
-                    </>
-                  )}
+                      </>
+                    )}
+                  </div>
+                  {/* Gradient overlay fade effect */}
+                  <div className="pointer-events-none absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-black/80 via-black/40 to-transparent" />
                 </div>
               </div>
             </div>
@@ -351,13 +422,38 @@ export function ExplorePage() {
         {filtered.length === 0 ? (
           <p className="py-20 text-center text-white/50">No companions match your filters. Try another tag.</p>
         ) : (
-          <div
-            className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
-            role="list"
-            aria-label="Character gallery"
-          >
-            {gridItems}
-          </div>
+          <>
+            <div
+              className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+              role="list"
+              aria-label="Character gallery"
+            >
+              {gridItems}
+            </div>
+
+            {/* Infinite scroll trigger - always present for observation */}
+            <div 
+              ref={loadMoreRef} 
+              className="flex min-h-[100px] items-center justify-center py-8"
+            >
+              {displayCount < filtered.length ? (
+                isLoadingMore ? (
+                  <div className="flex items-center gap-2 text-white/60">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span className="text-sm">Loading more characters...</span>
+                  </div>
+                ) : (
+                  <div className="text-sm text-white/30">
+                    Scroll to load more
+                  </div>
+                )
+              ) : filtered.length > ITEMS_PER_PAGE ? (
+                <div className="text-sm text-white/40">
+                  All {filtered.length} characters loaded
+                </div>
+              ) : null}
+            </div>
+          </>
         )}
 
       </div>

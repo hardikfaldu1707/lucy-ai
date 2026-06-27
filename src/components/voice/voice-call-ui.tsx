@@ -73,6 +73,46 @@ export function VoiceCallUI({
   const setCoinBalance = useSetCoinBalance();
   const { data: coinBalance } = useCoinBalance();
 
+  // Check microphone permission on mount
+  useEffect(() => {
+    const checkMicPermission = async () => {
+      try {
+        if (navigator.permissions) {
+          const permissionStatus = await navigator.permissions.query({ name: 'microphone' as PermissionName });
+          
+          if (permissionStatus.state === 'granted') {
+            // Permission already granted, skip to confirm stage
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            setLocalStream(stream);
+            setStage("confirm");
+          } else if (permissionStatus.state === 'denied') {
+            setMicStatus("denied");
+          }
+          
+          // Listen for permission changes
+          permissionStatus.addEventListener('change', () => {
+            if (permissionStatus.state === 'granted' && stage === 'mic') {
+              navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(stream => {
+                  setLocalStream(stream);
+                  setMicStatus("prompt");
+                  setStage("confirm");
+                })
+                .catch(() => setMicStatus("denied"));
+            } else if (permissionStatus.state === 'denied') {
+              setMicStatus("denied");
+            }
+          });
+        }
+      } catch (error) {
+        // Permission API not supported or error, stay on mic stage
+        console.log('Permission check failed:', error);
+      }
+    };
+
+    void checkMicPermission();
+  }, []); // Only run once on mount
+
   const openRouterVoice = useOpenRouterVoice({
     sessionId: voiceMode === "native" ? sessionId : null,
     onStateChange: (s) => {
@@ -130,6 +170,20 @@ export function VoiceCallUI({
     setMicStatus("requesting");
     warmVoicePlayback();
     try {
+      // First check if we already have permission
+      if (navigator.permissions) {
+        const permissionStatus = await navigator.permissions.query({ name: 'microphone' as PermissionName });
+        if (permissionStatus.state === 'granted') {
+          // Permission already granted, directly get the stream
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          setLocalStream(stream);
+          setMicStatus("prompt");
+          setStage("confirm");
+          return;
+        }
+      }
+      
+      // If no permission API or not granted, request it
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       setLocalStream(stream);
       setMicStatus("prompt");
@@ -333,6 +387,19 @@ export function VoiceCallUI({
               animate={{ scale: 1, opacity: 1 }}
               className="relative mb-6"
             >
+              {/* Pulse animations - always visible during active call */}
+              {stage === "active" && (
+                <>
+                  <div className="absolute inset-0 -z-10 flex items-center justify-center">
+                    <div className="absolute h-40 w-40 animate-ping rounded-full bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 opacity-20 sm:h-44 sm:w-44" style={{ animationDuration: '2s' }} />
+                  </div>
+                  <div className="absolute inset-0 -z-10 flex items-center justify-center">
+                    <div className="absolute h-44 w-44 animate-pulse rounded-full bg-gradient-to-r from-blue-500 via-cyan-500 to-pink-500 opacity-10 sm:h-48 sm:w-48" style={{ animationDuration: '3s' }} />
+                  </div>
+                </>
+              )}
+              
+              {/* Extra pulse when speaking */}
               {state === "speaking" && (
                 <>
                   <div className="absolute inset-0 animate-ping rounded-full bg-pink-500/20" />
@@ -366,24 +433,6 @@ export function VoiceCallUI({
               <Wifi className="h-3 w-3" aria-hidden />
               {stage === "ended" ? "Call ended" : statusLabel}
             </Badge>
-
-            {stage === "active" && voiceMode === "text" && (
-              <Badge
-                variant="outline"
-                className="mt-2 border-violet-500/30 bg-violet-500/10 text-violet-200"
-              >
-                OpenRouter chat voice
-              </Badge>
-            )}
-
-            {stage === "active" && voiceMode === "native" && (
-              <Badge
-                variant="outline"
-                className="mt-2 border-violet-500/30 bg-violet-500/10 text-violet-200"
-              >
-                GPT audio voice
-              </Badge>
-            )}
 
             {stage === "active" && (
               <>
@@ -457,6 +506,35 @@ export function VoiceCallUI({
                 >
                   {speaker ? <Volume2 /> : <VolumeX />}
                 </Button>
+              </div>
+            )}
+
+            {/* Siri-style pulse wave animation */}
+            {stage === "active" && state === "speaking" && (
+              <div className="mt-12 flex h-16 w-full max-w-sm items-center justify-center">
+                <div className="flex items-center justify-center gap-1">
+                  {[...Array(40)].map((_, i) => {
+                    const delay = i * 0.05;
+                    const heightVariation = Math.sin(i * 0.5) * 20 + 30;
+                    return (
+                      <motion.div
+                        key={i}
+                        className="w-1 rounded-full bg-gradient-to-t from-pink-500 via-purple-500 to-blue-500"
+                        initial={{ height: 4 }}
+                        animate={{
+                          height: [4, heightVariation, 4],
+                          opacity: [0.3, 1, 0.3],
+                        }}
+                        transition={{
+                          duration: 1.2,
+                          repeat: Infinity,
+                          delay,
+                          ease: "easeInOut",
+                        }}
+                      />
+                    );
+                  })}
+                </div>
               </div>
             )}
 
