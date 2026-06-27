@@ -35,7 +35,7 @@ function CardContent({
             : "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
         }
       />
-      <div className="absolute inset-0 z-0 bg-gradient-to-t from-[#df1a97] from-[0%] via-[#df1a97]/80 via-[15%] to-transparent to-[35%] opacity-0 transition-opacity duration-300 group-hover/card:opacity-100" />
+      <div className="absolute inset-0 z-0 bg-gradient-to-t from-[#df1a97] from-[0%] via-[#df1a97]/80 via-[15%] to-transparent to-[35%] opacity-0 transition-opacity duration-300 group-hover/card:opacity-70" />
 
       {character.isNew && (
         <span

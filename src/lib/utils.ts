@@ -89,12 +89,17 @@ export function formatChatDateLabel(date: string | Date): string {
 
   if (diffDays === 0) return "Today";
   if (diffDays === 1) return "Yesterday";
-  return d.toLocaleDateString(undefined, {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: d.getFullYear() !== now.getFullYear() ? "numeric" : undefined,
-  });
+  
+  // Use consistent formatting to avoid hydration mismatches
+  const weekday = d.toLocaleDateString("en-US", { weekday: "long" });
+  const month = d.toLocaleDateString("en-US", { month: "long" });
+  const day = d.getDate();
+  const year = d.getFullYear();
+  
+  if (year !== now.getFullYear()) {
+    return `${weekday}, ${month} ${day}, ${year}`;
+  }
+  return `${weekday}, ${month} ${day}`;
 }
 
 export function chatDateKey(date: string | Date): string {

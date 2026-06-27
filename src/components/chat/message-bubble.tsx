@@ -51,7 +51,7 @@ function BubbleMeta({
         inline ? "text-[11px] leading-none" : "px-1 text-[10px]",
       )}
     >
-      <time dateTime={createdAt} className={timeClass}>
+      <time dateTime={createdAt} className={timeClass} suppressHydrationWarning>
         {inline ? formatBubbleTime(createdAt) : formatChatTime(createdAt)}
       </time>
       {isUser && deliveryStatus && (

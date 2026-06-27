@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
-import { ChevronLeft, ChevronRight, Menu, PanelLeft, Plus, Search } from "lucide-react";
+import { ChevronLeft, Menu, PanelLeft, Plus, Search } from "lucide-react";
 import { ConversationList } from "@/components/chat/conversation-list";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -185,18 +185,6 @@ export function ChatMessengerShell({
                 <Link href={ROUTES.publicChatNew}>
                   <Plus className="h-5 w-5" />
                 </Link>
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className={cn(
-                  "hidden h-8 w-8 md:flex",
-                  isDark && "text-white/50 hover:bg-white/10 hover:text-white",
-                )}
-                onClick={toggleChatSidebarCollapsed}
-                aria-label="Expand conversations"
-              >
-                <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
           ) : (
