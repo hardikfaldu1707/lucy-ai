@@ -5,13 +5,13 @@ export type CreateStyle = "realistic" | "anime";
 
 export const CREATE_PROGRESS_STEPS = [
   { id: "style", label: "Style" },
+  { id: "ethnicity", label: "Ethnicity" },
   { id: "hair", label: "Hair" },
   { id: "body", label: "Body" },
   { id: "outfit", label: "Outfit" },
   { id: "identity", label: "Identity" },
   { id: "personality", label: "Personality" },
   { id: "voice", label: "Voice" },
-  { id: "photo", label: "Photo" },
   { id: "bond", label: "Bond" },
 ] as const;
 
@@ -83,7 +83,7 @@ export const CREATE_FAQ_ITEMS = [
   {
     question: "How do I Create Your AI Girlfriend from scratch?",
     answer:
-      "Pick a style (Realistic or Anime), customize her look, personality, and voice, then define your relationship. Hit Continue and finish your account to start chatting.",
+      "Pick a style (Realistic or Anime), ethnicity, hair, body, and outfit, then set personality and voice and define your relationship. No photo upload — hit Create & Chat to start.",
   },
   {
     question: "Can I customize my AI girlfriend's personality?",

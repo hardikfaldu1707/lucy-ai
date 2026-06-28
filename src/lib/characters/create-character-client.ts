@@ -4,7 +4,7 @@ export type CreateCharacterPayload = {
   name: string;
   tagline?: string;
   description?: string;
-  avatarUrl: string;
+  avatarUrl?: string;
   tags?: string[];
   personality?: string[];
   gender?: "female";
@@ -31,7 +31,7 @@ export async function submitUserCharacter(
       name: payload.name.trim(),
       tagline: payload.tagline?.trim(),
       description: payload.description?.trim(),
-      avatarUrl: payload.avatarUrl.trim(),
+      avatarUrl: payload.avatarUrl?.trim() || undefined,
       tags: payload.tags,
       personality: payload.personality,
       gender: payload.gender ?? "female",

@@ -38,7 +38,10 @@ export function formatDuration(seconds: number): string {
 const CHAT_TIME: Intl.DateTimeFormatOptions = {
   hour: "numeric",
   minute: "2-digit",
+  hour12: true,
 };
+
+const CHAT_TIME_LOCALE = "en-US";
 
 function startOfDay(d: Date): number {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
@@ -49,22 +52,22 @@ export function formatChatTime(date: string | Date): string {
   const now = new Date();
   const diffDays = Math.floor((startOfDay(now) - startOfDay(d)) / 86400000);
 
-  const time = d.toLocaleTimeString(undefined, CHAT_TIME);
+  const time = d.toLocaleTimeString(CHAT_TIME_LOCALE, CHAT_TIME);
 
   if (diffDays === 0) return time;
   if (diffDays === 1) return `Yesterday ${time}`;
   if (diffDays < 7) {
-    const weekday = d.toLocaleDateString(undefined, { weekday: "short" });
+    const weekday = d.toLocaleDateString(CHAT_TIME_LOCALE, { weekday: "short" });
     return `${weekday} ${time}`;
   }
-  const datePart = d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  const datePart = d.toLocaleDateString(CHAT_TIME_LOCALE, { month: "short", day: "numeric" });
   return `${datePart}, ${time}`;
 }
 
 /** Short time for inside message bubbles (WhatsApp-style). */
 export function formatBubbleTime(date: string | Date): string {
   const d = typeof date === "string" ? new Date(date) : date;
-  return d.toLocaleTimeString(undefined, CHAT_TIME);
+  return d.toLocaleTimeString(CHAT_TIME_LOCALE, CHAT_TIME);
 }
 
 /** Compact time for chat sidebar rows (today = time only, else short date). */
@@ -73,10 +76,10 @@ export function formatChatListTime(date: string | Date): string {
   const now = new Date();
   const diffDays = Math.floor((startOfDay(now) - startOfDay(d)) / 86400000);
 
-  if (diffDays === 0) return d.toLocaleTimeString(undefined, CHAT_TIME);
+  if (diffDays === 0) return d.toLocaleTimeString(CHAT_TIME_LOCALE, CHAT_TIME);
   if (diffDays === 1) return "Yesterday";
-  if (diffDays < 7) return d.toLocaleDateString(undefined, { weekday: "short" });
-  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  if (diffDays < 7) return d.toLocaleDateString(CHAT_TIME_LOCALE, { weekday: "short" });
+  return d.toLocaleDateString(CHAT_TIME_LOCALE, { month: "short", day: "numeric" });
 }
 
 export function formatChatDateLabel(date: string | Date): string {

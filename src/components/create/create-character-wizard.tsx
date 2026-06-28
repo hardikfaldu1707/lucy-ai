@@ -1,13 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 import {
-  Camera,
   Check,
   ChevronLeft,
   ChevronRight,
+  Globe,
   Heart,
   Mic,
   Sparkles,
@@ -19,13 +19,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { CharacterAvatarPicker } from "@/components/admin/character-avatar-picker";
 import {
   CREATE_PROGRESS_STEPS,
   CREATE_STYLES,
   type CreateStyle,
 } from "@/constants/create-page";
 import {
+  CREATE_ETHNICITIES,
   CREATE_HAIR_COLORS,
   CREATE_HAIR_STYLES,
   CREATE_BODY_TYPES,
@@ -50,18 +50,19 @@ import {
   shouldAutoSubmitCreate,
   type CreateCharacterDraft,
 } from "@/lib/characters/create-draft";
+import { resolveCreateAvatarFromDraft } from "@/lib/characters/resolve-create-avatar";
 import { cn } from "@/lib/utils";
 import { useFlag } from "@/hooks/use-flags";
 
 const PROGRESS_ICONS = [
   User,
+  Globe,
   Sparkles,
   User,
   Sparkles,
-  User,
   Heart,
+  Sparkles,
   Mic,
-  Camera,
   Heart,
 ] as const;
 
@@ -167,6 +168,34 @@ function AppearanceGrid({
           </button>
         );
       })}
+    </div>
+  );
+}
+
+function CreatePortraitPreview({ draft }: { draft: CreateCharacterDraft }) {
+  const portraitSrc = useMemo(() => resolveCreateAvatarFromDraft(draft), [draft]);
+  const displayName = draft.name.trim() || "Your AI girl";
+
+  return (
+    <div className="mx-auto w-full max-w-[200px] lg:max-w-none">
+      <p className="mb-2 text-center text-xs font-medium uppercase tracking-wide text-white/45 lg:text-left">
+        Live preview
+      </p>
+      <div className="overflow-hidden rounded-2xl ring-2 ring-white/10">
+        <div className="relative aspect-[3/4] w-full bg-black/40">
+          <OptionPreviewImage
+            src={portraitSrc || null}
+            alt={displayName}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 p-3">
+            <p className="truncate text-sm font-semibold text-white">{displayName}</p>
+            {draft.relationship && (
+              <p className="truncate text-xs text-white/60">{draft.relationship}</p>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -314,19 +343,19 @@ export function CreateCharacterWizard({
       case 0:
         return true;
       case 1:
-        return draft.hairStyle.length > 0 && draft.hairColor.length > 0;
+        return draft.ethnicity.length > 0;
       case 2:
-        return draft.bodyType.length > 0;
+        return draft.hairStyle.length > 0 && draft.hairColor.length > 0;
       case 3:
-        return draft.outfit.length > 0;
+        return draft.bodyType.length > 0;
       case 4:
-        return draft.name.trim().length > 0 && draft.age >= 18;
+        return draft.outfit.length > 0;
       case 5:
-        return draft.personality.length > 0;
+        return draft.name.trim().length > 0 && draft.age >= 18;
       case 6:
-        return draft.voicePersonaId.length > 0;
+        return draft.personality.length > 0;
       case 7:
-        return draft.avatarUrl.trim().length > 0;
+        return draft.voicePersonaId.length > 0;
       case 8:
         return draft.relationship.length > 0;
       default:
@@ -356,6 +385,8 @@ export function CreateCharacterWizard({
     void runSubmit();
   }
 
+  const reviewPortraitSrc = resolveCreateAvatarFromDraft(draft);
+
   if (mode === "create" && canCreate === false) {
     return (
       <div className="mx-auto max-w-md px-4 py-20 text-center text-white">
@@ -378,7 +409,7 @@ export function CreateCharacterWizard({
           aria-hidden
         />
 
-        <div className="relative mx-auto max-w-4xl px-4 sm:px-6">
+        <div className="relative mx-auto max-w-5xl px-4 sm:px-6">
           <nav
             className="mb-8 flex items-center justify-center gap-1.5 sm:mb-10 sm:gap-2"
             aria-label="Creation progress"
@@ -418,7 +449,7 @@ export function CreateCharacterWizard({
             })}
           </nav>
 
-          <header className="mb-8 text-center">
+          <header className="mb-6 text-center md:mb-8">
             <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
               {mode === "edit" ? "Edit Your " : "Create Your "}
               <span className="bg-gradient-to-r from-primary to-violet-400 bg-clip-text text-transparent">
@@ -430,320 +461,337 @@ export function CreateCharacterWizard({
             </p>
           </header>
 
-          {step === 0 && (
-            <section className="space-y-8">
-              <div className="grid grid-cols-2 gap-3 sm:gap-5">
-                {CREATE_STYLES.map((item) => {
-                  const selected = draft.style === item.id;
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => updateDraft({ style: item.id as CreateStyle })}
-                      className={cn(
-                        "group relative overflow-hidden rounded-2xl text-left ring-2 transition-all sm:rounded-3xl",
-                        selected
-                          ? "ring-primary shadow-[0_0_32px_-8px_rgba(124,58,237,0.5)]"
-                          : "ring-white/10 hover:ring-white/25",
-                      )}
-                      aria-pressed={selected}
-                    >
-                      <div className="relative aspect-[3/4] w-full">
-                        <OptionPreviewImage
-                          src={item.image}
-                          alt={`${item.label} style`}
-                          sizes="(max-width: 640px) 45vw, 320px"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
-                        {selected && (
-                          <span className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-white shadow-lg">
-                            <Check className="h-4 w-4" strokeWidth={3} aria-hidden />
-                          </span>
-                        )}
-                        <span
+          <div className="mb-6 md:hidden">
+            <CreatePortraitPreview draft={draft} />
+          </div>
+
+          <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
+            <div className="min-w-0 flex-1">
+              {step === 0 && (
+                <section className="space-y-8">
+                  <div className="grid grid-cols-2 gap-3 sm:gap-5">
+                    {CREATE_STYLES.map((item) => {
+                      const selected = draft.style === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => updateDraft({ style: item.id as CreateStyle })}
                           className={cn(
-                            "absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full px-5 py-1.5 text-sm font-semibold",
-                            selected ? "bg-primary text-white" : "bg-black/60 text-white/90",
+                            "group relative overflow-hidden rounded-2xl text-left ring-2 transition-all sm:rounded-3xl",
+                            selected
+                              ? "ring-primary shadow-[0_0_32px_-8px_rgba(124,58,237,0.5)]"
+                              : "ring-white/10 hover:ring-white/25",
+                          )}
+                          aria-pressed={selected}
+                        >
+                          <div className="relative aspect-[3/4] w-full">
+                            <OptionPreviewImage
+                              src={item.image}
+                              alt={`${item.label} style`}
+                              sizes="(max-width: 640px) 45vw, 320px"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
+                            {selected && (
+                              <span className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-white shadow-lg">
+                                <Check className="h-4 w-4" strokeWidth={3} aria-hidden />
+                              </span>
+                            )}
+                            <span
+                              className={cn(
+                                "absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full px-5 py-1.5 text-sm font-semibold",
+                                selected ? "bg-primary text-white" : "bg-black/60 text-white/90",
+                              )}
+                            >
+                              {item.label}
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
+
+              {step === 1 && (
+                <section className="space-y-4">
+                  <p className="text-center text-sm text-white/60">Choose her ethnicity.</p>
+                  <AppearanceGrid
+                    options={CREATE_ETHNICITIES}
+                    value={draft.ethnicity}
+                    onChange={(id) => updateDraft({ ethnicity: id })}
+                    columns={4}
+                  />
+                </section>
+              )}
+
+              {step === 2 && (
+                <section className="space-y-8">
+                  <div className="space-y-3">
+                    <p className="text-center text-sm font-medium text-white/80">Hair style</p>
+                    <AppearanceGrid
+                      options={CREATE_HAIR_STYLES}
+                      value={draft.hairStyle}
+                      onChange={(id) => updateDraft({ hairStyle: id })}
+                      columns={4}
+                    />
+                  </div>
+                  <div className="space-y-3">
+                    <p className="text-center text-sm font-medium text-white/80">Hair color</p>
+                    <AppearanceGrid
+                      options={CREATE_HAIR_COLORS}
+                      value={draft.hairColor}
+                      onChange={(id) => updateDraft({ hairColor: id })}
+                      columns={4}
+                    />
+                  </div>
+                </section>
+              )}
+
+              {step === 3 && (
+                <section className="space-y-4">
+                  <p className="text-center text-sm text-white/60">Choose her body type.</p>
+                  <AppearanceGrid
+                    options={CREATE_BODY_TYPES}
+                    value={draft.bodyType}
+                    onChange={(id) => updateDraft({ bodyType: id })}
+                    columns={3}
+                  />
+                </section>
+              )}
+
+              {step === 4 && (
+                <section className="space-y-4">
+                  <p className="text-center text-sm text-white/60">Pick her usual outfit.</p>
+                  <AppearanceGrid
+                    options={CREATE_OUTFITS}
+                    value={draft.outfit}
+                    onChange={(id) => updateDraft({ outfit: id })}
+                    columns={4}
+                  />
+                </section>
+              )}
+
+              {step === 5 && (
+                <section className="mx-auto max-w-md space-y-5">
+                  <div className="space-y-2">
+                    <Label htmlFor="create-name" className="text-white/80">
+                      Name
+                    </Label>
+                    <Input
+                      id="create-name"
+                      value={draft.name}
+                      onChange={(e) => updateDraft({ name: e.target.value })}
+                      placeholder="e.g. Luna"
+                      className="border-white/15 bg-white/5 text-white"
+                      autoFocus
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="create-age" className="text-white/80">
+                      Age
+                    </Label>
+                    <Input
+                      id="create-age"
+                      type="number"
+                      min={18}
+                      max={120}
+                      value={draft.age}
+                      onChange={(e) => updateDraft({ age: Number(e.target.value) || 18 })}
+                      className="border-white/15 bg-white/5 text-white"
+                    />
+                  </div>
+                </section>
+              )}
+
+              {step === 6 && (
+                <section className="mx-auto max-w-lg space-y-5">
+                  <p className="text-center text-sm text-white/60">
+                    Pick up to 5 traits that define her personality.
+                  </p>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {CREATE_PERSONALITY_TRAITS.map((trait) => {
+                      const selected = draft.personality.includes(trait);
+                      return (
+                        <button
+                          key={trait}
+                          type="button"
+                          onClick={() => toggleTrait(trait)}
+                          className={cn(
+                            "rounded-full px-4 py-2 text-sm font-medium transition-colors",
+                            selected
+                              ? "bg-primary text-white"
+                              : "bg-white/10 text-white/70 hover:bg-white/15",
                           )}
                         >
-                          {item.label}
-                        </span>
+                          {trait}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="create-bio" className="text-white/80">
+                      About her (optional)
+                    </Label>
+                    <Textarea
+                      id="create-bio"
+                      value={draft.description}
+                      onChange={(e) => updateDraft({ description: e.target.value })}
+                      rows={3}
+                      placeholder="A few lines about who she is..."
+                      className="border-white/15 bg-white/5 text-white"
+                    />
+                  </div>
+                </section>
+              )}
+
+              {step === 7 && (
+                <section className="mx-auto max-w-lg space-y-4">
+                  <p className="text-center text-sm text-white/60">
+                    Choose her voice — tap to select, use preview to hear a sample.
+                  </p>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {CREATE_VOICE_OPTIONS.map((voice) => {
+                      const selected = draft.voicePersonaId === voice.id;
+                      const loading = previewingVoice === voice.id;
+                      return (
+                        <div
+                          key={voice.id}
+                          className={cn(
+                            "flex items-center gap-2 rounded-xl border p-3 transition-colors",
+                            selected
+                              ? "border-primary bg-primary/15"
+                              : "border-white/10 bg-white/5",
+                          )}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => updateDraft({ voicePersonaId: voice.id })}
+                            className="min-w-0 flex-1 text-left"
+                          >
+                            <p className="text-sm font-semibold text-white">{voice.label}</p>
+                            <p className="text-xs text-white/55">{voice.description}</p>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => previewVoice(voice.id)}
+                            disabled={loading}
+                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-white/80 hover:bg-white/20 disabled:opacity-50"
+                            aria-label={`Preview ${voice.label}`}
+                          >
+                            <Volume2 className="h-4 w-4" aria-hidden />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
+
+              {step === 8 && (
+                <section className="mx-auto max-w-lg space-y-6">
+                  <p className="text-center text-sm text-white/60">
+                    What is your relationship with her?
+                  </p>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {CREATE_RELATIONSHIP_TYPES.map((rel) => {
+                      const selected = draft.relationship === rel;
+                      return (
+                        <button
+                          key={rel}
+                          type="button"
+                          onClick={() => updateDraft({ relationship: rel })}
+                          className={cn(
+                            "rounded-full px-4 py-2 text-sm font-medium transition-colors",
+                            selected
+                              ? "bg-primary text-white"
+                              : "bg-white/10 text-white/70 hover:bg-white/15",
+                          )}
+                        >
+                          {rel}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+                    <h2 className="text-lg font-semibold">Review</h2>
+                    <div className="mt-4 flex gap-4">
+                      <div className="relative h-24 w-20 shrink-0 overflow-hidden rounded-xl ring-1 ring-white/10">
+                        <OptionPreviewImage
+                          src={reviewPortraitSrc || null}
+                          alt={draft.name || "Preview"}
+                        />
                       </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
-          )}
-
-          {step === 1 && (
-            <section className="space-y-8">
-              <div className="space-y-3">
-                <p className="text-center text-sm font-medium text-white/80">Hair style</p>
-                <AppearanceGrid
-                  options={CREATE_HAIR_STYLES}
-                  value={draft.hairStyle}
-                  onChange={(id) => updateDraft({ hairStyle: id })}
-                  columns={4}
-                />
-              </div>
-              <div className="space-y-3">
-                <p className="text-center text-sm font-medium text-white/80">Hair color</p>
-                <AppearanceGrid
-                  options={CREATE_HAIR_COLORS}
-                  value={draft.hairColor}
-                  onChange={(id) => updateDraft({ hairColor: id })}
-                  columns={4}
-                />
-              </div>
-            </section>
-          )}
-
-          {step === 2 && (
-            <section className="space-y-4">
-              <p className="text-center text-sm text-white/60">Choose her body type.</p>
-              <AppearanceGrid
-                options={CREATE_BODY_TYPES}
-                value={draft.bodyType}
-                onChange={(id) => updateDraft({ bodyType: id })}
-                columns={3}
-              />
-            </section>
-          )}
-
-          {step === 3 && (
-            <section className="space-y-4">
-              <p className="text-center text-sm text-white/60">Pick her usual outfit.</p>
-              <AppearanceGrid
-                options={CREATE_OUTFITS}
-                value={draft.outfit}
-                onChange={(id) => updateDraft({ outfit: id })}
-                columns={4}
-              />
-            </section>
-          )}
-
-          {step === 4 && (
-            <section className="mx-auto max-w-md space-y-5">
-              <div className="space-y-2">
-                <Label htmlFor="create-name" className="text-white/80">
-                  Name
-                </Label>
-                <Input
-                  id="create-name"
-                  value={draft.name}
-                  onChange={(e) => updateDraft({ name: e.target.value })}
-                  placeholder="e.g. Luna"
-                  className="border-white/15 bg-white/5 text-white"
-                  autoFocus
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="create-age" className="text-white/80">
-                  Age
-                </Label>
-                <Input
-                  id="create-age"
-                  type="number"
-                  min={18}
-                  max={120}
-                  value={draft.age}
-                  onChange={(e) => updateDraft({ age: Number(e.target.value) || 18 })}
-                  className="border-white/15 bg-white/5 text-white"
-                />
-              </div>
-            </section>
-          )}
-
-          {step === 5 && (
-            <section className="mx-auto max-w-lg space-y-5">
-              <p className="text-center text-sm text-white/60">
-                Pick up to 5 traits that define her personality.
-              </p>
-              <div className="flex flex-wrap justify-center gap-2">
-                {CREATE_PERSONALITY_TRAITS.map((trait) => {
-                  const selected = draft.personality.includes(trait);
-                  return (
-                    <button
-                      key={trait}
-                      type="button"
-                      onClick={() => toggleTrait(trait)}
-                      className={cn(
-                        "rounded-full px-4 py-2 text-sm font-medium transition-colors",
-                        selected
-                          ? "bg-primary text-white"
-                          : "bg-white/10 text-white/70 hover:bg-white/15",
-                      )}
-                    >
-                      {trait}
-                    </button>
-                  );
-                })}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="create-bio" className="text-white/80">
-                  About her (optional)
-                </Label>
-                <Textarea
-                  id="create-bio"
-                  value={draft.description}
-                  onChange={(e) => updateDraft({ description: e.target.value })}
-                  rows={3}
-                  placeholder="A few lines about who she is..."
-                  className="border-white/15 bg-white/5 text-white"
-                />
-              </div>
-            </section>
-          )}
-
-          {step === 6 && (
-            <section className="mx-auto max-w-lg space-y-4">
-              <p className="text-center text-sm text-white/60">
-                Choose her voice — tap to select, use preview to hear a sample.
-              </p>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {CREATE_VOICE_OPTIONS.map((voice) => {
-                  const selected = draft.voicePersonaId === voice.id;
-                  const loading = previewingVoice === voice.id;
-                  return (
-                    <div
-                      key={voice.id}
-                      className={cn(
-                        "flex items-center gap-2 rounded-xl border p-3 transition-colors",
-                        selected
-                          ? "border-primary bg-primary/15"
-                          : "border-white/10 bg-white/5",
-                      )}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => updateDraft({ voicePersonaId: voice.id })}
-                        className="min-w-0 flex-1 text-left"
-                      >
-                        <p className="text-sm font-semibold text-white">{voice.label}</p>
-                        <p className="text-xs text-white/55">{voice.description}</p>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => previewVoice(voice.id)}
-                        disabled={loading}
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-white/80 hover:bg-white/20 disabled:opacity-50"
-                        aria-label={`Preview ${voice.label}`}
-                      >
-                        <Volume2 className="h-4 w-4" aria-hidden />
-                      </button>
+                      <dl className="min-w-0 flex-1 space-y-2 text-sm text-white/75">
+                        <div className="flex justify-between gap-4">
+                          <dt className="text-white/50">Name</dt>
+                          <dd className="font-medium text-white">{draft.name || "—"}</dd>
+                        </div>
+                        <div className="flex justify-between gap-4">
+                          <dt className="text-white/50">Style</dt>
+                          <dd className="capitalize">{draft.style}</dd>
+                        </div>
+                        <div className="flex justify-between gap-4">
+                          <dt className="text-white/50">Ethnicity</dt>
+                          <dd>
+                            {labelForAppearance(CREATE_ETHNICITIES, draft.ethnicity) ?? "—"}
+                          </dd>
+                        </div>
+                      </dl>
                     </div>
-                  );
-                })}
-              </div>
-            </section>
-          )}
+                    <dl className="mt-4 space-y-2 border-t border-white/10 pt-4 text-sm text-white/75">
+                      <div className="flex justify-between gap-4">
+                        <dt className="text-white/50">Age</dt>
+                        <dd>{draft.age}</dd>
+                      </div>
+                      <div className="flex justify-between gap-4">
+                        <dt className="text-white/50">Hair</dt>
+                        <dd className="text-right">
+                          {[
+                            labelForAppearance(CREATE_HAIR_STYLES, draft.hairStyle),
+                            labelForAppearance(CREATE_HAIR_COLORS, draft.hairColor),
+                          ]
+                            .filter(Boolean)
+                            .join(", ") || "—"}
+                        </dd>
+                      </div>
+                      <div className="flex justify-between gap-4">
+                        <dt className="text-white/50">Body</dt>
+                        <dd>
+                          {labelForAppearance(CREATE_BODY_TYPES, draft.bodyType) ?? "—"}
+                        </dd>
+                      </div>
+                      <div className="flex justify-between gap-4">
+                        <dt className="text-white/50">Outfit</dt>
+                        <dd>
+                          {labelForAppearance(CREATE_OUTFITS, draft.outfit) ?? "—"}
+                        </dd>
+                      </div>
+                      <div className="flex justify-between gap-4">
+                        <dt className="text-white/50">Traits</dt>
+                        <dd className="text-right">{draft.personality.join(", ") || "—"}</dd>
+                      </div>
+                      <div className="flex justify-between gap-4">
+                        <dt className="text-white/50">Voice</dt>
+                        <dd>{labelForVoice(draft.voicePersonaId) ?? "—"}</dd>
+                      </div>
+                      <div className="flex justify-between gap-4">
+                        <dt className="text-white/50">Relationship</dt>
+                        <dd>{draft.relationship || "—"}</dd>
+                      </div>
+                    </dl>
+                  </div>
+                </section>
+              )}
+            </div>
 
-          {step === 7 && (
-            <section className="mx-auto max-w-lg space-y-5">
-              <p className="text-center text-sm text-white/60">
-                Upload a photo — required to create your AI girl.
-              </p>
-              <CharacterAvatarPicker
-                value={draft.avatarUrl}
-                onChange={(url) => updateDraft({ avatarUrl: url })}
-                hidePresets
-                variant="create"
-                uploadScope="user"
-              />
-            </section>
-          )}
-
-          {step === 8 && (
-            <section className="mx-auto max-w-lg space-y-6">
-              <p className="text-center text-sm text-white/60">
-                What is your relationship with her?
-              </p>
-              <div className="flex flex-wrap justify-center gap-2">
-                {CREATE_RELATIONSHIP_TYPES.map((rel) => {
-                  const selected = draft.relationship === rel;
-                  return (
-                    <button
-                      key={rel}
-                      type="button"
-                      onClick={() => updateDraft({ relationship: rel })}
-                      className={cn(
-                        "rounded-full px-4 py-2 text-sm font-medium transition-colors",
-                        selected
-                          ? "bg-primary text-white"
-                          : "bg-white/10 text-white/70 hover:bg-white/15",
-                      )}
-                    >
-                      {rel}
-                    </button>
-                  );
-                })}
+            <aside className="hidden shrink-0 lg:block lg:w-52 xl:w-56">
+              <div className="sticky top-24">
+                <CreatePortraitPreview draft={draft} />
               </div>
-
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-                <h2 className="text-lg font-semibold">Review</h2>
-                <dl className="mt-3 space-y-2 text-sm text-white/75">
-                  <div className="flex justify-between gap-4">
-                    <dt className="text-white/50">Name</dt>
-                    <dd className="font-medium text-white">{draft.name || "—"}</dd>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <dt className="text-white/50">Age</dt>
-                    <dd>{draft.age}</dd>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <dt className="text-white/50">Style</dt>
-                    <dd className="capitalize">{draft.style}</dd>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <dt className="text-white/50">Photo</dt>
-                    <dd>
-                      {draft.avatarUrl ? (
-                        <span className="text-primary">Uploaded</span>
-                      ) : (
-                        "—"
-                      )}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <dt className="text-white/50">Hair</dt>
-                    <dd className="text-right">
-                      {[
-                        labelForAppearance(CREATE_HAIR_STYLES, draft.hairStyle),
-                        labelForAppearance(CREATE_HAIR_COLORS, draft.hairColor),
-                      ]
-                        .filter(Boolean)
-                        .join(", ") || "—"}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <dt className="text-white/50">Body</dt>
-                    <dd>
-                      {labelForAppearance(CREATE_BODY_TYPES, draft.bodyType) ?? "—"}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <dt className="text-white/50">Outfit</dt>
-                    <dd>
-                      {labelForAppearance(CREATE_OUTFITS, draft.outfit) ?? "—"}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <dt className="text-white/50">Traits</dt>
-                    <dd className="text-right">{draft.personality.join(", ") || "—"}</dd>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <dt className="text-white/50">Voice</dt>
-                    <dd>{labelForVoice(draft.voicePersonaId) ?? "—"}</dd>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <dt className="text-white/50">Relationship</dt>
-                    <dd>{draft.relationship || "—"}</dd>
-                  </div>
-                </dl>
-              </div>
-            </section>
-          )}
+            </aside>
+          </div>
         </div>
       </main>
 
@@ -777,8 +825,8 @@ export function CreateCharacterWizard({
               disabled={!canAdvance() || submitting}
               className="h-11 rounded-full bg-gradient-to-r from-primary to-violet-600 px-8 text-sm font-semibold text-white"
             >
-              {submitting 
-                ? (mode === "edit" ? "Saving…" : "Creating…") 
+              {submitting
+                ? (mode === "edit" ? "Saving…" : "Creating…")
                 : (mode === "edit" ? "Save Changes" : "Create & Chat")}
             </Button>
           )}

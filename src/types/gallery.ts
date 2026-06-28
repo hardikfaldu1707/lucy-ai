@@ -15,7 +15,7 @@ function isGalleryMediaType(value: unknown): value is GalleryMediaType {
   return value === "image" || value === "video";
 }
 
-function normalizeItem(raw: unknown): CharacterGalleryItem | null {
+export function normalizeGalleryItemInput(raw: unknown): CharacterGalleryItem | null {
   if (!raw || typeof raw !== "object") return null;
   const row = raw as Record<string, unknown>;
   const url = typeof row.url === "string" ? row.url.trim() : "";
@@ -38,7 +38,7 @@ export function resolveCharacterGalleryItems(
 ): CharacterGalleryItem[] {
   if (Array.isArray(galleryItemsRaw) && galleryItemsRaw.length > 0) {
     const parsed = galleryItemsRaw
-      .map(normalizeItem)
+      .map(normalizeGalleryItemInput)
       .filter((item): item is CharacterGalleryItem => item !== null);
     if (parsed.length > 0) return parsed;
   }

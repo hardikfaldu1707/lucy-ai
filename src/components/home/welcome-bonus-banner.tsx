@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Heart, Sparkles } from "lucide-react";
 import { portraitForId } from "@/constants/character-portraits";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/constants/routes";
 
@@ -74,7 +74,7 @@ export function WelcomeBonusBanner() {
               <div className="absolute inset-0 bg-gradient-to-t from-purple-900/60 to-transparent" />
             </div>
             {[0, 1, 2, 3].map((i) => (
-              <motion.div
+              <m.div
                 key={i}
                 className="absolute text-pink-400"
                 style={{ right: `${10 + i * 12}%`, top: `${15 + i * 18}%` }}
@@ -83,7 +83,7 @@ export function WelcomeBonusBanner() {
                 aria-hidden
               >
                 <Heart className="h-6 w-6 fill-current sm:h-8 sm:w-8" />
-              </motion.div>
+              </m.div>
             ))}
           </div>
         </div>

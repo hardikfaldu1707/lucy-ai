@@ -1,28 +1,42 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChatBrowseCharacterCard } from "./chat-browse-character-card";
 import type { ExploreCharacter } from "@/constants/explore-characters";
 import { cn } from "@/lib/utils";
 
 const AUTO_SCROLL_MS = 4000;
+const HERO_CAROUSEL_MAX = 12;
 
 interface HomeHeroSectionProps {
   characters: ExploreCharacter[];
 }
 
 export function HomeHeroSection({ characters }: HomeHeroSectionProps) {
+  const featured = useMemo(
+    () => characters.slice(0, HERO_CAROUSEL_MAX),
+    [characters],
+  );
   const scrollRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [coarsePointer, setCoarsePointer] = useState(false);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const update = () => setReducedMotion(mq.matches);
+    const pointerMq = window.matchMedia("(pointer: coarse)");
+    const update = () => {
+      setReducedMotion(mq.matches);
+      setCoarsePointer(pointerMq.matches);
+    };
     update();
     mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
+    pointerMq.addEventListener("change", update);
+    return () => {
+      mq.removeEventListener("change", update);
+      pointerMq.removeEventListener("change", update);
+    };
   }, []);
 
   const getCardStep = useCallback(() => {
@@ -36,18 +50,18 @@ export function HomeHeroSection({ characters }: HomeHeroSectionProps) {
   const scrollToIndex = useCallback(
     (index: number, behavior: ScrollBehavior = "smooth") => {
       const el = scrollRef.current;
-      if (!el || characters.length === 0) return;
+      if (!el || featured.length === 0) return;
       const step = getCardStep();
       if (step <= 0) return;
-      const clamped = ((index % characters.length) + characters.length) % characters.length;
+      const clamped = ((index % featured.length) + featured.length) % featured.length;
       el.scrollTo({ left: clamped * step, behavior });
       setActiveIndex(clamped);
     },
-    [characters.length, getCardStep],
+    [featured.length, getCardStep],
   );
 
   useEffect(() => {
-    if (characters.length <= 1 || paused || reducedMotion) return;
+    if (featured.length <= 1 || paused || reducedMotion || coarsePointer) return;
 
     const id = window.setInterval(() => {
       const el = scrollRef.current;
@@ -66,7 +80,7 @@ export function HomeHeroSection({ characters }: HomeHeroSectionProps) {
     }, AUTO_SCROLL_MS);
 
     return () => window.clearInterval(id);
-  }, [activeIndex, characters.length, getCardStep, paused, reducedMotion, scrollToIndex]);
+  }, [activeIndex, featured.length, getCardStep, paused, reducedMotion, coarsePointer, scrollToIndex]);
 
   const handleScroll = useCallback(() => {
     const el = scrollRef.current;
@@ -74,10 +88,10 @@ export function HomeHeroSection({ characters }: HomeHeroSectionProps) {
     const step = getCardStep();
     if (step <= 0) return;
     const index = Math.round(el.scrollLeft / step);
-    setActiveIndex(Math.min(index, characters.length - 1));
-  }, [characters.length, getCardStep]);
+    setActiveIndex(Math.min(index, featured.length - 1));
+  }, [featured.length, getCardStep]);
 
-  if (characters.length === 0) {
+  if (featured.length === 0) {
     return (
       <section className="w-full max-w-[1400px]" aria-labelledby="home-hero-heading">
         <header className="mb-8 text-center sm:mb-10">
@@ -113,7 +127,9 @@ export function HomeHeroSection({ characters }: HomeHeroSectionProps) {
       </header>
 
       <p className="mb-3 text-center text-xs text-white/40 sm:hidden">
-        {reducedMotion ? "Swipe to see more" : "Swipe or wait — companions rotate automatically"}
+        {reducedMotion || coarsePointer
+          ? "Swipe to see more"
+          : "Swipe or wait — companions rotate automatically"}
       </p>
 
       <div
@@ -146,25 +162,25 @@ export function HomeHeroSection({ characters }: HomeHeroSectionProps) {
           aria-label="Featured AI companions"
           aria-live="polite"
         >
-          {characters.map((character, index) => (
+          {featured.map((character, index) => (
             <div
               key={character.id}
               role="listitem"
               className="w-[min(42vw,200px)] shrink-0 snap-start sm:w-[188px] md:w-[200px]"
             >
-              <ChatBrowseCharacterCard character={character} priority={index < 4} />
+              <ChatBrowseCharacterCard character={character} priority={index < 2} />
             </div>
           ))}
         </div>
       </div>
 
-      {characters.length > 1 && (
+      {featured.length > 1 && (
         <div
           className="mt-4 flex justify-center gap-1.5"
           role="tablist"
           aria-label="Companion carousel position"
         >
-          {characters.map((character, index) => (
+          {featured.map((character, index) => (
             <button
               key={character.id}
               type="button"
