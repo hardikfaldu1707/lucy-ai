@@ -604,13 +604,16 @@ export function ChatWindow({
         </ScrollArea>
       </div>
       {showSuggestions && (
-        <ChatSuggestionChips
-          suggestions={suggestedQuestions}
-          onSelect={setDraft}
-          variant={inputVariant}
-        />
+        <div className="shrink-0">
+          <ChatSuggestionChips
+            suggestions={suggestedQuestions}
+            onSelect={setDraft}
+            variant={inputVariant}
+          />
+        </div>
       )}
-      <ChatInput
+      <div className="shrink-0">
+        <ChatInput
         value={draft}
         onValueChange={setDraft}
         onSend={(content, options) => void handleSend(content, options)}
@@ -633,7 +636,8 @@ export function ChatWindow({
             ? `${guestRemaining} free message${guestRemaining === 1 ? "" : "s"} left`
             : undefined
         }
-      />
+        />
+      </div>
       {isGuest && (
         <GuestAuthDialog
           open={authDialogOpen}

@@ -109,9 +109,11 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    -webkit-tap-highlight-color: transparent;
   }
   body {
     @apply bg-background text-foreground antialiased;
+    overscroll-behavior-y: none;
   }
 }
 
@@ -136,6 +138,50 @@
     background: rgba(255, 255, 255, 0.15);
     border-radius: 9999px;
   }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .pl-safe {
+    padding-left: env(safe-area-inset-left);
+  }
+  .pr-safe {
+    padding-right: env(safe-area-inset-right);
+  }
+  .h-dvh-safe {
+    height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  }
+  .h-vv {
+    height: var(--vv-height, 100dvh);
+  }
+  .min-h-vv {
+    min-height: var(--vv-height, 100dvh);
+  }
+  .top-vv {
+    top: var(--vv-offset-top, 0px);
+  }
+  .pb-safe-keyboard {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+  [data-keyboard-open="true"] .pb-safe-keyboard {
+    padding-bottom: 0.75rem;
+  }
+  .content-visibility-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 300px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 @keyframes heart-pulse {
@@ -150,4 +196,8 @@
 
 @utility animate-heart-pulse {
   animation: heart-pulse 0.85s ease-in-out infinite;
+}
+
+.chat-surface {
+  touch-action: manipulation;
 }

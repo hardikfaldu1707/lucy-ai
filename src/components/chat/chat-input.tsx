@@ -13,6 +13,7 @@ import {
 import { ChatDictationPermission } from "@/components/chat/chat-dictation-permission";
 import { useSpeechDictation } from "@/hooks/use-speech-dictation";
 import { appendTranscriptToDraft } from "@/lib/speech/browser-speech-recognition";
+import { resetVisualViewportScroll } from "@/hooks/use-visual-viewport-height";
 import { cn } from "@/lib/utils";
 import type { GalleryMediaType } from "@/types/gallery";
 
@@ -34,6 +35,7 @@ interface ChatInputProps {
   mediaRequestEnabled?: boolean;
   mediaPaywallEnabled?: boolean;
   mediaCostPerItem?: number;
+  onInputFocus?: () => void;
 }
 
 function insertAtCursor(
@@ -65,6 +67,7 @@ export function ChatInput({
   mediaRequestEnabled = false,
   mediaPaywallEnabled = false,
   mediaCostPerItem = 0,
+  onInputFocus,
 }: ChatInputProps) {
   const [internalValue, setInternalValue] = useState("");
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -182,6 +185,14 @@ export function ChatInput({
     requestAnimationFrame(() => textareaRef.current?.focus());
   };
 
+  const handleInputFocus = () => {
+    onInputFocus?.();
+    resetVisualViewportScroll();
+    requestAnimationFrame(() => {
+      textareaRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
+    });
+  };
+
   const ghostBtnClass = cn(
     isDark && "text-white hover:bg-white/10 hover:text-white",
   );
@@ -192,7 +203,7 @@ export function ChatInput({
   return (
     <div
       className={cn(
-        "border-t backdrop-blur-xl",
+        "shrink-0 border-t backdrop-blur-xl",
         isDark
           ? "border-white/10 bg-[#0a0a0a]/95"
           : "border-border bg-background/80",
@@ -232,7 +243,7 @@ export function ChatInput({
           />
         </div>
       )}
-      <div className="p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-4 sm:pb-4">
+      <div className="p-3 pb-safe-keyboard sm:px-4 sm:pb-4">
         <div
           className={cn(
             "mx-auto flex max-w-3xl items-end gap-1 rounded-[1.35rem] border p-1.5 sm:gap-1.5 sm:p-2",
@@ -285,6 +296,7 @@ export function ChatInput({
               value={displayValue}
               onChange={(e) => setValue(e.target.value)}
               onKeyDown={onKeyDown}
+              onFocus={handleInputFocus}
               placeholder={
                 dictation.isListening ? "Listening… speak your message" : mediaPlaceholder
               }
