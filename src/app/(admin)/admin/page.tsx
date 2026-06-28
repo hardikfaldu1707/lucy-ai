@@ -1,8 +1,19 @@
 import type { Metadata } from "next";
-import { Users, CreditCard, MessageCircle, Sparkles, HardDrive } from "lucide-react";
+import {
+  Users,
+  CreditCard,
+  MessageCircle,
+  Sparkles,
+  HardDrive,
+  TrendingUp,
+  ArrowUpRight,
+  ArrowDownRight,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import { PageHeader } from "@/components/shared/page-header";
 import { overview, topCharacters, storageUsage } from "@/lib/data/admin-stats";
+import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Admin Dashboard" };
 
@@ -13,6 +24,56 @@ function formatBytes(bytes: number): string {
   return `${(bytes / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 2)} ${units[i]}`;
 }
 
+interface StatCardProps {
+  label: string;
+  value: string;
+  icon: React.ComponentType<{ className?: string }>;
+  trend?: { value: number; label: string };
+  color?: "default" | "emerald" | "amber" | "rose" | "sky";
+}
+
+function StatCard({ label, value, icon: Icon, trend, color = "default" }: StatCardProps) {
+  const colorStyles = {
+    default: "bg-primary/10 text-primary",
+    emerald: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+    amber: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+    rose: "bg-rose-500/10 text-rose-600 dark:text-rose-400",
+    sky: "bg-sky-500/10 text-sky-600 dark:text-sky-400",
+  };
+
+  return (
+    <Card className="relative overflow-hidden transition-shadow hover:shadow-md">
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-sm font-medium text-muted-foreground">{label}</CardTitle>
+        <div className={cn("rounded-lg p-2", colorStyles[color])}>
+          <Icon className="h-4 w-4" aria-hidden="true" />
+        </div>
+      </CardHeader>
+      <CardContent>
+        <p className="text-2xl font-bold tabular-nums tracking-tight">{value}</p>
+        {trend && (
+          <div className="mt-1 flex items-center gap-1 text-xs">
+            {trend.value >= 0 ? (
+              <ArrowUpRight className="h-3 w-3 text-emerald-500" />
+            ) : (
+              <ArrowDownRight className="h-3 w-3 text-rose-500" />
+            )}
+            <span
+              className={cn(
+                "font-medium",
+                trend.value >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+              )}
+            >
+              {Math.abs(trend.value)}%
+            </span>
+            <span className="text-muted-foreground">{trend.label}</span>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 // Real metrics, read server-side via the service-role client.
 export default async function AdminDashboardPage() {
   const [stats, top, storage] = await Promise.all([
@@ -21,63 +82,165 @@ export default async function AdminDashboardPage() {
     storageUsage(),
   ]);
 
-  const cards = [
-    { label: "Total users", value: stats.totalUsers.toLocaleString(), icon: Users },
-    {
-      label: "Paid users",
-      value: (stats.usersByPlan.premium + stats.usersByPlan.ultimate).toLocaleString(),
-      icon: CreditCard,
-    },
-    { label: "Total messages", value: stats.totalMessages.toLocaleString(), icon: MessageCircle },
-    { label: "Characters", value: stats.totalCharacters.toLocaleString(), icon: Sparkles },
-    { label: "Revenue", value: `$${stats.totalRevenue.toLocaleString()}`, icon: CreditCard },
-    { label: "Storage used (R2)", value: formatBytes(storage.totalBytes), icon: HardDrive },
-  ];
+  const totalPaidUsers = stats.usersByPlan.premium + stats.usersByPlan.ultimate;
+  const paidUserPercentage = stats.totalUsers > 0 ? (totalPaidUsers / stats.totalUsers) * 100 : 0;
 
   return (
     <div className="space-y-8">
-      <PageHeader title="Admin dashboard" description="Live platform metrics." />
+      <PageHeader title="Admin dashboard" description="Live platform metrics and overview." />
 
+      {/* Stats Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        {cards.map((stat) => (
-          <Card key={stat.label}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">{stat.label}</CardTitle>
-              <stat.icon className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold tabular-nums">{stat.value}</p>
-            </CardContent>
-          </Card>
-        ))}
+        <StatCard
+          label="Total users"
+          value={stats.totalUsers.toLocaleString()}
+          icon={Users}
+          color="sky"
+        />
+        <StatCard
+          label="Paid users"
+          value={totalPaidUsers.toLocaleString()}
+          icon={CreditCard}
+          color="emerald"
+        />
+        <StatCard
+          label="Total messages"
+          value={stats.totalMessages.toLocaleString()}
+          icon={MessageCircle}
+          color="amber"
+        />
+        <StatCard
+          label="Characters"
+          value={stats.totalCharacters.toLocaleString()}
+          icon={Sparkles}
+          color="rose"
+        />
+        <StatCard
+          label="Revenue"
+          value={`$${stats.totalRevenue.toLocaleString()}`}
+          icon={TrendingUp}
+          color="emerald"
+        />
+        <StatCard
+          label="Storage used"
+          value={formatBytes(storage.totalBytes)}
+          icon={HardDrive}
+          color="sky"
+        />
       </div>
 
+      {/* Charts Row */}
       <div className="grid gap-4 md:grid-cols-2">
+        {/* Users by Plan */}
         <Card>
-          <CardHeader><CardTitle className="text-base">Users by plan</CardTitle></CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <div className="flex justify-between"><span className="text-muted-foreground">Free</span><span className="tabular-nums">{stats.usersByPlan.free}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Premium</span><span className="tabular-nums">{stats.usersByPlan.premium}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Ultimate</span><span className="tabular-nums">{stats.usersByPlan.ultimate}</span></div>
+          <CardHeader>
+            <CardTitle className="text-base">Users by plan</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <div className="space-y-3">
+              {(
+                [
+                  { plan: "Free", count: stats.usersByPlan.free, color: "bg-muted-foreground/30" },
+                  { plan: "Premium", count: stats.usersByPlan.premium, color: "bg-amber-500" },
+                  { plan: "Ultimate", count: stats.usersByPlan.ultimate, color: "bg-emerald-500" },
+                ] as const
+              ).map((item) => {
+                const pct = stats.totalUsers > 0 ? (item.count / stats.totalUsers) * 100 : 0;
+                return (
+                  <div key={item.plan} className="space-y-1.5">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium">{item.plan}</span>
+                      <span className="tabular-nums text-muted-foreground">
+                        {item.count.toLocaleString()} ({pct.toFixed(1)}%)
+                      </span>
+                    </div>
+                    <div className="relative h-2 w-full overflow-hidden rounded-full bg-secondary">
+                      <div
+                        className={cn("h-full rounded-full transition-all", item.color)}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
+              <span className="font-medium text-foreground">{paidUserPercentage.toFixed(1)}%</span> of users are on a
+              paid plan.
+            </div>
           </CardContent>
         </Card>
 
+        {/* Top Characters */}
         <Card>
-          <CardHeader><CardTitle className="text-base">Top characters</CardTitle></CardHeader>
-          <CardContent className="space-y-2 text-sm">
+          <CardHeader>
+            <CardTitle className="text-base">Top characters</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-1">
             {top.length ? (
-              top.map((c) => (
-                <div key={c.characterId} className="flex flex-col gap-1 sm:flex-row sm:justify-between">
-                  <span>{c.name}</span>
-                  <span className="text-muted-foreground sm:shrink-0 sm:text-right tabular-nums">{c.uniqueUsers} users · {c.totalMessages} msgs</span>
+              top.map((c, i) => (
+                <div
+                  key={c.characterId}
+                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-muted/50"
+                >
+                  <span
+                    className={cn(
+                      "flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold",
+                      i === 0
+                        ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                        : i === 1
+                          ? "bg-slate-400/15 text-slate-600 dark:text-slate-400"
+                          : i === 2
+                            ? "bg-orange-600/15 text-orange-700 dark:text-orange-400"
+                            : "bg-muted text-muted-foreground"
+                    )}
+                  >
+                    {i + 1}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{c.name}</p>
+                  </div>
+                  <div className="shrink-0 text-right text-xs text-muted-foreground tabular-nums">
+                    <span className="font-medium text-foreground">{c.uniqueUsers}</span> users
+                    <span className="mx-1.5 text-border">·</span>
+                    <span className="font-medium text-foreground">{c.totalMessages}</span> msgs
+                  </div>
                 </div>
               ))
             ) : (
-              <p className="text-muted-foreground">No activity yet.</p>
+              <p className="py-8 text-center text-sm text-muted-foreground">No activity yet.</p>
             )}
           </CardContent>
         </Card>
       </div>
+
+      {/* Storage Breakdown */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Storage breakdown</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {Object.entries(storage.byScope).length > 0 ? (
+              Object.entries(storage.byScope).map(([scope, bytes]) => {
+                const pct = storage.totalBytes > 0 ? (bytes / storage.totalBytes) * 100 : 0;
+                return (
+                  <div key={scope} className="space-y-2 rounded-lg border p-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium capitalize">{scope}</span>
+                      <span className="text-xs text-muted-foreground tabular-nums">{pct.toFixed(1)}%</span>
+                    </div>
+                    <p className="text-xl font-bold tabular-nums">{formatBytes(bytes)}</p>
+                    <Progress value={pct} className="h-1.5" />
+                  </div>
+                );
+              })
+            ) : (
+              <p className="col-span-full py-4 text-center text-sm text-muted-foreground">No storage data available.</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

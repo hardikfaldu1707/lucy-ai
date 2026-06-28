@@ -37,11 +37,11 @@ export const LANDING_FAQ_ITEMS: LandingFaqItem[] = [
   {
     question: "Can I create my own AI girlfriend (custom looks, personality, name)?",
     answer:
-      "Custom character creation is on our roadmap. Today you can choose from our curated library; full create-your-own is coming in a future release.",
+      "Yes. Use Create Your AI Girl to pick her style, ethnicity, hair, body, outfit, personality, voice, and relationship — then start chatting instantly. No photo upload needed.",
   },
   {
     question: 'When will the full "Create AI Girlfriend" feature launch?',
     answer:
-      "We are actively building the creator studio. Join free to get early access announcements and beta invites as soon as it is ready.",
+      "The creator is live today. More options — Design with AI, custom photo upload, and expanded traits — are coming in a future update.",
   },
 ];

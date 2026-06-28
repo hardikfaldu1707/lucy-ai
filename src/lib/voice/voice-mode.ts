@@ -1,5 +1,7 @@
 import "server-only";
 
+import { hasTtsBackendConfigured } from "@/lib/voice/tts";
+
 /** text = browser STT + OpenRouter chat + TTS; native = OpenRouter gpt-audio I/O */
 export type VoiceCallMode = "text" | "native";
 
@@ -16,10 +18,14 @@ function isTextForced(): boolean {
 }
 
 export function getVoiceCallMode(): VoiceCallMode {
-  if (isTextForced()) return "text";
   if (isNativeAudioForced()) return "native";
-  if (hasOpenRouterKey()) return "native";
+  if (isTextForced()) return "text";
+  if (hasOpenRouterKey()) return "text";
   return "text";
+}
+
+export function hasVoiceTtsConfigured(): boolean {
+  return hasTtsBackendConfigured();
 }
 
 export function canStartVoiceSession(): boolean {

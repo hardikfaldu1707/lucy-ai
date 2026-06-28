@@ -2,15 +2,11 @@
 
 import Link from "next/link";
 import { Gem } from "lucide-react";
-import { motion } from "framer-motion";
 import { ROUTES } from "@/constants/routes";
 
 export function ExplorePromoCard() {
   return (
-    <motion.article
-      whileHover={{ y: -4 }}
-      className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1a0a24] via-[#2d0f3a] to-black ring-1 ring-[#df1a97]/30"
-    >
+    <article className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1a0a24] via-[#2d0f3a] to-black ring-1 ring-[#df1a97]/30 transition-transform duration-200 ease-out hover:-translate-y-1 motion-reduce:transform-none">
       <div className="relative flex aspect-[15/22] w-full flex-col items-center justify-center p-5 text-center">
         <div
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(223,26,151,0.25),transparent_60%)]"
@@ -33,6 +29,6 @@ export function ExplorePromoCard() {
           Upgrade now
         </Link>
       </div>
-    </motion.article>
+    </article>
   );
 }

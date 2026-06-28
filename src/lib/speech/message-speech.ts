@@ -176,7 +176,6 @@ async function speakViaServer(
 async function speakViaBrowser(
   messageId: string,
   text: string,
-  _options?: SpeakOptions,
 ): Promise<boolean> {
   if (typeof window === "undefined" || !window.speechSynthesis) return false;
 
@@ -284,7 +283,7 @@ export async function speakMessageText(
   const browserOk =
     typeof window !== "undefined" &&
     "speechSynthesis" in window &&
-    (await speakViaBrowser(messageId, trimmed, options));
+    (await speakViaBrowser(messageId, trimmed));
 
   if (browserOk) return true;
 

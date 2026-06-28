@@ -616,6 +616,7 @@ export function ChatWindow({
         <ChatInput
         value={draft}
         onValueChange={setDraft}
+        onInputFocus={() => scrollToBottom("smooth")}
         onSend={(content, options) => void handleSend(content, options)}
         onSendGif={
           isGuest

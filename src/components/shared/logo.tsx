@@ -10,15 +10,19 @@ interface LogoMarkProps {
 
 export function LogoMark({ className, size = 36 }: LogoMarkProps) {
   return (
-    <Image
-      src="/logo.png"
-      alt="Lucy AI"
-      width={size}
-      height={size}
-      style={{ width: size, height: "auto" }}
-      className={cn("rounded-full object-cover", className)}
-      priority
-    />
+    <span
+      className={cn("relative inline-block shrink-0", className)}
+      style={{ width: size, height: size }}
+    >
+      <Image
+        src="/logo.png"
+        alt="Lucy AI"
+        fill
+        className="rounded-full object-cover"
+        sizes={`${size}px`}
+        priority
+      />
+    </span>
   );
 }
 

@@ -1,15 +1,33 @@
+import dynamic from "next/dynamic";
 import type { ExploreCharacter } from "@/constants/explore-characters";
 import { HomeHeroSection } from "@/components/home/home-hero-section";
 import { MatchExploreSection } from "@/components/home/match-explore-section";
-import { LandingFooter } from "@/components/layout/landing-footer";
-import { WelcomeBonusBanner } from "@/components/home/welcome-bonus-banner";
 import { CharacterDiscoverySection } from "@/components/home/character-discovery-section";
-import { PlatformStatsRow } from "@/components/home/platform-stats-row";
-import { LimitedOfferBanner } from "@/components/home/limited-offer-banner";
-import { AiGirlfriendContentSection } from "@/components/home/ai-girlfriend-content-section";
-import { LandingContentBottom } from "@/components/home/landing-content-bottom";
-import { FollowUsSection } from "@/components/home/follow-us-section";
-import { LandingFaqSection } from "@/components/home/landing-faq-section";
+
+const WelcomeBonusBanner = dynamic(
+  () => import("@/components/home/welcome-bonus-banner").then((m) => m.WelcomeBonusBanner)
+);
+const PlatformStatsRow = dynamic(
+  () => import("@/components/home/platform-stats-row").then((m) => m.PlatformStatsRow)
+);
+const LimitedOfferBanner = dynamic(
+  () => import("@/components/home/limited-offer-banner").then((m) => m.LimitedOfferBanner)
+);
+const AiGirlfriendContentSection = dynamic(
+  () => import("@/components/home/ai-girlfriend-content-section").then((m) => m.AiGirlfriendContentSection)
+);
+const LandingContentBottom = dynamic(
+  () => import("@/components/home/landing-content-bottom").then((m) => m.LandingContentBottom)
+);
+const FollowUsSection = dynamic(
+  () => import("@/components/home/follow-us-section").then((m) => m.FollowUsSection)
+);
+const LandingFaqSection = dynamic(
+  () => import("@/components/home/landing-faq-section").then((m) => m.LandingFaqSection)
+);
+const LandingFooter = dynamic(
+  () => import("@/components/layout/landing-footer").then((m) => m.LandingFooter)
+);
 
 export function PublicHomePage({
   initialCharacters,

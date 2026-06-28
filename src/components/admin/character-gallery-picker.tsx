@@ -33,6 +33,67 @@ interface CharacterGalleryPickerProps {
   characterId?: string;
 }
 
+async function parseGalleryError(res: Response): Promise<string> {
+  const json = (await res.json().catch(() => ({}))) as { error?: string };
+  return json.error ?? "Gallery request failed";
+}
+
+async function postGalleryItem(
+  characterId: string,
+  item: CharacterGalleryItem,
+): Promise<CharacterGalleryItem[]> {
+  const res = await fetch(`/api/admin/characters/${characterId}/gallery`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(item),
+  });
+  if (!res.ok) throw new Error(await parseGalleryError(res));
+  const json = (await res.json()) as { items: CharacterGalleryItem[] };
+  return json.items;
+}
+
+async function patchGalleryItem(
+  characterId: string,
+  index: number,
+  patch: { tags?: string[]; type?: GalleryMediaType },
+): Promise<CharacterGalleryItem[]> {
+  const res = await fetch(`/api/admin/characters/${characterId}/gallery/${index}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(patch),
+  });
+  if (!res.ok) throw new Error(await parseGalleryError(res));
+  const json = (await res.json()) as { items: CharacterGalleryItem[] };
+  return json.items;
+}
+
+async function deleteGalleryItem(
+  characterId: string,
+  index: number,
+): Promise<CharacterGalleryItem[]> {
+  const res = await fetch(`/api/admin/characters/${characterId}/gallery/${index}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error(await parseGalleryError(res));
+  const json = (await res.json()) as { items: CharacterGalleryItem[] };
+  return json.items;
+}
+
+async function reorderGalleryItem(
+  characterId: string,
+  fromIndex: number,
+  toIndex: number,
+): Promise<CharacterGalleryItem[]> {
+  const res = await fetch(`/api/admin/characters/${characterId}/gallery/${fromIndex}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ fromIndex, toIndex }),
+  });
+  if (!res.ok) throw new Error(await parseGalleryError(res));
+  const json = (await res.json()) as { items: CharacterGalleryItem[] };
+  return json.items;
+}
+
 export function CharacterGalleryPicker({
   value,
   onChange,
@@ -46,6 +107,7 @@ export function CharacterGalleryPicker({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const uploadOptions = resolveCharacterUploadOptions(characterId);
+  const useApi = Boolean(characterId);
 
   const openTypePicker = () => {
     setShowTypePicker(true);
@@ -67,7 +129,9 @@ export function CharacterGalleryPicker({
 
     setUploading(true);
     try {
-      const uploaded: CharacterGalleryItem[] = [];
+      let latestItems = value;
+      let added = 0;
+
       for (const file of toUpload) {
         const allowed = type === "video" ? isAllowedVideoFile(file) : isAllowedImageFile(file);
         if (!allowed) {
@@ -80,11 +144,19 @@ export function CharacterGalleryPicker({
           continue;
         }
         const url = await uploadGalleryMediaToR2(file, uploadOptions);
-        uploaded.push({ url, type, tags });
+        const item: CharacterGalleryItem = { url, type, tags };
+
+        if (useApi && characterId) {
+          latestItems = await postGalleryItem(characterId, item);
+        } else {
+          latestItems = [...latestItems, item];
+        }
+        added++;
       }
-      if (uploaded.length) {
-        onChange([...value, ...uploaded]);
-        toast.success(`${uploaded.length} item(s) added`);
+
+      if (added > 0) {
+        onChange(latestItems);
+        toast.success(`${added} item(s) added`);
         setPendingType(null);
         setNewItemTags([]);
       }
@@ -106,20 +178,58 @@ export function CharacterGalleryPicker({
     void handleFiles(e.dataTransfer.files);
   };
 
-  const updateItem = (index: number, patch: Partial<CharacterGalleryItem>) => {
-    onChange(value.map((item, i) => (i === index ? { ...item, ...patch } : item)));
+  const updateItem = async (index: number, patch: Partial<CharacterGalleryItem>) => {
+    const previous = value;
+    const optimistic = value.map((item, i) => (i === index ? { ...item, ...patch } : item));
+    onChange(optimistic);
+
+    if (!useApi || !characterId) return;
+
+    try {
+      const apiPatch: { tags?: string[]; type?: GalleryMediaType } = {};
+      if (patch.tags !== undefined) apiPatch.tags = patch.tags;
+      if (patch.type !== undefined) apiPatch.type = patch.type;
+      const items = await patchGalleryItem(characterId, index, apiPatch);
+      onChange(items);
+    } catch (err) {
+      onChange(previous);
+      toast.error(err instanceof Error ? err.message : "Failed to update item");
+    }
   };
 
-  const removeAt = (index: number) => {
+  const removeAt = async (index: number) => {
+    const previous = value;
     onChange(value.filter((_, i) => i !== index));
+
+    if (!useApi || !characterId) return;
+
+    try {
+      const items = await deleteGalleryItem(characterId, index);
+      onChange(items);
+    } catch (err) {
+      onChange(previous);
+      toast.error(err instanceof Error ? err.message : "Failed to remove item");
+    }
   };
 
-  const move = (from: number, to: number) => {
+  const move = async (from: number, to: number) => {
     if (to < 0 || to >= value.length) return;
+
+    const previous = value;
     const next = [...value];
     const [item] = next.splice(from, 1);
     next.splice(to, 0, item);
     onChange(next);
+
+    if (!useApi || !characterId) return;
+
+    try {
+      const items = await reorderGalleryItem(characterId, from, to);
+      onChange(items);
+    } catch (err) {
+      onChange(previous);
+      toast.error(err instanceof Error ? err.message : "Failed to reorder");
+    }
   };
 
   const accept =
@@ -279,7 +389,7 @@ export function CharacterGalleryPicker({
                   <Select
                     value={item.type}
                     onValueChange={(next) =>
-                      updateItem(index, { type: next as GalleryMediaType })
+                      void updateItem(index, { type: next as GalleryMediaType })
                     }
                   >
                     <SelectTrigger className="h-8 w-28">
@@ -298,7 +408,7 @@ export function CharacterGalleryPicker({
                       className="h-8 w-8"
                       aria-label="Move earlier"
                       disabled={index === 0}
-                      onClick={() => move(index, index - 1)}
+                      onClick={() => void move(index, index - 1)}
                     >
                       <GripVertical className="h-3.5 w-3.5" aria-hidden />
                     </Button>
@@ -308,7 +418,7 @@ export function CharacterGalleryPicker({
                       size="icon"
                       className="h-8 w-8"
                       aria-label="Remove item"
-                      onClick={() => removeAt(index)}
+                      onClick={() => void removeAt(index)}
                     >
                       <Trash2 className="h-3.5 w-3.5" aria-hidden />
                     </Button>
@@ -316,7 +426,7 @@ export function CharacterGalleryPicker({
                 </div>
                 <MatchTagsInput
                   value={item.tags}
-                  onChange={(tags) => updateItem(index, { tags })}
+                  onChange={(tags) => void updateItem(index, { tags })}
                   placeholder="e.g. selfie, bedroom — press Enter to add"
                 />
               </div>

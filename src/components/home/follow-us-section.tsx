@@ -1,7 +1,7 @@
 "use client";
 
 import { Heart } from "lucide-react";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 
 const FOLLOW_CARDS = [
   {
@@ -75,7 +75,7 @@ export function FollowUsSection() {
 
       <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-3">
         {FOLLOW_CARDS.map((card, i) => (
-          <motion.article
+          <m.article
             key={card.id}
             initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -93,7 +93,7 @@ export function FollowUsSection() {
               </div>
               <p className="mt-3 text-sm leading-relaxed text-white/75">{card.caption}</p>
             </div>
-          </motion.article>
+          </m.article>
         ))}
       </div>
     </section>

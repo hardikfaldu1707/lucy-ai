@@ -1,6 +1,7 @@
 import type { CharacterAppearance } from "@/constants/create-appearance";
 import { DEFAULT_CREATE_VOICE_ID } from "@/constants/create-voices";
 import type { CreateStyle } from "@/constants/create-page";
+import { resolveCreateAvatarFromDraft } from "@/lib/characters/resolve-create-avatar";
 
 export const CREATE_DRAFT_STORAGE_KEY = "lucy-create-character-draft";
 export const CREATE_AUTO_SUBMIT_KEY = "lucy-create-auto-submit";
@@ -8,6 +9,7 @@ export const CREATE_AUTO_SUBMIT_KEY = "lucy-create-auto-submit";
 export type CreateCharacterDraft = {
   gender: "female";
   style: CreateStyle;
+  ethnicity: string;
   hairStyle: string;
   hairColor: string;
   bodyType: string;
@@ -17,13 +19,13 @@ export type CreateCharacterDraft = {
   personality: string[];
   description: string;
   voicePersonaId: string;
-  avatarUrl: string;
   relationship: string;
 };
 
 export const DEFAULT_CREATE_DRAFT: CreateCharacterDraft = {
   gender: "female",
   style: "realistic",
+  ethnicity: "",
   hairStyle: "",
   hairColor: "",
   bodyType: "",
@@ -33,7 +35,6 @@ export const DEFAULT_CREATE_DRAFT: CreateCharacterDraft = {
   personality: [],
   description: "",
   voicePersonaId: DEFAULT_CREATE_VOICE_ID,
-  avatarUrl: "",
   relationship: "",
 };
 
@@ -42,7 +43,8 @@ export function loadCreateDraft(): CreateCharacterDraft {
   try {
     const raw = sessionStorage.getItem(CREATE_DRAFT_STORAGE_KEY);
     if (!raw) return DEFAULT_CREATE_DRAFT;
-    const parsed = JSON.parse(raw) as Partial<CreateCharacterDraft>;
+    const parsed = JSON.parse(raw) as Partial<CreateCharacterDraft> & { avatarUrl?: string };
+    delete parsed.avatarUrl;
     return { ...DEFAULT_CREATE_DRAFT, ...parsed, gender: "female" };
   } catch {
     return DEFAULT_CREATE_DRAFT;
@@ -72,6 +74,7 @@ export function shouldAutoSubmitCreate(): boolean {
 
 function draftAppearance(draft: CreateCharacterDraft): CharacterAppearance {
   return {
+    ethnicity: draft.ethnicity || undefined,
     hairStyle: draft.hairStyle || undefined,
     hairColor: draft.hairColor || undefined,
     bodyType: draft.bodyType || undefined,
@@ -90,11 +93,13 @@ export function draftToPayload(draft: CreateCharacterDraft) {
     traits.slice(0, 2).join(" · "),
   ].filter(Boolean);
 
+  const avatarUrl = resolveCreateAvatarFromDraft(draft);
+
   return {
     name: draft.name,
     tagline: taglineParts.join(" · ") || undefined,
     description: draft.description.trim() || undefined,
-    avatarUrl: draft.avatarUrl.trim(),
+    avatarUrl: avatarUrl || undefined,
     tags,
     personality: traits,
     gender: "female" as const,
@@ -110,13 +115,13 @@ export function isDraftReadyForSubmit(draft: CreateCharacterDraft): boolean {
   return (
     draft.name.trim().length > 0 &&
     draft.age >= 18 &&
+    draft.ethnicity.length > 0 &&
     draft.hairStyle.length > 0 &&
     draft.hairColor.length > 0 &&
     draft.bodyType.length > 0 &&
     draft.outfit.length > 0 &&
     draft.personality.length > 0 &&
     draft.voicePersonaId.length > 0 &&
-    draft.avatarUrl.trim().length > 0 &&
     draft.relationship.length > 0
   );
 }
@@ -134,6 +139,7 @@ export function characterToDraft(char: any): CreateCharacterDraft {
   return {
     gender: "female",
     style: char.style === "anime" ? "anime" : "realistic",
+    ethnicity: app.ethnicity || "",
     hairStyle: app.hairStyle || "",
     hairColor: app.hairColor || "",
     bodyType: app.bodyType || "",
@@ -143,7 +149,6 @@ export function characterToDraft(char: any): CreateCharacterDraft {
     personality: char.personality || [],
     description: char.description || "",
     voicePersonaId: char.voiceId || char.voicePersonaId || DEFAULT_CREATE_VOICE_ID,
-    avatarUrl: char.avatarUrl || "",
     relationship: relationship,
   };
 }

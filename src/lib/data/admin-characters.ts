@@ -6,8 +6,10 @@ import { revalidateCharacterCatalog } from "@/lib/data/characters-public";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import {
   galleryItemsToUrls,
+  normalizeGalleryItemInput,
   resolveCharacterGalleryItems,
   type CharacterGalleryItem,
+  type GalleryMediaType,
 } from "@/types/gallery";
 
 // Admin-facing character row (superset of the chat CharacterRow — includes the
@@ -334,4 +336,169 @@ export async function deleteCharacter(id: string): Promise<DeleteCharacterResult
 
   revalidateCharacterCatalog(meta.slug);
   return { ok: true };
+}
+
+function parseStoredGalleryItems(raw: unknown): CharacterGalleryItem[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map(normalizeGalleryItemInput)
+    .filter((item): item is CharacterGalleryItem => item !== null);
+}
+
+async function persistGalleryItems(
+  characterId: string,
+  galleryItems: CharacterGalleryItem[],
+): Promise<CharacterGalleryItem[] | null> {
+  const galleryUrls = galleryItemsToUrls(galleryItems);
+  const { data, error } = await supabaseAdmin()
+    .from("characters")
+    .update({
+      gallery_items: galleryItems,
+      gallery_urls: galleryUrls,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", characterId)
+    .select("slug, gallery_items")
+    .single();
+
+  if (error || !data) {
+    console.error("[persistGalleryItems]", error);
+    return null;
+  }
+
+  revalidateCharacterCatalog((data as { slug: string | null }).slug);
+  return parseStoredGalleryItems((data as { gallery_items: unknown }).gallery_items);
+}
+
+export async function getGalleryItems(
+  characterId: string,
+): Promise<CharacterGalleryItem[] | null> {
+  const { data, error } = await supabaseAdmin()
+    .from("characters")
+    .select("gallery_items, gallery_urls, preview_video_url, slug")
+    .eq("id", characterId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[getGalleryItems]", error);
+    return null;
+  }
+  if (!data) return null;
+
+  const row = data as {
+    gallery_items: unknown;
+    gallery_urls: string[];
+    preview_video_url: string | null;
+    slug: string | null;
+  };
+  const slug = row.slug ?? characterId;
+  const legacyUrls = (row.gallery_urls ?? []).map((g) => resolveCharacterImageUrl(g, slug));
+  return resolveCharacterGalleryItems(
+    row.gallery_items,
+    legacyUrls,
+    row.preview_video_url ?? null,
+  );
+}
+
+export async function appendGalleryItem(
+  characterId: string,
+  item: { url: string; type: GalleryMediaType; tags?: string[] },
+): Promise<{ items: CharacterGalleryItem[]; index: number } | null> {
+  const normalized = normalizeGalleryItemInput(item);
+  if (!normalized) return null;
+
+  const { data, error } = await supabaseAdmin()
+    .from("characters")
+    .select("gallery_items")
+    .eq("id", characterId)
+    .maybeSingle();
+
+  if (error || !data) return null;
+
+  const current = parseStoredGalleryItems((data as { gallery_items: unknown }).gallery_items);
+  const next = [...current, normalized];
+  const saved = await persistGalleryItems(characterId, next);
+  if (!saved) return null;
+
+  return { items: saved, index: saved.length - 1 };
+}
+
+export async function updateGalleryItemAt(
+  characterId: string,
+  index: number,
+  patch: { tags?: string[]; type?: GalleryMediaType },
+): Promise<CharacterGalleryItem[] | null> {
+  const { data, error } = await supabaseAdmin()
+    .from("characters")
+    .select("gallery_items")
+    .eq("id", characterId)
+    .maybeSingle();
+
+  if (error || !data) return null;
+
+  const current = parseStoredGalleryItems((data as { gallery_items: unknown }).gallery_items);
+  if (index < 0 || index >= current.length) return null;
+
+  const updated = { ...current[index] };
+  if (patch.tags !== undefined) {
+    updated.tags = patch.tags
+      .filter((t): t is string => typeof t === "string")
+      .map((t) => t.trim().toLowerCase())
+      .filter(Boolean);
+  }
+  if (patch.type !== undefined) {
+    updated.type = patch.type;
+  }
+
+  const next = [...current];
+  next[index] = updated;
+  return persistGalleryItems(characterId, next);
+}
+
+export async function removeGalleryItemAt(
+  characterId: string,
+  index: number,
+): Promise<CharacterGalleryItem[] | null> {
+  const { data, error } = await supabaseAdmin()
+    .from("characters")
+    .select("gallery_items")
+    .eq("id", characterId)
+    .maybeSingle();
+
+  if (error || !data) return null;
+
+  const current = parseStoredGalleryItems((data as { gallery_items: unknown }).gallery_items);
+  if (index < 0 || index >= current.length) return null;
+
+  const next = current.filter((_, i) => i !== index);
+  return persistGalleryItems(characterId, next);
+}
+
+export async function reorderGalleryItems(
+  characterId: string,
+  fromIndex: number,
+  toIndex: number,
+): Promise<CharacterGalleryItem[] | null> {
+  const { data, error } = await supabaseAdmin()
+    .from("characters")
+    .select("gallery_items")
+    .eq("id", characterId)
+    .maybeSingle();
+
+  if (error || !data) return null;
+
+  const current = parseStoredGalleryItems((data as { gallery_items: unknown }).gallery_items);
+  if (
+    fromIndex < 0 ||
+    fromIndex >= current.length ||
+    toIndex < 0 ||
+    toIndex >= current.length
+  ) {
+    return null;
+  }
+
+  const next = [...current];
+  const [item] = next.splice(fromIndex, 1);
+  next.splice(toIndex, 0, item);
+  return persistGalleryItems(characterId, next);
 }

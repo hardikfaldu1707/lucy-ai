@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { m } from "framer-motion";
 import { Coins, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +11,7 @@ import {
   VOICE_SESSION_SECONDS_DEFAULT,
 } from "@/lib/coins-config";
 import { ROUTES } from "@/constants/routes";
+import { cn } from "@/lib/utils";
 
 interface VoiceCallConfirmProps {
   characterName: string;
@@ -18,6 +20,7 @@ interface VoiceCallConfirmProps {
   coinBalance?: number;
   starting: boolean;
   error?: string | null;
+  startDisabled?: boolean;
   onStart: () => void;
   onCancel: () => void;
 }
@@ -29,24 +32,39 @@ export function VoiceCallConfirm({
   coinBalance,
   starting,
   error,
+  startDisabled = false,
   onStart,
   onCancel,
 }: VoiceCallConfirmProps) {
   const cost = ACTION_COST.voice_session;
   const minutes = Math.floor(VOICE_SESSION_SECONDS_DEFAULT / 60);
   const insufficient = typeof coinBalance === "number" && coinBalance < cost;
+  const blocked = insufficient || startDisabled;
   const backHref = ROUTES.publicChatWithCharacter(characterSlug);
 
   return (
-    <div className="flex flex-col items-center px-6 text-center">
-      <div className="relative mb-6 h-24 w-24 overflow-hidden rounded-full ring-4 ring-pink-500/30 ring-offset-4 ring-offset-[#0a0a0a]">
-        <Image
-          src={characterAvatar}
-          alt={characterName}
-          fill
-          className="object-cover"
-          sizes="96px"
+    <m.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="flex w-full flex-col items-center rounded-3xl border border-white/10 bg-white/[0.04] px-6 py-8 text-center backdrop-blur-md"
+    >
+      <div className="relative mb-6 flex items-center justify-center">
+        <m.span
+          aria-hidden
+          className="absolute inset-0 rounded-full bg-pink-500/20 blur-xl"
+          animate={{ scale: [1, 1.15, 1], opacity: [0.4, 0.7, 0.4] }}
+          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
         />
+        <div className="relative h-24 w-24 overflow-hidden rounded-full ring-4 ring-pink-500/30 ring-offset-4 ring-offset-[#0a0a0a]">
+          <Image
+            src={characterAvatar}
+            alt={characterName}
+            fill
+            className="object-cover"
+            sizes="96px"
+          />
+        </div>
       </div>
       <h2 className="text-xl font-semibold text-white">Ready to call {characterName}?</h2>
       <Badge
@@ -57,7 +75,14 @@ export function VoiceCallConfirm({
         {cost} coins · {minutes} minute call
       </Badge>
       {typeof coinBalance === "number" && (
-        <p className="mt-2 text-sm text-white/50">Your balance: {coinBalance} coins</p>
+        <p
+          className={cn(
+            "mt-2 text-sm",
+            insufficient ? "text-red-400/90" : "text-white/50",
+          )}
+        >
+          Your balance: {coinBalance} coins
+        </p>
       )}
       {error && (
         <p className="mt-3 text-sm text-red-400" role="alert">
@@ -72,10 +97,10 @@ export function VoiceCallConfirm({
           )}
         </p>
       )}
-      <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+      <div className="mt-8 flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
         <Button
           onClick={onStart}
-          disabled={starting || insufficient}
+          disabled={starting || blocked}
           className="gap-2 rounded-full bg-pink-500 px-8 hover:bg-pink-400"
         >
           <Phone className="h-4 w-4" aria-hidden />
@@ -96,6 +121,6 @@ export function VoiceCallConfirm({
       >
         Back to chat
       </Link>
-    </div>
+    </m.div>
   );
 }

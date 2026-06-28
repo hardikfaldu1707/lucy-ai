@@ -30,6 +30,7 @@ import {
   type ExploreStyle,
 } from "@/constants/explore-characters";
 import { ROUTES, signInHrefForCreate } from "@/constants/routes";
+import { useProgressiveRender } from "@/hooks/use-progressive-render";
 import { cn } from "@/lib/utils";
 
 type SortMode = "newest" | "popular";
@@ -54,7 +55,8 @@ export function ExplorePage() {
   const { data: dbCharacters } = useQuery({
     queryKey: ["explore", "characters"],
     queryFn: fetchExploreCharacters,
-    staleTime: 60_000,
+    staleTime: 5 * 60_000,
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
   const baseList = useMemo(() => dbCharacters ?? [], [dbCharacters]);
@@ -88,9 +90,11 @@ export function ExplorePage() {
     return list;
   }, [baseList, query, gender, style, ageRange, activeTag, sort]);
 
+  const { visibleItems, hasMore, sentinelRef } = useProgressiveRender(filtered);
+
   const gridItems = useMemo(() => {
     const items: ReactNode[] = [<ExploreCreateCard key="create" />];
-    filtered.forEach((character, index) => {
+    visibleItems.forEach((character, index) => {
       items.push(
         <ExploreCharacterCard
           key={character.id}
@@ -103,7 +107,7 @@ export function ExplorePage() {
       }
     });
     return items;
-  }, [filtered]);
+  }, [visibleItems]);
 
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-black text-white md:pb-12 md:pt-6">
@@ -276,13 +280,24 @@ export function ExplorePage() {
         {filtered.length === 0 ? (
           <p className="py-20 text-center text-white/50">No companions match your filters. Try another tag.</p>
         ) : (
-          <div
-            className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
-            role="list"
-            aria-label="Character gallery"
-          >
-            {gridItems}
-          </div>
+          <>
+            <div
+              className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+              role="list"
+              aria-label="Character gallery"
+            >
+              {gridItems}
+            </div>
+            {hasMore && (
+              <div
+                ref={sentinelRef}
+                className="flex h-16 items-center justify-center py-6 text-sm text-white/40"
+                aria-hidden
+              >
+                Loading more…
+              </div>
+            )}
+          </>
         )}
 
       </div>

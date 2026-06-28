@@ -14,6 +14,7 @@ import { checkUserRateLimit } from "@/lib/rate-limit";
 import { parseBody } from "@/lib/validation/parse";
 import { createCharacterSchema } from "@/lib/validation/schemas";
 import { buildCharacterSystemPrompt } from "@/lib/characters/build-character-system-prompt";
+import { resolveCreateAvatar } from "@/lib/characters/resolve-create-avatar";
 import { CREATE_VOICE_OPTIONS } from "@/constants/create-voices";
 
 // Public: the home/explore catalog (published + public characters).
@@ -93,11 +94,18 @@ export async function POST(req: Request) {
     voicePersonaId: body.voicePersonaId,
   });
 
+  const avatarUrl =
+    body.avatarUrl?.trim() ||
+    resolveCreateAvatar({
+      style: body.style ?? "realistic",
+      appearance: body.appearance,
+    });
+
   const { character, error } = await createCharacter({
     name: body.name,
     tagline: body.tagline,
     description: body.description,
-    avatarUrl: body.avatarUrl,
+    avatarUrl,
     tags: body.tags,
     personality: body.personality,
     aiModel: body.aiModel ?? null,
