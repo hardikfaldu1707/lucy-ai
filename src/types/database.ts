@@ -322,6 +322,98 @@ export type Database = {
           },
         ]
       }
+      character_creation_options: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string | null
+          is_enabled: boolean
+          label: string
+          metadata: Json
+          option_group: string | null
+          option_key: string
+          sort_order: number
+          step_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_enabled?: boolean
+          label: string
+          metadata?: Json
+          option_group?: string | null
+          option_key: string
+          sort_order?: number
+          step_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_enabled?: boolean
+          label?: string
+          metadata?: Json
+          option_group?: string | null
+          option_key?: string
+          sort_order?: number
+          step_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "character_creation_options_step_id_fkey"
+            columns: ["step_id"]
+            isOneToOne: false
+            referencedRelation: "character_creation_steps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      character_creation_steps: {
+        Row: {
+          config: Json
+          created_at: string
+          description: string | null
+          id: string
+          is_enabled: boolean
+          is_required: boolean
+          label: string
+          sort_order: number
+          step_key: string
+          step_type: string
+          updated_at: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_enabled?: boolean
+          is_required?: boolean
+          label: string
+          sort_order?: number
+          step_key: string
+          step_type: string
+          updated_at?: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_enabled?: boolean
+          is_required?: boolean
+          label?: string
+          sort_order?: number
+          step_key?: string
+          step_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       characters: {
         Row: {
           age: number

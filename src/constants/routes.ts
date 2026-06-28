@@ -52,6 +52,7 @@ export const ROUTES = {
   adminAiModels: "/admin/ai-models",
   adminSettings: "/admin/settings",
   adminStorage: "/admin/storage",
+  adminCreateBuilder: "/admin/create-builder",
 } as const;
 
 export function signInHrefForCreate(): string {
@@ -131,6 +132,7 @@ export const ADMIN_NAV = [
   { title: "Dashboard", href: ROUTES.admin, icon: "LayoutDashboard" },
   { title: "Users", href: ROUTES.adminUsers, icon: "Users" },
   { title: "Characters", href: ROUTES.adminCharacters, icon: "Sparkles" },
+  { title: "Create Builder", href: ROUTES.adminCreateBuilder, icon: "Wand2" },
   { title: "Usage & cost", href: ROUTES.adminUsage, icon: "BarChart3" },
   { title: "Cohorts", href: ROUTES.adminCohorts, icon: "TrendingUp" },
   { title: "Tenants", href: ROUTES.adminTenants, icon: "Building2" },
