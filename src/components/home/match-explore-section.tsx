@@ -5,6 +5,7 @@ import { ExploreCharacterCard } from "@/components/explore/explore-character-car
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import type { ExploreCharacter } from "@/constants/explore-characters";
+import { useProgressiveRender } from "@/hooks/use-progressive-render";
 import { cn } from "@/lib/utils";
 
 type MatchTab = "trending" | "popular" | "newest";
@@ -44,6 +45,8 @@ export function MatchExploreSection({ characters }: MatchExploreSectionProps) {
 
     return list;
   }, [characters, activeTab, adultEnabled]);
+
+  const { visibleItems, hasMore, sentinelRef } = useProgressiveRender(filtered, 8);
 
   return (
     <section className="w-full max-w-[1400px]" aria-labelledby="match-heading">
@@ -100,18 +103,29 @@ export function MatchExploreSection({ characters }: MatchExploreSectionProps) {
       {filtered.length === 0 ? (
         <p className="py-16 text-center text-white/50">No characters available yet.</p>
       ) : (
-        <div
-          className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4"
-          role="tabpanel"
-        >
-          {filtered.map((character, index) => (
-            <ExploreCharacterCard
-              key={character.id}
-              character={character}
-              priority={index < 4}
-            />
-          ))}
-        </div>
+        <>
+          <div
+            className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4"
+            role="tabpanel"
+          >
+            {visibleItems.map((character, index) => (
+              <ExploreCharacterCard
+                key={character.id}
+                character={character}
+                priority={index < 4}
+              />
+            ))}
+          </div>
+          {hasMore && (
+            <div
+              ref={sentinelRef}
+              className="flex h-12 items-center justify-center pt-4 text-sm text-white/40"
+              aria-hidden
+            >
+              Loading more…
+            </div>
+          )}
+        </>
       )}
     </section>
   );

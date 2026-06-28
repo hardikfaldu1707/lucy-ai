@@ -34,6 +34,7 @@ interface ChatInputProps {
   mediaRequestEnabled?: boolean;
   mediaPaywallEnabled?: boolean;
   mediaCostPerItem?: number;
+  onInputFocus?: () => void;
 }
 
 function insertAtCursor(
@@ -65,6 +66,7 @@ export function ChatInput({
   mediaRequestEnabled = false,
   mediaPaywallEnabled = false,
   mediaCostPerItem = 0,
+  onInputFocus,
 }: ChatInputProps) {
   const [internalValue, setInternalValue] = useState("");
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -182,6 +184,13 @@ export function ChatInput({
     requestAnimationFrame(() => textareaRef.current?.focus());
   };
 
+  const handleInputFocus = () => {
+    onInputFocus?.();
+    requestAnimationFrame(() => {
+      textareaRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
+    });
+  };
+
   const ghostBtnClass = cn(
     isDark && "text-white hover:bg-white/10 hover:text-white",
   );
@@ -285,6 +294,8 @@ export function ChatInput({
               value={displayValue}
               onChange={(e) => setValue(e.target.value)}
               onKeyDown={onKeyDown}
+              onFocus={handleInputFocus}
+              enterKeyHint="send"
               placeholder={
                 dictation.isListening ? "Listening… speak your message" : mediaPlaceholder
               }
@@ -292,7 +303,7 @@ export function ChatInput({
               readOnly={dictation.isListening}
               rows={1}
               className={cn(
-                "min-h-[40px] max-h-32 min-w-0 flex-1 resize-none border-0 bg-transparent px-1 pr-1 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0",
+                "min-h-[40px] max-h-32 min-w-0 flex-1 resize-none border-0 bg-transparent px-1 pr-1 text-base leading-snug shadow-none focus-visible:ring-0 focus-visible:ring-offset-0",
                 isDark && "text-white placeholder:text-white/40",
                 dictation.isListening && "placeholder:text-primary/80",
               )}

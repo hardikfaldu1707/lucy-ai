@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
 import { X } from "lucide-react";
 import { Logo } from "@/components/shared/logo";
 import { Button } from "@/components/ui/button";
@@ -26,7 +26,7 @@ export function AdminMobileNav() {
     <AnimatePresence>
       {mobileNavOpen && (
         <>
-          <motion.div
+          <m.div
             initial={{ opacity: reducedMotion ? 1 : 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: reducedMotion ? 1 : 0 }}
@@ -34,7 +34,7 @@ export function AdminMobileNav() {
             onClick={() => setMobileNavOpen(false)}
             aria-hidden="true"
           />
-          <motion.aside
+          <m.aside
             initial={{ x: slideOffset }}
             animate={{ x: 0 }}
             exit={{ x: slideOffset }}
@@ -72,7 +72,7 @@ export function AdminMobileNav() {
                 );
               })}
             </nav>
-          </motion.aside>
+          </m.aside>
         </>
       )}
     </AnimatePresence>

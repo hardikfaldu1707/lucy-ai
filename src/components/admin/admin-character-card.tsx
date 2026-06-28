@@ -1,13 +1,18 @@
 "use client";
 
 import Image from "next/image";
-import { Camera, Edit, Eye, Trash2 } from "lucide-react";
+import { Camera, Edit, Eye, Trash2, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { resolveCharacterImageUrl } from "@/constants/character-portraits";
 import { aiModelLabel } from "@/constants/ai-models";
 import type { AdminCharacter } from "@/lib/data/admin-characters";
 import { cn } from "@/lib/utils";
+
+function formatDate(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
 
 interface AdminCharacterCardProps {
   character: AdminCharacter;
@@ -121,6 +126,11 @@ export function AdminCharacterCard({
             {character.tagline || character.description}
           </p>
           <div className="flex flex-wrap gap-1">
+            {character.category && (
+              <span className="rounded-full bg-primary/25 px-2 py-0.5 text-[9px] font-medium text-white/95 backdrop-blur-sm">
+                {character.category}
+              </span>
+            )}
             {character.tags.slice(0, 2).map((tag) => (
               <span
                 key={tag}
@@ -134,6 +144,15 @@ export function AdminCharacterCard({
                 {aiModelLabel(character.aiModel)}
               </span>
             )}
+          </div>
+          <div className="flex items-center gap-2 pt-0.5">
+            <span className="text-[9px] text-white/50 capitalize">
+              {character.gender} · {character.style}
+            </span>
+            <span className="ml-auto flex items-center gap-1 text-[9px] text-white/40">
+              <Calendar className="h-2.5 w-2.5" />
+              {formatDate(character.createdAt)}
+            </span>
           </div>
         </div>
       </div>

@@ -4,7 +4,6 @@ import { memo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Heart } from "lucide-react";
-import { motion } from "framer-motion";
 import { StartChatButton } from "@/components/chat/start-chat-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,7 +23,7 @@ export const CharacterCard = memo(function CharacterCard({
   onToggleFavorite,
 }: CharacterCardProps) {
   return (
-    <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
+    <div className="transition-transform duration-200 ease-out hover:-translate-y-1 motion-reduce:transform-none">
       <Card className="group overflow-hidden transition-shadow hover:shadow-lg hover:shadow-primary/5">
         <Link href={ROUTES.character(character.id)} className="block">
           <div className="relative aspect-[4/5] overflow-hidden bg-muted">
@@ -65,6 +64,6 @@ export const CharacterCard = memo(function CharacterCard({
           </div>
         </CardContent>
       </Card>
-    </motion.div>
+    </div>
   );
 });

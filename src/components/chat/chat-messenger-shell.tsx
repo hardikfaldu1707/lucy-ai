@@ -133,7 +133,7 @@ export function ChatMessengerShell({
   return (
     <div
       className={cn(
-        "relative flex min-h-0 w-full overflow-hidden",
+        "chat-surface relative flex min-h-0 w-full overflow-hidden",
         isEmbedded ? "h-full min-h-0" : "h-full flex-1",
         isDark ? "bg-[#0a0a0a] text-white" : "bg-background text-foreground",
         className,
@@ -263,7 +263,7 @@ export function ChatMessengerShell({
                   value={chatSearch}
                   onChange={(e) => setChatSearch(e.target.value)}
                   className={cn(
-                    "h-9 rounded-lg pl-9 text-sm",
+                    "h-9 rounded-lg pl-9 text-base",
                     isDark &&
                       "border-white/[0.08] bg-white/[0.06] text-white placeholder:text-white/40 focus-visible:ring-primary/40",
                   )}

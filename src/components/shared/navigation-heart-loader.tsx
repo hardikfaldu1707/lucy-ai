@@ -23,7 +23,11 @@ function isInternalNavigationLink(anchor: HTMLAnchorElement, currentPath: string
   return next !== current;
 }
 
-const SHOW_DELAY_MS = 180;
+const SHOW_DELAY_MS = 300;
+
+function isAdminRoute(path: string): boolean {
+  return path.startsWith("/admin");
+}
 
 export function NavigationHeartLoader() {
   const pathname = usePathname();
@@ -49,6 +53,13 @@ export function NavigationHeartLoader() {
     const onClick = (event: MouseEvent) => {
       const anchor = (event.target as HTMLElement).closest("a");
       if (!anchor || !isInternalNavigationLink(anchor, pathnameRef.current)) return;
+
+      const href = anchor.getAttribute("href") ?? "";
+      const url = new URL(anchor.href);
+      const nextPath = url.pathname;
+
+      // Skip fullscreen overlay for admin-to-admin navigation
+      if (isAdminRoute(pathnameRef.current) && isAdminRoute(nextPath)) return;
 
       clearShowTimer();
       showTimerRef.current = setTimeout(() => {

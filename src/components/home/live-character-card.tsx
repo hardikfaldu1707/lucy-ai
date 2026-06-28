@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import { motion } from "framer-motion";
 import { CharacterPortraitMedia } from "./character-portrait-media";
 import type { LandingCharacter } from "@/constants/landing-characters";
 import { ROUTES } from "@/constants/routes";
@@ -16,11 +15,9 @@ interface LiveCharacterCardProps {
 
 export function LiveCharacterCard({ character, className, priority }: LiveCharacterCardProps) {
   return (
-    <motion.article
-      whileHover={{ y: -6, scale: 1.02 }}
-      transition={{ type: "spring", stiffness: 400, damping: 28 }}
+    <article
       className={cn(
-        "group relative flex w-[168px] shrink-0 flex-col overflow-hidden rounded-2xl sm:w-[188px] md:w-[200px]",
+        "group relative flex w-[168px] shrink-0 flex-col overflow-hidden rounded-2xl transition-transform duration-200 ease-out hover:scale-[1.02] hover:-translate-y-1 motion-reduce:transform-none sm:w-[188px] md:w-[200px]",
         className
       )}
     >
@@ -63,6 +60,6 @@ export function LiveCharacterCard({ character, className, priority }: LiveCharac
           </Link>
         </div>
       </div>
-    </motion.article>
+    </article>
   );
 }

@@ -208,8 +208,8 @@ export function MessageBubble({
                 "w-fit max-w-full px-3.5 py-2 text-sm shadow-sm",
                 isUser
                   ? groupPosition === "last" || groupPosition === "single"
-                    ? "rounded-2xl rounded-br-md bg-primary text-primary-foreground"
-                    : "rounded-2xl bg-primary text-primary-foreground"
+                    ? "rounded-2xl rounded-br-md bg-gradient-to-r from-fuchsia-500 to-pink-500 text-white"
+                    : "rounded-2xl bg-gradient-to-r from-fuchsia-500 to-pink-500 text-white"
                   : groupPosition === "last" || groupPosition === "single"
                     ? "rounded-2xl rounded-bl-md"
                     : "rounded-2xl",

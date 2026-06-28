@@ -9,6 +9,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { parseBody } from "@/lib/validation/parse";
 import { updateUserCharacterSchema } from "@/lib/validation/schemas";
 import { buildCharacterSystemPrompt } from "@/lib/characters/build-character-system-prompt";
+import { resolveCreateAvatar } from "@/lib/characters/resolve-create-avatar";
 import { CREATE_VOICE_OPTIONS } from "@/constants/create-voices";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -102,11 +103,18 @@ export async function PATCH(req: Request, context: RouteContext) {
     voicePersonaId: mergedVoicePersonaId ?? undefined,
   });
 
+  const resolvedAvatar =
+    body.avatarUrl?.trim() ||
+    resolveCreateAvatar({
+      style: (mergedStyle as "realistic" | "anime") ?? "realistic",
+      appearance: (mergedAppearance ?? {}) as import("@/constants/create-appearance").CharacterAppearance,
+    });
+
   const character = await updateCharacter(characterId, {
     name: mergedName,
     tagline: body.tagline,
     description: mergedDescription,
-    avatarUrl: body.avatarUrl,
+    ...(resolvedAvatar ? { avatarUrl: resolvedAvatar } : {}),
     tags: mergedTags,
     personality: mergedPersonality,
     aiModel: body.aiModel === undefined ? undefined : body.aiModel,

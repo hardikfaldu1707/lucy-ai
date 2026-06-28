@@ -10,9 +10,11 @@ const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
 const isAuthRoute = createRouteMatcher(["/sign-in(.*)", "/sign-up(.*)"]);
 
 export default clerkMiddleware(async (auth, request) => {
-  const { userId, sessionClaims } = await auth();
+  const { isAuthenticated, userId, sessionClaims } = await auth();
 
-  if (userId && isAuthRoute(request)) {
+  // Only bounce signed-in users away from /sign-in when the session is valid.
+  // A stale cookie (userId without isAuthenticated) causes refresh loops if we redirect here.
+  if (isAuthenticated && isAuthRoute(request)) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 

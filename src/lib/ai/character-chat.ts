@@ -107,6 +107,7 @@ function buildSystemPrompt(
     lustLevel?: ChatSettingsLevel;
     responseLength?: ChatSettingsLevel;
     voicePersonaId?: string | null;
+    systemPromptSuffix?: string;
   },
 ): string {
   const custom = character.systemPrompt?.trim();
@@ -120,6 +121,7 @@ function buildSystemPrompt(
   }
   const memBlock = opts?.memories?.length ? formatMemoriesForPrompt(opts.memories) : "";
   if (memBlock) parts.push(memBlock);
+  if (opts?.systemPromptSuffix?.trim()) parts.push(opts.systemPromptSuffix.trim());
   return parts.join("\n\n");
 }
 
@@ -145,12 +147,15 @@ export interface ChatContext {
   lustLevel?: ChatSettingsLevel;
   responseLength?: ChatSettingsLevel;
   voicePersonaId?: string | null;
+  modelOverride?: string;
+  systemPromptSuffix?: string;
 }
 
 async function resolvePrimaryModel(
   character: CharacterRow,
   ctx: ChatContext,
 ): Promise<string> {
+  if (ctx.modelOverride?.trim()) return ctx.modelOverride.trim();
   const settingsDefault = await resolveDefaultModel();
   const fallback = process.env.OPENROUTER_MODEL || settingsDefault || DEFAULT_MODEL;
   return ctx.plan
@@ -182,6 +187,7 @@ async function buildRequest(
     lustLevel: ctx.lustLevel,
     responseLength: ctx.responseLength,
     voicePersonaId: ctx.voicePersonaId,
+    systemPromptSuffix: ctx.systemPromptSuffix,
   });
   const messages = [
     { role: "system" as const, content: systemPrompt },

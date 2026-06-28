@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import { motion } from "framer-motion";
 import { CharacterPortraitMedia } from "./character-portrait-media";
 import type { LandingCharacter } from "@/constants/landing-characters";
 import { ROUTES } from "@/constants/routes";
@@ -45,11 +44,7 @@ export function DiscoveryCharacterCard({ character }: DiscoveryCharacterCardProp
     "group relative block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500 focus-visible:ring-offset-2 focus-visible:ring-offset-black";
 
   return (
-    <motion.article
-      whileHover={{ scale: 1.02 }}
-      transition={{ type: "spring", stiffness: 400, damping: 30 }}
-      className="relative overflow-hidden rounded-3xl"
-    >
+    <article className="relative overflow-hidden rounded-3xl transition-transform duration-200 ease-out hover:scale-[1.02] motion-reduce:transform-none">
       <Link
         href={ROUTES.publicChatWithCharacter(character.id)}
         className={linkClass}
@@ -57,6 +52,6 @@ export function DiscoveryCharacterCard({ character }: DiscoveryCharacterCardProp
       >
         <CardContent character={character} />
       </Link>
-    </motion.article>
+    </article>
   );
 }

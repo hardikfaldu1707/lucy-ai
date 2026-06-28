@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useMemo, useState, useEffect, useRef, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@clerk/nextjs";
-// import { useAuth } from "@clerk/nextjs";
 import { Phone, Search, SlidersHorizontal } from "lucide-react";
 import { ExploreCharacterCard } from "@/components/explore/explore-character-card";
 import { ExploreCreateCard } from "@/components/explore/explore-create-card";
@@ -32,6 +31,7 @@ import {
 import type { ExploreCharacter } from "@/constants/explore-characters";
 import { ROUTES } from "@/constants/routes";
 import { useFlag } from "@/hooks/use-flags";
+import { useProgressiveRender } from "@/hooks/use-progressive-render";
 import { cn } from "@/lib/utils";
 
 type SortMode = "newest" | "popular";
@@ -66,18 +66,19 @@ export function HomeExploreGallerySection({
     queryKey: ["home", "characters"],
     queryFn: fetchHomeCharacters,
     initialData: initialCharacters,
-    staleTime: 60_000,
-    refetchOnMount: initialCharacters === undefined,
+    staleTime: 5 * 60_000,
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
     enabled: isLoaded,
   });
 
   useEffect(() => {
-    if (isLoaded && isSignedIn && !wasSignedInRef.current) {
+    if (!isLoaded || !isSignedIn || wasSignedInRef.current) return;
+    wasSignedInRef.current = true;
+    if (initialCharacters === undefined) {
       void queryClient.invalidateQueries({ queryKey: ["home", "characters"] });
     }
-    wasSignedInRef.current = Boolean(isSignedIn);
-  }, [isLoaded, isSignedIn, queryClient]);
+  }, [isLoaded, isSignedIn, initialCharacters, queryClient]);
 
   const baseList = useMemo(
     () => dbCharacters ?? initialCharacters ?? [],
@@ -113,9 +114,11 @@ export function HomeExploreGallerySection({
     return list;
   }, [baseList, query, gender, style, ageRange, activeTag, sort]);
 
+  const { visibleItems, hasMore, sentinelRef } = useProgressiveRender(filtered);
+
   const gridItems = useMemo(() => {
     const items: ReactNode[] = [<ExploreCreateCard key="create" />];
-    filtered.forEach((character, index) => {
+    visibleItems.forEach((character, index) => {
       items.push(
         <ExploreCharacterCard
           key={character.id}
@@ -128,7 +131,7 @@ export function HomeExploreGallerySection({
       }
     });
     return items;
-  }, [filtered]);
+  }, [visibleItems]);
 
   return (
     <section className="w-full" aria-label="Discover AI companions">
@@ -392,13 +395,24 @@ export function HomeExploreGallerySection({
           No companions match your filters. Try another tag.
         </p>
       ) : (
-        <div
-          className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
-          role="list"
-          aria-label="Character gallery"
-        >
-          {gridItems}
-        </div>
+        <>
+          <div
+            className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+            role="list"
+            aria-label="Character gallery"
+          >
+            {gridItems}
+          </div>
+          {hasMore && (
+            <div
+              ref={sentinelRef}
+              className="flex h-16 items-center justify-center py-6 text-sm text-white/40"
+              aria-hidden
+            >
+              Loading more…
+            </div>
+          )}
+        </>
       )}
 
     </section>

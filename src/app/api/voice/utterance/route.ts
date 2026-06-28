@@ -2,10 +2,14 @@ import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { getCharacterBySlug } from "@/lib/data/chat";
 import {
+  getCharacterChatPrefs,
+  resolveEffectiveVoicePersona,
+} from "@/lib/data/character-chat-prefs";
+import {
   getVoiceCallSession,
   isVoiceSessionActive,
 } from "@/lib/data/voice-sessions";
-import { createDemoVoiceSseStream } from "@/lib/voice/demo-voice";
+import { createDemoVoiceSseStream, createVoiceGreetingSseStream } from "@/lib/voice/demo-voice";
 import {
   createVoiceErrorStream,
   isOpenRouterAudioBalanceError,
@@ -47,6 +51,7 @@ export async function POST(req: Request) {
   const userText = typeof body.userText === "string" ? body.userText.trim() : "";
   const format = typeof body.format === "string" ? body.format.trim() : "webm";
   const history = parseHistory(body.history);
+  const isGreeting = body.greeting === true;
 
   if (!sessionId) {
     return NextResponse.json({ error: "sessionId is required" }, { status: 400 });
@@ -62,18 +67,31 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Character not found" }, { status: 404 });
   }
 
+  const chatPrefs = await getCharacterChatPrefs(userId, character.id);
+  const voicePersonaId = resolveEffectiveVoicePersona(chatPrefs, character.voiceId);
+
   const mode = getVoiceCallMode();
   let stream: ReadableStream<Uint8Array>;
 
   if (mode === "text") {
-    if (!userText) {
-      return NextResponse.json({ error: "userText is required for voice chat" }, { status: 400 });
+    if (isGreeting) {
+      stream = await createVoiceGreetingSseStream({
+        character,
+        profileId: userId,
+        voicePersonaId,
+      });
+    } else {
+      if (!userText) {
+        return NextResponse.json({ error: "userText is required for voice chat" }, { status: 400 });
+      }
+      stream = await createDemoVoiceSseStream({
+        character,
+        profileId: userId,
+        voicePersonaId,
+        userText,
+        history,
+      });
     }
-    stream = await createDemoVoiceSseStream({
-      character,
-      userText,
-      history,
-    });
   } else {
     if (!audioBase64) {
       return NextResponse.json({ error: "audioBase64 is required for native voice" }, { status: 400 });
@@ -98,6 +116,8 @@ export async function POST(req: Request) {
         if (transcribed) {
           stream = await createDemoVoiceSseStream({
             character,
+            profileId: userId,
+            voicePersonaId,
             userText: transcribed,
             history,
           });

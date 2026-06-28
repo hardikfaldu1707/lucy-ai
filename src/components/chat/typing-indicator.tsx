@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 interface TypingIndicatorProps {
@@ -31,7 +31,7 @@ export function TypingIndicator({
         )}
       >
         {[0, 1, 2].map((i) => (
-          <motion.span
+          <m.span
             key={i}
             className={cn(
               "h-2 w-2 rounded-full",

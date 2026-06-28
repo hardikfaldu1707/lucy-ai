@@ -124,15 +124,28 @@ export function CharacterProfileMediaPicker({
     }
   };
 
-  const handleFile = async (file: File) => {
-    if (pendingType === "video") await handleVideoFile(file);
+  const handleFile = async (file: File, type: GalleryMediaType) => {
+    if (type === "video") await handleVideoFile(file);
     else await handlePhotoFile(file);
+  };
+
+  const resolveFileType = (file: File): GalleryMediaType | null => {
+    if (isAllowedVideoFile(file)) return "video";
+    if (isAllowedImageFile(file)) return "image";
+    return null;
   };
 
   const handleFiles = (files: FileList | null) => {
     const file = files?.[0];
-    if (!file || !pendingType) return;
-    void handleFile(file);
+    if (!file) return;
+
+    const type = pendingType ?? resolveFileType(file);
+    if (!type) {
+      toast.error("Please upload JPEG, PNG, WebP, GIF, MP4, or WebM");
+      return;
+    }
+
+    void handleFile(file, type);
   };
 
   const clearMedia = () => {
@@ -148,7 +161,9 @@ export function CharacterProfileMediaPicker({
   const accept =
     pendingType === "video"
       ? "video/mp4,video/webm,.mp4,.webm"
-      : "image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif";
+      : pendingType === "image"
+        ? "image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif"
+        : "image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,.jpg,.jpeg,.png,.webp,.gif,.mp4,.webm";
 
   return (
     <div className="space-y-4">
@@ -200,15 +215,61 @@ export function CharacterProfileMediaPicker({
           </p>
 
           {!showTypePicker && !pendingType && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={uploading}
-              onClick={() => setShowTypePicker(true)}
-            >
-              {value.avatarUrl || value.previewVideoUrl ? "Change media" : "Add profile media"}
-            </Button>
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={uploading}
+                onClick={() => setShowTypePicker(true)}
+              >
+                {value.avatarUrl || value.previewVideoUrl ? "Change media" : "Add profile media"}
+              </Button>
+
+              <div
+                role="button"
+                tabIndex={0}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setIsDragOver(true);
+                }}
+                onDragLeave={() => setIsDragOver(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setIsDragOver(false);
+                  handleFiles(e.dataTransfer.files);
+                }}
+                onClick={() => fileInputRef.current?.click()}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    fileInputRef.current?.click();
+                  }
+                }}
+                className={cn(
+                  "flex min-h-[100px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-4 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  isDragOver
+                    ? "border-primary bg-primary/5"
+                    : "border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50",
+                  uploading && "pointer-events-none opacity-60",
+                )}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept={accept}
+                  className="hidden"
+                  disabled={uploading}
+                  aria-label="Upload profile photo or video"
+                  onChange={(e) => handleFiles(e.target.files)}
+                />
+                <Upload className="mb-2 h-6 w-6 text-muted-foreground" aria-hidden />
+                <p className="text-xs font-semibold">Drag & drop photo or video</p>
+                <p className="mt-1 text-[10px] text-muted-foreground">
+                  Auto-detects type — or use the button above to pick Photo / Video first
+                </p>
+              </div>
+            </>
           )}
 
           {showTypePicker && (

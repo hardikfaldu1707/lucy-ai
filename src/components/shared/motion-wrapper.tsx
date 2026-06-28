@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, type Variants } from "framer-motion";
+import { m, type Variants } from "framer-motion";
 import type { ReactNode } from "react";
 
 const fadeUp: Variants = {
@@ -16,7 +16,7 @@ interface MotionWrapperProps {
 
 export function MotionWrapper({ children, className, delay = 0 }: MotionWrapperProps) {
   return (
-    <motion.div
+    <m.div
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true, margin: "-48px" }}
@@ -25,6 +25,6 @@ export function MotionWrapper({ children, className, delay = 0 }: MotionWrapperP
       className={className}
     >
       {children}
-    </motion.div>
+    </m.div>
   );
 }
