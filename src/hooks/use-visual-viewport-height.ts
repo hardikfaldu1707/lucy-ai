@@ -99,5 +99,5 @@ export function useVisualViewportHeight() {
 
 /** Reset iOS visual viewport scroll offset after input focus. */
 export function resetVisualViewportScroll() {
-  window.visualViewport?.scroll({ top: 0, left: 0 });
+  window.scrollTo({ top: 0, left: 0 });
 }
