@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
-import { ChevronLeft, Menu, PanelLeft, Plus, Search } from "lucide-react";
+import { ChevronLeft, Menu, PanelLeft, Plus, Search, Sparkles, Compass, MessageSquare, Wand, Bot, User, Crown } from "lucide-react";
 import { ConversationList } from "@/components/chat/conversation-list";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,44 @@ import { ROUTES } from "@/constants/routes";
 import { BELOW_MD_MEDIA_QUERY, MD_MEDIA_QUERY } from "@/constants/breakpoints";
 import { useUIStore } from "@/store/ui-store";
 import { cn } from "@/lib/utils";
+
+interface NavItemProps {
+  icon: React.ElementType;
+  label: string;
+  href: string;
+  isDark: boolean;
+  isActive?: boolean;
+  isNew?: boolean;
+  hasPinkBg?: boolean;
+}
+
+function NavItem({ icon: Icon, label, href, isDark, isActive, isNew, hasPinkBg }: NavItemProps) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+        hasPinkBg
+          ? "bg-gradient-to-r from-pink-500/20 to-purple-600/20 text-white border border-pink-500/30"
+          : isActive
+            ? isDark
+              ? "bg-white/10 text-white"
+              : "bg-primary/10 text-primary"
+            : isDark
+              ? "text-white/60 hover:bg-white/5 hover:text-white"
+              : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+      )}
+    >
+      <Icon className="h-5 w-5" />
+      <span className="flex-1">{label}</span>
+      {isNew && (
+        <span className="rounded-full bg-primary px-1.5 py-0.5 text-[9px] font-bold text-white">
+          NEW
+        </span>
+      )}
+    </Link>
+  );
+}
 
 function MobileChatListHeader() {
   const { setChatSidebarOpen, setLandingMobileMenuOpen } = useUIStore();
@@ -26,15 +64,6 @@ function MobileChatListHeader() {
         aria-label="Open app menu"
       >
         <Menu className="h-5 w-5" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-9 w-9 shrink-0 rounded-xl text-white hover:bg-white/10"
-        onClick={() => setChatSidebarOpen(true)}
-        aria-label="Open conversations"
-      >
-        <PanelLeft className="h-5 w-5" />
       </Button>
       <h1 className="min-w-0 flex-1 truncate text-sm font-semibold text-white">Chats</h1>
       <Button
@@ -188,87 +217,40 @@ export function ChatMessengerShell({
               </Button>
             </div>
           ) : (
-            <div className="space-y-3">
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0 pt-0.5">
-                  <h2
-                    className={cn(
-                      "text-base font-semibold tracking-tight",
-                      isDark ? "text-white" : "text-foreground",
-                    )}
-                  >
-                    {isGuestChat ? "Companions" : "Chats"}
-                  </h2>
-                  <p
-                    className={cn(
-                      "text-[11px]",
-                      isDark ? "text-white/45" : "text-muted-foreground",
-                    )}
-                  >
-                    {isGuestChat ? "Switch chat" : "Your conversations"}
-                  </p>
-                </div>
-                <div className="flex shrink-0 items-center gap-0.5">
+            <div className="flex h-full flex-col">
+              {/* Top section with badge */}
+              <div className="flex items-center justify-between px-4 py-4">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-purple-600">
+                    <span className="text-sm font-bold text-white">39</span>
+                  </div>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className={cn(
-                      "hidden h-8 w-8 md:inline-flex",
-                      isDark && "text-white/50 hover:bg-white/10 hover:text-white",
-                    )}
-                    onClick={toggleChatSidebarCollapsed}
-                    aria-label="Collapse conversations"
+                    className="h-8 w-8 rounded-full bg-white/10 text-white hover:bg-white/20"
                   >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={cn(
-                      "h-8 w-8 md:hidden",
-                      isDark && "text-white/50 hover:bg-white/10 hover:text-white",
-                    )}
-                    onClick={() => setChatSidebarOpen(false)}
-                    aria-label="Close sidebar"
-                  >
-                    <PanelLeft className="h-4 w-4" />
+                    <Plus className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
-              <Button
-                asChild
-                className={cn(
-                  "h-9 w-full gap-2 rounded-lg font-medium",
-                  isDark
-                    ? "bg-white/[0.08] text-white hover:bg-white/[0.12]"
-                    : "bg-primary text-primary-foreground hover:bg-primary/90",
-                )}
-              >
-                <Link href={ROUTES.publicChatNew}>
-                  <Plus className="h-4 w-4" />
-                  New chat
-                </Link>
-              </Button>
-              <div className="relative">
-                <Search
-                  className={cn(
-                    "pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2",
-                    isDark ? "text-white/40" : "text-muted-foreground",
-                  )}
-                  aria-hidden
-                />
-                <Input
-                  type="search"
-                  placeholder="Search chats"
-                  value={chatSearch}
-                  onChange={(e) => setChatSearch(e.target.value)}
-                  className={cn(
-                    "h-9 rounded-lg pl-9 text-base",
-                    isDark &&
-                      "border-white/[0.08] bg-white/[0.06] text-white placeholder:text-white/40 focus-visible:ring-primary/40",
-                  )}
-                  aria-label="Search conversations"
-                />
+
+              {/* Navigation Icons */}
+              <nav className="flex-1 space-y-1 px-3">
+                <NavItem icon={Sparkles} label="Create" href={ROUTES.publicChatNew} isDark={isDark} />
+                <NavItem icon={Compass} label="Explore" href="/explore" isDark={isDark} />
+                <NavItem icon={MessageSquare} label="Chat" href={ROUTES.publicChat} isDark={isDark} isActive hasPinkBg />
+                <NavItem icon={User} label="Profile" href="/profile" isDark={isDark} />
+                <NavItem icon={Crown} label="Premium" href="/premium" isDark={isDark} />
+              </nav>
+
+              {/* Profile Section at bottom */}
+              <div className="border-t border-white/[0.08] px-3 py-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-white">User</p>
+                    <p className="text-xs text-white/50">Free plan</p>
+                  </div>
+                </div>
               </div>
             </div>
           )}

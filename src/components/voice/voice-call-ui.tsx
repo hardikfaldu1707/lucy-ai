@@ -159,14 +159,61 @@ export function VoiceCallUI({
     setMicStatus("requesting");
     warmVoicePlayback();
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      setLocalStream(stream);
-      setMicStatus("prompt");
-      setStage("confirm");
-    } catch {
+      // Check if permission is already granted
+      const permissionStatus = await navigator.permissions.query({ name: "microphone" as PermissionName });
+      
+      if (permissionStatus.state === "granted") {
+        // Permission already granted, directly get the stream
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        setLocalStream(stream);
+        setMicStatus("prompt");
+        setStage("confirm");
+      } else if (permissionStatus.state === "denied") {
+        // Permission already denied
+        setMicStatus("denied");
+      } else {
+        // Permission is "prompt" state - ask for permission
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        setLocalStream(stream);
+        setMicStatus("prompt");
+        setStage("confirm");
+      }
+    } catch (err) {
+      // Permission denied or error
       setMicStatus("denied");
     }
   }, []);
+
+  // Check permission status on component mount
+  useEffect(() => {
+    if (stage !== "mic") return;
+    
+    const checkPermission = async () => {
+      try {
+        const permissionStatus = await navigator.permissions.query({ name: "microphone" as PermissionName });
+        
+        if (permissionStatus.state === "granted") {
+          // Auto-skip mic permission screen if already granted
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          setLocalStream(stream);
+          setStage("confirm");
+        } else if (permissionStatus.state === "denied") {
+          setMicStatus("denied");
+        }
+        
+        // Listen for permission changes
+        permissionStatus.onchange = () => {
+          if (permissionStatus.state === "denied") {
+            setMicStatus("denied");
+          }
+        };
+      } catch {
+        // Permissions API not supported or error - stay on mic screen
+      }
+    };
+    
+    void checkPermission();
+  }, [stage]);
 
   const handleCancelConfirm = useCallback(() => {
     releaseStream(localStream);

@@ -30,7 +30,12 @@ export default async function PublicChatLayout({ children }: { children: React.R
       <CoinBalanceHydrator balance={coinBalance} />
       <FlagsHydrator flags={flags} />
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <ChatMessengerShell variant="dark" layout="landing" className="min-h-0 flex-1">
+        <ChatMessengerShell 
+          variant="dark" 
+          layout="landing" 
+          guestBrowse={true}
+          className="min-h-0 flex-1"
+        >
           {children}
         </ChatMessengerShell>
       </div>

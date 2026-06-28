@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { ChatInboxPlaceholder } from "@/components/chat/chat-inbox-placeholder";
+import { ChatConversationListView } from "@/components/chat/chat-conversation-list-view";
 import { ROUTES } from "@/constants/routes";
 
 export const metadata: Metadata = {
@@ -15,5 +15,5 @@ export default async function PublicChatPage() {
     redirect(ROUTES.publicChatNew);
   }
 
-  return <ChatInboxPlaceholder variant="dark" />;
+  return <ChatConversationListView />;
 }

@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { Menu, PanelLeft, Phone } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Menu, ChevronLeft, Phone } from "lucide-react";
 import { ChatCharacterSettingsMenu } from "@/components/chat/chat-character-settings-menu";
 import { chatHeaderIconClass } from "@/components/chat/chat-header-actions";
 import { CoinBalanceBadge } from "@/components/shared/coin-balance-badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { characterProfilePath } from "@/constants/routes";
+import { characterProfilePath, ROUTES } from "@/constants/routes";
 import { useUIStore } from "@/store/ui-store";
 import { cn } from "@/lib/utils";
 
@@ -32,8 +33,8 @@ export function ChatCharacterProfileBar({
   voiceEnabled,
   voiceHref,
 }: ChatCharacterProfileBarProps) {
-  const { setChatSidebarOpen, toggleChatSidebarCollapsed, setLandingMobileMenuOpen } =
-    useUIStore();
+  const router = useRouter();
+  const { setLandingMobileMenuOpen } = useUIStore();
 
   return (
     <header className="sticky top-0 z-10 shrink-0 border-b border-white/[0.08] bg-[#0c0c0c]/95 pt-[calc(env(safe-area-inset-top)+8px)] backdrop-blur-md supports-[backdrop-filter]:bg-[#0c0c0c]/85">
@@ -47,23 +48,15 @@ export function ChatCharacterProfileBar({
         >
           <Menu className="h-5 w-5" />
         </Button>
+
         <Button
           variant="ghost"
           size="icon"
-          className="h-9 w-9 shrink-0 rounded-lg text-white/80 hover:bg-white/[0.06] hover:text-white md:hidden"
-          onClick={() => setChatSidebarOpen(true)}
-          aria-label="Open conversations"
+          className="h-9 w-9 shrink-0 rounded-lg text-white/80 hover:bg-white/[0.06] hover:text-white"
+          onClick={() => router.push(ROUTES.publicChat)}
+          aria-label="Back to chats"
         >
-          <PanelLeft className="h-5 w-5" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="hidden h-9 w-9 shrink-0 rounded-lg text-white/80 hover:bg-white/[0.06] hover:text-white md:flex"
-          onClick={toggleChatSidebarCollapsed}
-          aria-label="Toggle conversation sidebar"
-        >
-          <PanelLeft className="h-5 w-5" />
+          <ChevronLeft className="h-5 w-5" />
         </Button>
 
         <Link

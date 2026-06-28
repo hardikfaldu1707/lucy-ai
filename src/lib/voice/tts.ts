@@ -6,6 +6,8 @@ import {
   type OpenAiTtsVoice,
 } from "@/constants/create-voices";
 
+// OpenRouter uses chat/completions endpoint for audio models, not /audio/speech
+const OPENROUTER_CHAT_URL = "https://openrouter.ai/api/v1/chat/completions";
 const OPENROUTER_SPEECH_URL = "https://openrouter.ai/api/v1/audio/speech";
 
 function isDirectOpenAiApiKey(key: string): boolean {
@@ -13,11 +15,14 @@ function isDirectOpenAiApiKey(key: string): boolean {
 }
 
 export function resolveOpenRouterTtsModel(): string {
-  return (
+  // Try these in order of preference
+  const model = 
     process.env.OPENROUTER_VOICE_TTS_MODEL?.trim() ||
     process.env.OPENROUTER_VOICE_MODEL?.trim() ||
-    "openai/gpt-audio-mini"
-  );
+    "openai/gpt-audio-mini";
+  
+  console.log("[TTS Config] Using model:", model);
+  return model;
 }
 
 function buildOpenRouterHeaders(apiKey: string): Record<string, string> {
@@ -63,25 +68,121 @@ async function synthesizeViaOpenRouter(
   voice: OpenAiTtsVoice,
   apiKey: string,
 ): Promise<{ audioBase64: string; mime: string } | null> {
-  const res = await fetch(OPENROUTER_SPEECH_URL, {
-    method: "POST",
-    headers: buildOpenRouterHeaders(apiKey),
-    body: JSON.stringify({
-      model: resolveOpenRouterTtsModel(),
-      input: trimmed,
-      voice,
-      response_format: "mp3",
-    }),
+  const model = resolveOpenRouterTtsModel();
+  console.log("[TTS] OpenRouter request:", {
+    url: OPENROUTER_CHAT_URL,
+    model,
+    voice,
+    textLength: trimmed.length,
   });
-  if (!res.ok) return null;
-  const buf = await res.arrayBuffer();
-  const mime = res.headers.get("content-type")?.includes("mpeg")
-    ? "audio/mpeg"
-    : "audio/mpeg";
-  return {
-    audioBase64: Buffer.from(buf).toString("base64"),
-    mime,
-  };
+
+  try {
+    // OpenRouter audio models require streaming
+    const res = await fetch(OPENROUTER_CHAT_URL, {
+      method: "POST",
+      headers: buildOpenRouterHeaders(apiKey),
+      body: JSON.stringify({
+        model,
+        messages: [
+          {
+            role: "user",
+            content: trimmed,
+          },
+        ],
+        stream: true, // Required for audio output
+        modalities: ["text", "audio"],
+        audio: {
+          voice: voice,
+          format: "mp3",
+        },
+      }),
+    });
+
+    console.log("[TTS] OpenRouter response status:", res.status);
+
+    if (!res.ok) {
+      const contentType = res.headers.get("content-type");
+      let errorText = `Status ${res.status}: ${res.statusText}`;
+      
+      if (contentType?.includes("application/json")) {
+        try {
+          const errorJson = await res.json();
+          errorText = JSON.stringify(errorJson, null, 2);
+        } catch {
+          errorText = await res.text().catch(() => errorText);
+        }
+      } else {
+        errorText = await res.text().catch(() => errorText);
+      }
+      
+      console.error("[TTS] OpenRouter error:", {
+        status: res.status,
+        statusText: res.statusText,
+        error: errorText,
+        model,
+      });
+      return null;
+    }
+
+    // Read streaming response
+    const reader = res.body?.getReader();
+    if (!reader) {
+      console.error("[TTS] No response body reader");
+      return null;
+    }
+
+    const decoder = new TextDecoder();
+    let audioData = "";
+    
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      
+      const chunk = decoder.decode(value, { stream: true });
+      const lines = chunk.split("\n").filter((line) => line.trim() !== "");
+      
+      for (const line of lines) {
+        if (line.startsWith("data: ")) {
+          const jsonStr = line.slice(6); // Remove "data: " prefix
+          
+          if (jsonStr === "[DONE]") continue;
+          
+          try {
+            const data = JSON.parse(jsonStr);
+            
+            // Check for audio data in the stream
+            if (data.choices?.[0]?.delta?.audio?.data) {
+              audioData += data.choices[0].delta.audio.data;
+            }
+          } catch (e) {
+            // Skip invalid JSON lines
+            console.log("[TTS] Skipping invalid JSON:", jsonStr.slice(0, 100));
+          }
+        }
+      }
+    }
+
+    if (!audioData) {
+      console.error("[TTS] No audio data received from stream");
+      return null;
+    }
+
+    const mime = "audio/mpeg";
+    
+    console.log("[TTS] OpenRouter success:", {
+      model,
+      audioSize: audioData.length,
+      mime,
+    });
+
+    return {
+      audioBase64: audioData,
+      mime,
+    };
+  } catch (error) {
+    console.error("[TTS] OpenRouter exception:", error);
+    return null;
+  }
 }
 
 /** OpenAI direct TTS or OpenRouter `/audio/speech` (e.g. openai/gpt-audio-mini). */
