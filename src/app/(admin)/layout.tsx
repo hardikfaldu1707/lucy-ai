@@ -18,7 +18,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <AdminMobileNav />
       <div className="flex flex-1 flex-col overflow-hidden">
         <DashboardTopNav />
-        <main id="main-content" tabIndex={-1} className="flex-1 overflow-y-auto p-4 pb-safe outline-none sm:p-6">
+        <main id="main-content" tabIndex={-1} className="flex-1 overflow-y-auto p-4 sm:p-6 outline-none">
           {children}
         </main>
       </div>

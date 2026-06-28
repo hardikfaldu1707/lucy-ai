@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useEffect, useMemo, useRef } from "react";
 import { resolveCharacterImageUrl } from "@/constants/character-portraits";
 import { useInView } from "@/hooks/use-in-view";
-import { cn, shouldUseUnoptimizedImage } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 export interface CharacterPortraitLike {
   id: string;
@@ -22,6 +22,15 @@ interface CharacterPortraitMediaProps {
   sizes?: string;
 }
 
+function isGifUrl(url: string): boolean {
+  try {
+    const path = new URL(url, "https://placeholder.local").pathname.toLowerCase();
+    return path.endsWith(".gif");
+  } catch {
+    return url.toLowerCase().includes(".gif");
+  }
+}
+
 export function CharacterPortraitMedia({
   character,
   className,
@@ -31,7 +40,7 @@ export function CharacterPortraitMedia({
   const imageSrc = resolveCharacterImageUrl(character.image, character.id);
   const videoUrl = character.previewVideoUrl?.trim() ?? "";
   const showVideo = character.cardDisplayMode === "video" && Boolean(videoUrl);
-  const unoptimized = useMemo(() => shouldUseUnoptimizedImage(imageSrc), [imageSrc]);
+  const unoptimized = useMemo(() => isGifUrl(imageSrc), [imageSrc]);
 
   const { ref: containerRef, inView } = useInView<HTMLDivElement>({
     rootMargin: "80px",

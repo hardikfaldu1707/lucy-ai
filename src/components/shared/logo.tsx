@@ -21,7 +21,6 @@ export function LogoMark({ className, size = 36 }: LogoMarkProps) {
         className="rounded-full object-cover"
         sizes={`${size}px`}
         priority
-        unoptimized
       />
     </span>
   );

@@ -140,7 +140,7 @@ export function HomeExploreGallerySection({
         className="relative mb-8 overflow-hidden rounded-2xl border border-white/10 sm:rounded-3xl"
         aria-label="Voice calls"
       >
-        <div className="relative min-h-[200px] sm:min-h-[240px] short-viewport-hero">
+        <div className="relative min-h-[200px] sm:min-h-[240px]">
           <Image
             src={HOME_HERO_IMAGE}
             alt=""
@@ -148,10 +148,9 @@ export function HomeExploreGallerySection({
             className="object-cover object-center"
             priority
             sizes="100vw"
-            unoptimized
           />
           <div className="absolute inset-0 bg-gradient-to-r from-black/92 via-black/60 to-black/25" />
-          <div className="relative flex h-full min-h-[200px] flex-col justify-between gap-6 p-6 sm:min-h-[240px] sm:flex-row sm:items-center sm:p-8 short-viewport-hero">
+          <div className="relative flex h-full min-h-[200px] flex-col justify-between gap-6 p-6 sm:min-h-[240px] sm:flex-row sm:items-center sm:p-8">
             <div className="max-w-xl">
               <h1 className="text-2xl font-black uppercase leading-[1.1] tracking-tight text-white sm:text-3xl md:text-4xl">
                 She Always
@@ -183,7 +182,7 @@ export function HomeExploreGallerySection({
                     key={`home-join-${i}`}
                     className="relative h-10 w-10 overflow-hidden rounded-full ring-2 ring-black sm:h-11 sm:w-11"
                   >
-                    <Image src={src} alt="" fill className="object-cover" sizes="44px" unoptimized />
+                    <Image src={src} alt="" fill className="object-cover" sizes="44px" />
                   </span>
                 ))}
                 <span className="flex h-10 w-10 items-center justify-center rounded-full bg-pink-500 text-xs font-bold ring-2 ring-black sm:h-11 sm:w-11">
@@ -207,9 +206,9 @@ export function HomeExploreGallerySection({
               className="h-11 rounded-xl border-white/10 bg-[#141414] pl-10 text-white placeholder:text-white/35 focus-visible:ring-pink-500/50"
             />
           </div>
-          <div className="flex flex-col gap-2 max-[479px]:w-full min-[480px]:grid min-[480px]:grid-cols-3 sm:flex sm:flex-wrap">
+          <div className="grid grid-cols-1 gap-2 min-[480px]:grid-cols-3 sm:flex sm:flex-wrap">
             <Select value={gender} onValueChange={(v) => setGender(v as ExploreGender | "all")}>
-              <SelectTrigger className="h-11 w-full min-w-0 flex-1 rounded-xl border-white/10 bg-[#141414] text-white sm:w-[120px] sm:flex-none">
+              <SelectTrigger className="h-11 min-w-0 flex-1 rounded-xl border-white/10 bg-[#141414] text-white sm:w-[120px] sm:flex-none">
                 <SelectValue placeholder="Gender" />
               </SelectTrigger>
               <SelectContent>
@@ -219,7 +218,7 @@ export function HomeExploreGallerySection({
               </SelectContent>
             </Select>
             <Select value={style} onValueChange={(v) => setStyle(v as ExploreStyle | "all")}>
-              <SelectTrigger className="h-11 w-full min-w-0 flex-1 rounded-xl border-white/10 bg-[#141414] text-white sm:w-[120px] sm:flex-none">
+              <SelectTrigger className="h-11 min-w-0 flex-1 rounded-xl border-white/10 bg-[#141414] text-white sm:w-[120px] sm:flex-none">
                 <SelectValue placeholder="Style" />
               </SelectTrigger>
               <SelectContent>
@@ -229,7 +228,7 @@ export function HomeExploreGallerySection({
               </SelectContent>
             </Select>
             <Select value={ageRange} onValueChange={(v) => setAgeRange(v as ExploreAgeRange)}>
-              <SelectTrigger className="h-11 w-full min-w-0 flex-1 rounded-xl border-white/10 bg-[#141414] text-white sm:w-[110px] sm:flex-none">
+              <SelectTrigger className="h-11 min-w-0 flex-1 rounded-xl border-white/10 bg-[#141414] text-white sm:w-[110px] sm:flex-none">
                 <SelectValue placeholder="Age" />
               </SelectTrigger>
               <SelectContent>
@@ -304,7 +303,7 @@ export function HomeExploreGallerySection({
       ) : (
         <>
           <div
-            className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 content-visibility-auto"
+            className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
             role="list"
             aria-label="Character gallery"
           >

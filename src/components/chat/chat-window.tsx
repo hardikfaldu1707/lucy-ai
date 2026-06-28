@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import Image from "next/image";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { MessageBubble } from "./message-bubble";
 import { ChatInput, type ChatSendOptions } from "./chat-input";
@@ -498,10 +499,16 @@ export function ChatWindow({
       <div className="relative h-full min-h-0 flex-1">
         {bgUrl && (
           <div
-            className="pointer-events-none absolute inset-0 overflow-hidden bg-black bg-cover bg-center"
-            style={{ backgroundImage: `url(${JSON.stringify(bgUrl)})` }}
+            className="pointer-events-none absolute inset-0 overflow-hidden bg-black"
             aria-hidden
           >
+            <Image
+              src={bgUrl}
+              alt=""
+              fill
+              className="object-cover object-center"
+              sizes="(max-width: 768px) 100vw, 50vw"
+            />
             <div className="absolute inset-0 bg-black/60" />
             <div
               className="absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-black/65"

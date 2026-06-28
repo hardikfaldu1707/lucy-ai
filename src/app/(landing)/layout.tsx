@@ -17,7 +17,7 @@ export default async function LandingLayout({ children }: { children: React.Reac
   }
 
   return (
-    <div className="min-h-dvh bg-black text-white">
+    <div className="min-h-screen bg-black text-white">
       <CoinBalanceHydrator balance={coinBalance} />
       <LandingSidebar />
       <LandingContentOffset>{children}</LandingContentOffset>

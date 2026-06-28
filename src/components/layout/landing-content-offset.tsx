@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { BELOW_MD_MEDIA_QUERY } from "@/constants/breakpoints";
 import { VisualViewportShell } from "@/components/layout/visual-viewport-shell";
-import { useTouchChatViewport } from "@/hooks/use-touch-chat-viewport";
 import { useUIStore } from "@/store/ui-store";
 import { isImmersiveChatRoute } from "@/lib/chat-route-utils";
 import { cn } from "@/lib/utils";
@@ -14,18 +13,17 @@ export function LandingContentOffset({ children }: { children: React.ReactNode }
   const pathname = usePathname();
   const isChatRoute = pathname.startsWith("/chat");
   const isImmersiveChat = isImmersiveChatRoute(pathname);
-  const touchChatViewport = useTouchChatViewport();
-  const [isBelowMd, setIsBelowMd] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const mq = window.matchMedia(BELOW_MD_MEDIA_QUERY);
-    const update = () => setIsBelowMd(mq.matches);
+    const update = () => setIsMobile(mq.matches);
     update();
     mq.addEventListener("change", update);
     return () => mq.removeEventListener("change", update);
   }, []);
 
-  const useMobileChatViewport = isChatRoute && touchChatViewport;
+  const useMobileChatViewport = isChatRoute && isMobile;
 
   return (
     <div
@@ -38,9 +36,7 @@ export function LandingContentOffset({ children }: { children: React.ReactNode }
         isChatRoute &&
           !isImmersiveChat &&
           !useMobileChatViewport &&
-          isBelowMd &&
-          "pb-[max(4.5rem,env(safe-area-inset-bottom))]",
-        isChatRoute && !isImmersiveChat && !useMobileChatViewport && "md:pb-0",
+          "pb-[max(4.5rem,env(safe-area-inset-bottom))] md:pb-0",
       )}
     >
       <VisualViewportShell
