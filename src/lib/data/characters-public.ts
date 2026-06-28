@@ -230,6 +230,7 @@ export async function listChatBrowseCharacters(profileId?: string): Promise<Expl
 export async function listChatBrowseCharactersLive(
   profileId?: string,
 ): Promise<ExploreCharacter[]> {
-  const publicRows = await loadPublicCharactersFromDb();
+  // Use cached public rows for better performance (60s cache)
+  const publicRows = await getCachedPublicCharacters();
   return listChatBrowseWithProfile(publicRows, profileId);
 }

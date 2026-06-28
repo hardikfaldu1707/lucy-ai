@@ -42,25 +42,47 @@ async function synthesizeViaOpenAI(
   voice: OpenAiTtsVoice,
   apiKey: string,
 ): Promise<{ audioBase64: string; mime: string } | null> {
-  const res = await fetch("https://api.openai.com/v1/audio/speech", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "tts-1-hd",
-      input: trimmed,
-      voice,
-      response_format: "mp3",
-    }),
-  });
-  if (!res.ok) return null;
-  const buf = await res.arrayBuffer();
-  return {
-    audioBase64: Buffer.from(buf).toString("base64"),
-    mime: "audio/mpeg",
-  };
+  // Add timeout control
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+  
+  try {
+    const res = await fetch("https://api.openai.com/v1/audio/speech", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "tts-1-hd",
+        input: trimmed,
+        voice,
+        response_format: "mp3",
+      }),
+      signal: controller.signal,
+    });
+    
+    clearTimeout(timeout);
+    
+    if (!res.ok) {
+      console.error("[TTS OpenAI] Failed:", res.status, res.statusText);
+      return null;
+    }
+    
+    const buf = await res.arrayBuffer();
+    return {
+      audioBase64: Buffer.from(buf).toString("base64"),
+      mime: "audio/mpeg",
+    };
+  } catch (error) {
+    clearTimeout(timeout);
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error("[TTS OpenAI] Request timed out after 8 seconds");
+      return null;
+    }
+    console.error("[TTS OpenAI] Exception:", error);
+    return null;
+  }
 }
 
 async function synthesizeViaOpenRouter(
@@ -75,6 +97,10 @@ async function synthesizeViaOpenRouter(
     voice,
     textLength: trimmed.length,
   });
+
+  // Add timeout control
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000); // 10 second timeout for streaming
 
   try {
     // OpenRouter audio models require streaming
@@ -96,11 +122,13 @@ async function synthesizeViaOpenRouter(
           format: "mp3",
         },
       }),
+      signal: controller.signal,
     });
 
     console.log("[TTS] OpenRouter response status:", res.status);
 
     if (!res.ok) {
+      clearTimeout(timeout);
       const contentType = res.headers.get("content-type");
       let errorText = `Status ${res.status}: ${res.statusText}`;
       
@@ -127,6 +155,7 @@ async function synthesizeViaOpenRouter(
     // Read streaming response
     const reader = res.body?.getReader();
     if (!reader) {
+      clearTimeout(timeout);
       console.error("[TTS] No response body reader");
       return null;
     }
@@ -162,6 +191,8 @@ async function synthesizeViaOpenRouter(
       }
     }
 
+    clearTimeout(timeout);
+
     if (!audioData) {
       console.error("[TTS] No audio data received from stream");
       return null;
@@ -180,6 +211,11 @@ async function synthesizeViaOpenRouter(
       mime,
     };
   } catch (error) {
+    clearTimeout(timeout);
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error("[TTS OpenRouter] Request timed out after 10 seconds");
+      return null;
+    }
     console.error("[TTS] OpenRouter exception:", error);
     return null;
   }

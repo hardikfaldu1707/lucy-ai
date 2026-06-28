@@ -1,5 +1,6 @@
 import "server-only";
 
+import { unstable_cache } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export interface CoinPack {
@@ -44,29 +45,47 @@ function fromRow(r: CoinPackRow): CoinPack {
 }
 
 export async function listActiveCoinPacks(): Promise<CoinPack[]> {
-  const { data, error } = await supabaseAdmin()
-    .from("coin_packs")
-    .select("*")
-    .eq("is_active", true)
-    .not("stripe_price_id", "is", null)
-    .order("sort_order", { ascending: true });
+  // Use unstable_cache for 5 minute caching
+  const getCached = unstable_cache(
+    async () => {
+      const { data, error } = await supabaseAdmin()
+        .from("coin_packs")
+        .select("*")
+        .eq("is_active", true)
+        .not("stripe_price_id", "is", null)
+        .order("sort_order", { ascending: true });
 
-  if (error) {
-    console.error("[listActiveCoinPacks]", error.message);
-    return [];
-  }
-  return ((data ?? []) as CoinPackRow[]).map(fromRow);
+      if (error) {
+        console.error("[listActiveCoinPacks]", error.message);
+        return [];
+      }
+      return ((data ?? []) as CoinPackRow[]).map(fromRow);
+    },
+    ['active-coin-packs'],
+    { revalidate: 300, tags: ['active-coin-packs'] } // 5 minute cache
+  );
+
+  return getCached();
 }
 
 export async function getCoinPackById(id: string): Promise<CoinPack | null> {
-  const { data, error } = await supabaseAdmin()
-    .from("coin_packs")
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
+  // Use unstable_cache for 5 minute caching
+  const getCached = unstable_cache(
+    async (packId: string) => {
+      const { data, error } = await supabaseAdmin()
+        .from("coin_packs")
+        .select("*")
+        .eq("id", packId)
+        .maybeSingle();
 
-  if (error || !data) return null;
-  return fromRow(data as CoinPackRow);
+      if (error || !data) return null;
+      return fromRow(data as CoinPackRow);
+    },
+    [`coin-pack-${id}`],
+    { revalidate: 300, tags: [`coin-pack-${id}`] } // 5 minute cache
+  );
+
+  return getCached(id);
 }
 
 export async function listAllCoinPacks(): Promise<CoinPack[]> {

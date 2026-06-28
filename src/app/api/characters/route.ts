@@ -2,7 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import {
   listAuthenticatedCatalogCharactersLive,
-  listHomeCharactersLive,
+  listHomeCharacters,
 } from "@/lib/data/characters-public";
 import { createCharacter } from "@/lib/data/admin-characters";
 import { ensureProfile } from "@/lib/ensure-profile";
@@ -24,7 +24,7 @@ export async function GET() {
   const { userId } = await auth();
   const characters = userId
     ? await listAuthenticatedCatalogCharactersLive(userId)
-    : await listHomeCharactersLive();
+    : await listHomeCharacters();
 
   if (userId) {
     return NextResponse.json({ characters });
