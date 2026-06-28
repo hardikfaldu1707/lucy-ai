@@ -21,7 +21,7 @@ function r2PresignConnectSrc(): string {
 }
 
 const r2Host = r2PublicHost();
-const r2ImgSrc = r2Host ? ` https://${r2Host}` : " https://*.r2.dev";
+const r2ImgSrc = r2Host ? ` https://${r2Host} https://*.r2.dev` : " https://*.r2.dev";
 
 function buildSecurityHeaders() {
   const isDev = process.env.NODE_ENV !== "production";
@@ -79,13 +79,13 @@ if (r2Host) {
     hostname: r2Host,
     pathname: "/**",
   });
-} else {
-  imageRemotePatterns.push({
-    protocol: "https",
-    hostname: "*.r2.dev",
-    pathname: "/**",
-  });
 }
+
+imageRemotePatterns.push({
+  protocol: "https",
+  hostname: "*.r2.dev",
+  pathname: "/**",
+});
 
 const isDev = process.env.NODE_ENV !== "production";
 

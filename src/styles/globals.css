@@ -107,6 +107,10 @@
 }
 
 @layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    overflow-x: clip;
+  }
   * {
     @apply border-border outline-ring/50;
     -webkit-tap-highlight-color: transparent;
@@ -114,6 +118,7 @@
   body {
     @apply bg-background text-foreground antialiased;
     overscroll-behavior-y: none;
+    overflow-x: clip;
   }
 }
 
@@ -171,6 +176,16 @@
   .content-visibility-auto {
     content-visibility: auto;
     contain-intrinsic-size: auto 300px;
+  }
+}
+
+@media (max-height: 520px) and (orientation: landscape) {
+  .short-viewport-hero {
+    min-height: 160px;
+  }
+  .short-viewport-header {
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
   }
 }
 

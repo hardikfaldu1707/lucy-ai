@@ -36,7 +36,7 @@ export function ChatCharacterProfileBar({
     useUIStore();
 
   return (
-    <header className="sticky top-0 z-10 shrink-0 border-b border-white/[0.08] bg-[#0c0c0c]/95 pt-[env(safe-area-inset-top)] backdrop-blur-md supports-[backdrop-filter]:bg-[#0c0c0c]/85">
+    <header className="sticky top-0 z-10 shrink-0 border-b border-white/[0.08] bg-[#0c0c0c]/95 pt-[env(safe-area-inset-top)] backdrop-blur-md supports-[backdrop-filter]:bg-[#0c0c0c]/85 short-viewport-header">
       <div className="flex h-14 items-center gap-2 px-2 sm:gap-3 sm:px-4">
         <Button
           variant="ghost"
@@ -105,7 +105,7 @@ export function ChatCharacterProfileBar({
               characterName={characterName}
               voiceEnabled={voiceEnabled}
               voiceHref={voiceHref}
-              triggerClassName={chatHeaderIconClass}
+              triggerClassName={cn(chatHeaderIconClass, "max-[360px]:hidden")}
             />
             {voiceEnabled && voiceHref && (
               <Button
@@ -115,7 +115,7 @@ export function ChatCharacterProfileBar({
                 aria-label="Voice call"
                 className={cn(
                   chatHeaderIconClass,
-                  "border-white/10 bg-white/[0.04] text-white/80 hover:bg-white/[0.08] hover:text-white",
+                  "max-[360px]:hidden border-white/10 bg-white/[0.04] text-white/80 hover:bg-white/[0.08] hover:text-white",
                 )}
               >
                 <Link href={voiceHref}>

@@ -101,3 +101,10 @@ export function chatDateKey(date: string | Date): string {
   const d = typeof date === "string" ? new Date(date) : date;
   return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 }
+
+/** Remote and local static assets load more reliably without the Next image optimizer on mobile. */
+export function shouldUseUnoptimizedImage(src: string): boolean {
+  if (!src) return false;
+  if (src.startsWith("/")) return true;
+  return src.startsWith("http://") || src.startsWith("https://");
+}
