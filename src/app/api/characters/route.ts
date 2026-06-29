@@ -5,6 +5,7 @@ import {
   listHomeCharactersLive,
 } from "@/lib/data/characters-public";
 import { createCharacter } from "@/lib/data/admin-characters";
+import { getPublicCreationConfig, validateCharacterAgainstConfig } from "@/lib/data/character-creation-config";
 import { ensureProfile } from "@/lib/ensure-profile";
 import { assertCanCreateCharacter } from "@/lib/plan-limits";
 import { getFlagMap } from "@/lib/data/app-settings";
@@ -15,7 +16,6 @@ import { parseBody } from "@/lib/validation/parse";
 import { createCharacterSchema } from "@/lib/validation/schemas";
 import { buildCharacterSystemPrompt } from "@/lib/characters/build-character-system-prompt";
 import { resolveCreateAvatar } from "@/lib/characters/resolve-create-avatar";
-import { CREATE_VOICE_OPTIONS } from "@/constants/create-voices";
 
 // Public: the home/explore catalog (published + public characters).
 export const revalidate = 120;
@@ -68,11 +68,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Model not allowed. Pick from admin-approved models." }, { status: 400 });
   }
 
-  if (
-    body.voicePersonaId &&
-    !CREATE_VOICE_OPTIONS.some((v) => v.id === body.voicePersonaId)
-  ) {
-    return NextResponse.json({ error: "Invalid voice selection" }, { status: 400 });
+  const creationConfig = await getPublicCreationConfig();
+  const validationError = validateCharacterAgainstConfig(creationConfig, body);
+  if (validationError) {
+    return NextResponse.json({ error: validationError }, { status: 400 });
   }
 
   const relationship =
@@ -96,10 +95,13 @@ export async function POST(req: Request) {
 
   const avatarUrl =
     body.avatarUrl?.trim() ||
-    resolveCreateAvatar({
-      style: body.style ?? "realistic",
-      appearance: body.appearance,
-    });
+    resolveCreateAvatar(
+      {
+        style: body.style ?? "realistic",
+        appearance: body.appearance,
+      },
+      creationConfig,
+    );
 
   const { character, error } = await createCharacter({
     name: body.name,

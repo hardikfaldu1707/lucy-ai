@@ -16,7 +16,7 @@ export function ChatInboxPlaceholder({ variant = "dark" }: ChatInboxPlaceholderP
   return (
     <div
       className={cn(
-        "flex flex-1 flex-col items-center justify-center gap-6 p-8 text-center",
+        "flex h-full min-h-0 flex-1 flex-col items-center justify-center gap-6 p-8 text-center",
         isDark ? "text-white" : "text-foreground",
       )}
     >

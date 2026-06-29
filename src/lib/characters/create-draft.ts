@@ -1,7 +1,11 @@
 import type { CharacterAppearance } from "@/constants/create-appearance";
 import { DEFAULT_CREATE_VOICE_ID } from "@/constants/create-voices";
 import type { CreateStyle } from "@/constants/create-page";
-import { resolveCreateAvatarFromDraft } from "@/lib/characters/resolve-create-avatar";
+import {
+  resolveCreateAvatarFromDraft,
+  resolveCreateAvatarFromDraftWithConfig,
+} from "@/lib/characters/resolve-create-avatar";
+import type { CreationConfig } from "@/types/character-creation-config";
 
 export const CREATE_DRAFT_STORAGE_KEY = "lucy-create-character-draft";
 export const CREATE_AUTO_SUBMIT_KEY = "lucy-create-auto-submit";
@@ -82,7 +86,7 @@ function draftAppearance(draft: CreateCharacterDraft): CharacterAppearance {
   };
 }
 
-export function draftToPayload(draft: CreateCharacterDraft) {
+export function draftToPayload(draft: CreateCharacterDraft, config?: CreationConfig) {
   const traits = draft.personality;
   const tags = [...traits];
   if (draft.relationship && !tags.includes(draft.relationship)) {
@@ -93,7 +97,9 @@ export function draftToPayload(draft: CreateCharacterDraft) {
     traits.slice(0, 2).join(" · "),
   ].filter(Boolean);
 
-  const avatarUrl = resolveCreateAvatarFromDraft(draft);
+  const avatarUrl = config
+    ? resolveCreateAvatarFromDraftWithConfig(config, draft)
+    : resolveCreateAvatarFromDraft(draft);
 
   return {
     name: draft.name,

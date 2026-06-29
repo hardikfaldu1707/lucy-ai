@@ -36,6 +36,7 @@ export function VisualViewportShell({
   }, []);
 
   const active = enabled && isMobile && height > 0;
+  const pendingMobileShell = enabled && isMobile && height === 0;
 
   useEffect(() => {
     if (!lockBody || !active) return;
@@ -45,6 +46,14 @@ export function VisualViewportShell({
       document.body.style.overflow = prev;
     };
   }, [lockBody, active]);
+
+  if (pendingMobileShell) {
+    return (
+      <div className={cn("flex min-h-dvh min-h-0 flex-col overflow-hidden", className)}>
+        {children}
+      </div>
+    );
+  }
 
   if (!active) {
     if (className) {

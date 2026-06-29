@@ -204,7 +204,7 @@ export function PublicChatBrowse({ initialCharacters }: PublicChatBrowseProps) {
 
   return (
     <main
-      className="relative h-full overflow-y-auto overflow-x-hidden bg-[#080808] pb-[max(6rem,env(safe-area-inset-bottom))] text-white md:pb-12"
+      className="relative h-full min-h-0 overflow-y-auto overflow-x-hidden bg-[#080808] text-white md:pb-12"
       style={{ colorScheme: "dark" }}
     >
       {/* Atmosphere */}

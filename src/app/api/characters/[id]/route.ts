@@ -10,7 +10,10 @@ import { parseBody } from "@/lib/validation/parse";
 import { updateUserCharacterSchema } from "@/lib/validation/schemas";
 import { buildCharacterSystemPrompt } from "@/lib/characters/build-character-system-prompt";
 import { resolveCreateAvatar } from "@/lib/characters/resolve-create-avatar";
-import { CREATE_VOICE_OPTIONS } from "@/constants/create-voices";
+import {
+  getPublicCreationConfig,
+  validateCharacterAgainstConfig,
+} from "@/lib/data/character-creation-config";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -60,8 +63,20 @@ export async function PATCH(req: Request, context: RouteContext) {
   }
 
   if (body.voicePersonaId !== undefined && body.voicePersonaId !== null) {
-    if (!CREATE_VOICE_OPTIONS.some((v) => v.id === body.voicePersonaId)) {
-      return NextResponse.json({ error: "Invalid voice selection" }, { status: 400 });
+    const creationConfig = await getPublicCreationConfig();
+    const validationError = validateCharacterAgainstConfig(creationConfig, {
+      voicePersonaId: body.voicePersonaId,
+    });
+    if (validationError) {
+      return NextResponse.json({ error: validationError }, { status: 400 });
+    }
+  }
+
+  if (body.style || body.appearance || body.personality || body.relationship || body.tags) {
+    const creationConfig = await getPublicCreationConfig();
+    const validationError = validateCharacterAgainstConfig(creationConfig, body);
+    if (validationError) {
+      return NextResponse.json({ error: validationError }, { status: 400 });
     }
   }
 

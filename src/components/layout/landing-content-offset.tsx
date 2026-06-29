@@ -29,8 +29,7 @@ export function LandingContentOffset({ children }: { children: React.ReactNode }
     <div
       className={cn(
         landingNavCollapsed ? "md:pl-14" : "md:pl-[88px]",
-        isChatRoute && "flex min-h-0 flex-col overflow-hidden",
-        isChatRoute && !useMobileChatViewport && "h-dvh",
+        isChatRoute && "flex h-dvh min-h-dvh min-h-0 flex-col overflow-hidden",
         !isChatRoute &&
           "pt-[max(3.5rem,env(safe-area-inset-top))] pb-[max(4.5rem,env(safe-area-inset-bottom))] md:pt-0 md:pb-0",
         isChatRoute &&

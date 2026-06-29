@@ -14,6 +14,7 @@ import { ChatDictationPermission } from "@/components/chat/chat-dictation-permis
 import { useSpeechDictation } from "@/hooks/use-speech-dictation";
 import { appendTranscriptToDraft } from "@/lib/speech/browser-speech-recognition";
 import { resetVisualViewportScroll } from "@/hooks/use-visual-viewport-height";
+import { BELOW_MD_MEDIA_QUERY } from "@/constants/breakpoints";
 import { cn } from "@/lib/utils";
 import type { GalleryMediaType } from "@/types/gallery";
 
@@ -60,7 +61,7 @@ export function ChatInput({
   onSendGif,
   characterName,
   disabled,
-  placeholder = "Message Lucy...",
+  placeholder,
   variant = "light",
   value: controlledValue,
   onValueChange,
@@ -115,12 +116,15 @@ export function ChatInput({
       ? appendTranscriptToDraft(value, dictation.interimText)
       : value;
 
+  const defaultPlaceholder = characterName ? `Message ${characterName}...` : "Message...";
+  const resolvedPlaceholder = placeholder ?? defaultPlaceholder;
+
   const mediaPlaceholder =
     attachmentMode === "video"
       ? "Describe the video you want..."
       : attachmentMode === "image"
         ? "Describe the photo you want..."
-        : placeholder;
+        : resolvedPlaceholder;
 
   const handleSend = () => {
     if (dictation.isListening) dictation.stop();
@@ -187,10 +191,15 @@ export function ChatInput({
 
   const handleInputFocus = () => {
     onInputFocus?.();
-    resetVisualViewportScroll();
-    requestAnimationFrame(() => {
-      textareaRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
-    });
+    if (
+      typeof window !== "undefined" &&
+      window.matchMedia(BELOW_MD_MEDIA_QUERY).matches
+    ) {
+      resetVisualViewportScroll();
+      requestAnimationFrame(() => {
+        textareaRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
+      });
+    }
   };
 
   const ghostBtnClass = cn(

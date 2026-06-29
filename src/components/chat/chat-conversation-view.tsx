@@ -158,7 +158,7 @@ export function ChatConversationView({
   const isTyping = typingConversationId === conversation.id;
 
   return (
-    <div className="chat-surface flex h-full min-h-0 flex-col bg-[#0a0a0a]">
+    <div className="chat-surface flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[#0a0a0a]">
       <ChatCharacterProfileBar
         conversationId={conversation.id}
         characterSlug={conversation.characterId}
@@ -183,7 +183,7 @@ export function ChatConversationView({
         </p>
       )}
       <ChatWindow
-        className="min-h-0 flex-1"
+        className="min-h-0 flex-1 overflow-hidden"
         conversation={conversation}
         messages={convMessages}
         suggestedQuestions={suggestedQuestions}

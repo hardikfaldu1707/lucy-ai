@@ -207,6 +207,22 @@ export function resolveCharacterUploadOptions(characterId?: string): UploadToR2O
   return { scope: "character", characterId };
 }
 
+function sanitizePlatformName(key: string): string {
+  const safe = key
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return (safe || "option").slice(0, 72);
+}
+
+/** Creation builder option images use platform scope (admin-only). */
+export function resolveCreationConfigUploadOptions(optionKey: string): UploadToR2Options {
+  return {
+    scope: "platform",
+    platformName: `creation-${sanitizePlatformName(optionKey)}`,
+  };
+}
+
 /** Upload image or video for admin chat gallery (dispatches to correct helper). */
 export async function uploadGalleryMediaToR2(
   file: File,
