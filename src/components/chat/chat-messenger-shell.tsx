@@ -133,8 +133,8 @@ export function ChatMessengerShell({
   return (
     <div
       className={cn(
-        "chat-surface relative flex min-h-0 w-full overflow-hidden",
-        isEmbedded ? "h-full min-h-0" : "h-full flex-1",
+        "chat-surface relative flex h-full min-h-0 w-full flex-1 overflow-hidden",
+        isEmbedded ? "h-full min-h-0" : "",
         isDark ? "bg-[#0a0a0a] text-white" : "bg-background text-foreground",
         className,
       )}
@@ -295,7 +295,7 @@ export function ChatMessengerShell({
         </div>
       </aside>
       )}
-      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      <div className="relative flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         {showMobileListHeader && <MobileChatListHeader />}
         {children}
       </div>

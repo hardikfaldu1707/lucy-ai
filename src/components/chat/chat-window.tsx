@@ -495,8 +495,8 @@ export function ChatWindow({
   };
 
   return (
-    <div className={cn("flex h-full min-h-0 flex-1 flex-col", className)}>
-      <div className="relative h-full min-h-0 flex-1">
+    <div className={cn("flex min-h-0 flex-1 flex-col overflow-hidden", className)}>
+      <div className="relative min-h-0 flex-1 overflow-hidden">
         {bgUrl && (
           <div
             className="pointer-events-none absolute inset-0 overflow-hidden bg-black"
@@ -516,7 +516,7 @@ export function ChatWindow({
             />
           </div>
         )}
-        <ScrollArea ref={scrollRootRef} className="relative z-10 h-full min-h-0 flex-1 px-4">
+        <ScrollArea ref={scrollRootRef} className="relative z-10 h-full min-h-0 px-4">
           <div className="flex flex-col gap-3 py-4">
             {hasEarlierMessages && onLoadEarlierMessages && (
               <div className="flex justify-center py-1">
