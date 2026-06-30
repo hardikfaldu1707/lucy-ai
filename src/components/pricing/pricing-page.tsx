@@ -59,7 +59,7 @@ export function PricingPage() {
             </span>
           </div>
 
-          <h1 className="mt-6 text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
+          <h1 className="font-display mt-6 text-3xl font-normal tracking-tight sm:text-4xl md:text-5xl">
             Unlock Premium
             <Sparkles className="mx-2 inline h-8 w-8 text-pink-400 sm:h-9 sm:w-9" aria-hidden />
           </h1>
@@ -90,7 +90,7 @@ export function PricingPage() {
               )}
 
               <div className={cn(plan.popular && "pt-4")}>
-                <h2 className="text-xl font-bold text-white">{plan.name}</h2>
+                <h2 className="font-display text-xl font-normal text-white">{plan.name}</h2>
                 <p className="mt-1 text-sm text-white/60">{plan.description}</p>
 
                 <div className="mt-6 flex items-baseline gap-1">

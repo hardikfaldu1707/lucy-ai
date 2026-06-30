@@ -51,7 +51,7 @@ export function MatchExploreSection({ characters }: MatchExploreSectionProps) {
   return (
     <section className="w-full max-w-[1400px]" aria-labelledby="match-heading">
       <header className="mb-8 text-center">
-        <h2 id="match-heading" className="text-3xl font-bold tracking-tight text-white sm:text-4xl md:text-5xl">
+        <h2 id="match-heading" className="font-display text-3xl font-normal tracking-tight text-white sm:text-4xl md:text-5xl">
           Find Your{" "}
           <span className="bg-gradient-to-r from-pink-400 via-fuchsia-400 to-purple-500 bg-clip-text text-transparent">
             Match

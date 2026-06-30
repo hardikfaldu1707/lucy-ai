@@ -3,7 +3,7 @@ import { shadcn } from "@clerk/ui/themes";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist_Mono, Instrument_Serif, Inter } from "next/font/google";
 import "@/styles/globals.css";
 import { AppProviders } from "@/providers/app-providers";
 import { ChunkLoadRecovery } from "@/components/dev/chunk-load-recovery";
@@ -11,14 +11,23 @@ import { OrganizationJsonLd } from "@/components/shared/organization-json-ld";
 import { getClerkAllowedRedirectOrigins } from "@/lib/clerk-allowed-origins";
 import { resolveTenant } from "@/lib/tenant";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
+  display: "swap",
+});
+
+const instrumentSerif = Instrument_Serif({
+  variable: "--font-instrument-serif",
+  subsets: ["latin"],
+  weight: "400",
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -72,7 +81,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       style={{ "--tenant-primary": tenant.primaryColor } as Record<string, string>}
     >
       <body
-        className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}
+        className={`${inter.variable} ${instrumentSerif.variable} ${geistMono.variable} font-sans antialiased`}
         data-tenant={tenant.slug}
         suppressHydrationWarning
       >

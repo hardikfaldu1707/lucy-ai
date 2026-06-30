@@ -15,6 +15,7 @@ import {
   UserCircle,
   X,
 } from "lucide-react";
+import { LandingNavIcon } from "@/components/icons/animated-nav-icon";
 import { Show, SignInButton, SignUpButton, useAuth, UserButton } from "@clerk/nextjs";
 import { LogoMark } from "@/components/shared/logo";
 import { CoinBalanceBadge } from "@/components/shared/coin-balance-badge";
@@ -124,7 +125,7 @@ function SidebarContent({
                     active ? "bg-pink-500/20" : "bg-white/5",
                   )}
                 >
-                  <item.icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+                  <LandingNavIcon label={item.label} className="h-5 w-5" />
                 </span>
                 <span className="flex-1">{item.label}</span>
                 {item.badge && (
@@ -232,7 +233,7 @@ function SidebarContent({
                   collapsed && "h-9 w-9",
                 )}
               >
-                <item.icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+                <LandingNavIcon label={item.label} className="h-5 w-5" />
               </span>
               {!collapsed && item.label}
             </Link>
@@ -438,7 +439,7 @@ export function LandingSidebar() {
                 isNavActive(pathname, item.href) ? "text-pink-400" : "text-white/60",
               )}
             >
-              <item.icon className="h-5 w-5 shrink-0" aria-hidden />
+              <LandingNavIcon label={item.label} className="h-5 w-5 shrink-0" />
               <span className="max-w-full truncate max-[360px]:hidden">{item.label}</span>
             </Link>
           ))}

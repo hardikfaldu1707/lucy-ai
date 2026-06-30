@@ -68,7 +68,7 @@ export function MyGirlHub({ character }: MyGirlHubProps) {
             {/* Identity Info */}
             <div className="space-y-1">
               <div className="flex items-baseline gap-2">
-                <h1 className="text-3xl font-bold tracking-tight">{character.name}</h1>
+                <h1 className="font-display text-3xl font-normal tracking-tight">{character.name}</h1>
                 <span className="text-lg font-medium text-white/50">{character.age} y/o</span>
               </div>
               <p className="text-sm font-medium text-primary">

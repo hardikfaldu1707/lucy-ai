@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useRef, KeyboardEvent, useCallback, useEffect } from "react";
-import { Mic, Plus, Send, Smile } from "lucide-react";
+import { AnimatedSendIcon } from "@/components/icons/animated-nav-icon";
+import { Mic, Plus, Smile } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -354,7 +355,7 @@ export function ChatInput({
             disabled={disabled || !value.trim()}
             aria-label="Send message"
           >
-            <Send className="h-4 w-4" />
+            <AnimatedSendIcon className="h-4 w-4" />
           </Button>
         </div>
       </div>

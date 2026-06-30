@@ -97,7 +97,7 @@ export function HomeHeroSection({ characters }: HomeHeroSectionProps) {
         <header className="mb-8 text-center sm:mb-10">
           <h1
             id="home-hero-heading"
-            className="text-3xl font-black uppercase leading-[1.08] tracking-tight text-white sm:text-4xl md:text-5xl lg:text-[3.25rem]"
+            className="font-display text-3xl font-normal leading-[1.08] tracking-tight text-white sm:text-4xl md:text-5xl lg:text-[3.25rem]"
           >
             Your{" "}
             <span className="bg-gradient-to-r from-pink-400 via-fuchsia-400 to-purple-400 bg-clip-text text-transparent">
@@ -116,7 +116,7 @@ export function HomeHeroSection({ characters }: HomeHeroSectionProps) {
       <header className="mb-8 text-center sm:mb-10">
         <h1
           id="home-hero-heading"
-          className="text-3xl font-black uppercase leading-[1.08] tracking-tight text-white sm:text-4xl md:text-5xl lg:text-[3.25rem]"
+          className="font-display text-3xl font-normal leading-[1.08] tracking-tight text-white sm:text-4xl md:text-5xl lg:text-[3.25rem]"
         >
           Your{" "}
           <span className="bg-gradient-to-r from-pink-400 via-fuchsia-400 to-purple-400 bg-clip-text text-transparent">

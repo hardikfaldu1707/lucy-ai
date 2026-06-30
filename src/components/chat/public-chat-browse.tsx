@@ -246,7 +246,7 @@ export function PublicChatBrowse({ initialCharacters }: PublicChatBrowseProps) {
                 </span>
               </div>
               <h1
-                className="text-balance text-2xl font-bold tracking-tight text-white sm:text-3xl lg:text-4xl lg:leading-[1.12]"
+                className="font-display text-balance text-2xl font-normal tracking-tight text-white sm:text-3xl lg:text-4xl lg:leading-[1.12]"
                 translate="no"
               >
                 Who do you want to{" "}

@@ -717,7 +717,7 @@ export function CreateWizardShell({
         </nav>
 
         <header className={cn("mb-6 text-center", compact ? "mb-4" : "md:mb-8")}>
-          <h1 className={cn("font-bold tracking-tight", compact ? "text-xl" : "text-3xl sm:text-4xl")}>
+          <h1 className={cn("font-display font-normal tracking-tight", compact ? "text-xl" : "text-3xl sm:text-4xl")}>
             {mode === "edit" ? "Edit Your " : "Create Your "}
             <span className="bg-gradient-to-r from-primary to-violet-400 bg-clip-text text-transparent">
               AI Girl

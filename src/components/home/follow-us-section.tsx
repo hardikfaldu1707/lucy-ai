@@ -1,6 +1,6 @@
 "use client";
 
-import { Heart } from "lucide-react";
+import { AnimatedHeartIcon } from "@/components/icons/animated-nav-icon";
 import { m } from "framer-motion";
 
 const FOLLOW_CARDS = [
@@ -68,7 +68,7 @@ const FOLLOW_CARDS = [
 export function FollowUsSection() {
   return (
     <section className="w-full max-w-[1400px] text-center" aria-labelledby="follow-heading">
-      <h2 id="follow-heading" className="text-2xl font-bold text-white sm:text-3xl md:text-4xl">
+      <h2 id="follow-heading" className="font-display text-2xl font-normal text-white sm:text-3xl md:text-4xl">
         Follow Us
       </h2>
       <p className="mt-2 text-sm text-white/50 sm:text-base">Explore exclusive content</p>
@@ -87,7 +87,7 @@ export function FollowUsSection() {
             <div className="border-t border-white/10 p-4 text-left">
               <div className="flex items-center gap-2">
                 <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-pink-500 to-fuchsia-600">
-                  <Heart className="h-3.5 w-3.5 fill-white text-white" aria-hidden />
+                  <AnimatedHeartIcon className="h-3.5 w-3.5 fill-white text-white" />
                 </span>
                 <span className="text-sm font-semibold text-white">@lucy</span>
               </div>

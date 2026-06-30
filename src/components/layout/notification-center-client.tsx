@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, Loader2 } from "lucide-react";
+import { AnimatedBellIcon } from "@/components/icons/animated-nav-icon";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -34,7 +35,7 @@ export function NotificationCenterClient({
     <DropdownMenu open={open} onOpenChange={onOpenChange}>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="relative" aria-label="Notifications">
-          <Bell className="h-5 w-5" />
+          <AnimatedBellIcon className="h-5 w-5" />
           {unread > 0 && (
             <span className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
               {unread}

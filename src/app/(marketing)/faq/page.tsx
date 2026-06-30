@@ -38,7 +38,7 @@ export default function FAQPage() {
   return (
     <Section>
       <div className="mx-auto max-w-3xl">
-        <h1 className="text-center text-4xl font-bold">Frequently asked questions</h1>
+        <h1 className="font-display text-center text-4xl font-normal">Frequently asked questions</h1>
         <Accordion type="single" collapsible className="mt-12">
           {FAQ_ITEMS.map((item, i) => (
             <AccordionItem key={i} value={`item-${i}`}>
