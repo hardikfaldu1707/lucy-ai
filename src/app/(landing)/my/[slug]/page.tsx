@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { getGalleryItems } from "@/lib/data/admin-characters";
 import { MyGirlHub } from "@/components/character/my-girl-hub";
 
 type PageProps = { params: Promise<{ slug: string }> };
@@ -42,6 +43,11 @@ export default async function MyGirlHubPage({ params }: PageProps) {
   const character = await getOwnedCharacter(decodeURIComponent(slug), userId);
   if (!character) notFound();
 
+  const galleryItems = (await getGalleryItems(character.id)) ?? [];
+  const photos = galleryItems
+    .filter((item) => item.type === "image")
+    .map((item) => item.url);
+
   // Normalize shape for client component
   const normalizedCharacter = {
     id: character.id,
@@ -55,6 +61,7 @@ export default async function MyGirlHubPage({ params }: PageProps) {
     age: character.age ?? 24,
     style: character.style ?? "realistic",
     voiceId: character.voice_id,
+    photos,
   };
 
   return <MyGirlHub character={normalizedCharacter} />;

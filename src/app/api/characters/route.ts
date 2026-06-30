@@ -16,6 +16,7 @@ import { parseBody } from "@/lib/validation/parse";
 import { createCharacterSchema } from "@/lib/validation/schemas";
 import { buildCharacterSystemPrompt } from "@/lib/characters/build-character-system-prompt";
 import { resolveCreateAvatar } from "@/lib/characters/resolve-create-avatar";
+import { matchTemplateCharacter } from "@/lib/characters/match-template";
 
 // Public: the home/explore catalog (published + public characters).
 export const revalidate = 120;
@@ -93,8 +94,19 @@ export async function POST(req: Request) {
     voicePersonaId: body.voicePersonaId,
   });
 
+  // Match the user's appearance picks to an admin-built template girl. When a
+  // good match exists we copy her curated photo gallery (and profile media)
+  // onto the user's new private girl, so admin-uploaded photos finally show up.
+  // The user keeps their own name, personality, voice, and system prompt.
+  const template = await matchTemplateCharacter({
+    appearance: body.appearance,
+    style: body.style,
+    gender: body.gender,
+  });
+
   const avatarUrl =
     body.avatarUrl?.trim() ||
+    template?.avatarUrl ||
     resolveCreateAvatar(
       {
         style: body.style ?? "realistic",
@@ -108,6 +120,10 @@ export async function POST(req: Request) {
     tagline: body.tagline,
     description: body.description,
     avatarUrl,
+    coverUrl: template?.coverUrl ?? null,
+    previewVideoUrl: template?.previewVideoUrl ?? null,
+    cardDisplayMode: template?.cardDisplayMode ?? "image",
+    galleryItems: template?.galleryItems ?? [],
     tags: body.tags,
     personality: body.personality,
     aiModel: body.aiModel ?? null,

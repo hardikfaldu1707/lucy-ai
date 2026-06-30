@@ -647,6 +647,27 @@ export function CreateWizardShell({
         />
       )}
 
+      {submitting && mode === "create" && !isPreview && (
+        <div
+          className="fixed inset-0 z-[60] flex flex-col items-center justify-center gap-6 bg-black/90 backdrop-blur-md"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="relative flex h-20 w-20 items-center justify-center">
+            <span className="absolute inset-0 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
+            <Sparkles className="h-8 w-8 animate-pulse text-primary" aria-hidden />
+          </div>
+          <div className="space-y-1 text-center">
+            <p className="text-lg font-semibold text-white">
+              Generating your AI girl…
+            </p>
+            <p className="text-sm text-white/55">
+              Bringing {draft.name.trim() || "her"} to life. This only takes a moment.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div
         className={cn(
           "relative mx-auto px-4 sm:px-6",

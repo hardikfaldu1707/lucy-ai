@@ -30,9 +30,21 @@ import { CharacterPortraitMedia } from "@/components/home/character-portrait-med
 import { SuggestedQuestionsEditor } from "./suggested-questions-editor";
 import { resolveCharacterImageUrl } from "@/constants/character-portraits";
 import { CREATE_VOICE_OPTIONS } from "@/constants/create-voices";
+import {
+  CREATE_ETHNICITIES,
+  CREATE_HAIR_STYLES,
+  CREATE_HAIR_COLORS,
+  CREATE_BODY_TYPES,
+  CREATE_OUTFITS,
+  type CharacterAppearance,
+} from "@/constants/create-appearance";
 import type { CharacterGalleryItem } from "@/types/gallery";
 import type { AdminCharacter } from "@/lib/data/admin-characters";
 import { toast } from "sonner";
+
+const APPEARANCE_NONE = "__none__";
+
+type AppearanceOption = { id: string; label: string };
 
 const DEFAULT_MODEL_VALUE = "__default__";
 
@@ -55,6 +67,7 @@ export interface CharacterFormValues {
   gender: string;
   style: string;
   age: number;
+  appearance: CharacterAppearance;
   voiceId: string | null;
   isPublished: boolean;
 }
@@ -65,6 +78,42 @@ interface CharacterFormProps {
   initial?: AdminCharacter | null;
   onSubmit: (values: CharacterFormValues) => void;
   isSubmitting: boolean;
+}
+
+function AppearanceSelect({
+  id,
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  options: AppearanceOption[];
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id}>{label}</Label>
+      <Select
+        value={value || APPEARANCE_NONE}
+        onValueChange={(v) => onChange(v === APPEARANCE_NONE ? "" : v)}
+      >
+        <SelectTrigger id={id}>
+          <SelectValue placeholder="Not set" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={APPEARANCE_NONE}>Not set</SelectItem>
+          {options.map((o) => (
+            <SelectItem key={o.id} value={o.id}>
+              {o.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
 }
 
 function toCsv(values: string[]): string {
@@ -108,6 +157,11 @@ export function CharacterForm({
   const [visibility, setVisibility] = useState(initial?.visibility ?? "public");
   const [style, setStyle] = useState(initial?.style ?? "realistic");
   const [age, setAge] = useState(String(initial?.age ?? 24));
+  const [ethnicity, setEthnicity] = useState(initial?.appearance?.ethnicity ?? "");
+  const [hairStyle, setHairStyle] = useState(initial?.appearance?.hairStyle ?? "");
+  const [hairColor, setHairColor] = useState(initial?.appearance?.hairColor ?? "");
+  const [bodyType, setBodyType] = useState(initial?.appearance?.bodyType ?? "");
+  const [outfit, setOutfit] = useState(initial?.appearance?.outfit ?? "");
   const [voiceId, setVoiceId] = useState(initial?.voiceId ?? "");
   const [isPublished, setIsPublished] = useState(initial?.isPublished ?? true);
   const [activeTab, setActiveTab] = useState("basics");
@@ -150,6 +204,13 @@ export function CharacterForm({
       gender: "female",
       style,
       age: Number(age) || 24,
+      appearance: {
+        ...(ethnicity ? { ethnicity } : {}),
+        ...(hairStyle ? { hairStyle } : {}),
+        ...(hairColor ? { hairColor } : {}),
+        ...(bodyType ? { bodyType } : {}),
+        ...(outfit ? { outfit } : {}),
+      },
       voiceId: voiceId.trim() || null,
       isPublished,
     });
@@ -299,6 +360,53 @@ export function CharacterForm({
                       onChange={(e) => setPersonality(e.target.value)}
                       placeholder="Caring, Playful, Flirty"
                     />
+                  </div>
+
+                  <div className="space-y-3 border-t pt-4">
+                    <div className="space-y-0.5">
+                      <Label className="text-sm font-semibold">Match attributes</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Tag this girl so she can be matched when a user creates one. Her
+                        photos are copied to the user&apos;s girl when their picks match.
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <AppearanceSelect
+                        id="ethnicity"
+                        label="Ethnicity"
+                        value={ethnicity}
+                        options={CREATE_ETHNICITIES}
+                        onChange={setEthnicity}
+                      />
+                      <AppearanceSelect
+                        id="bodyType"
+                        label="Body type"
+                        value={bodyType}
+                        options={CREATE_BODY_TYPES}
+                        onChange={setBodyType}
+                      />
+                      <AppearanceSelect
+                        id="hairStyle"
+                        label="Hair style"
+                        value={hairStyle}
+                        options={CREATE_HAIR_STYLES}
+                        onChange={setHairStyle}
+                      />
+                      <AppearanceSelect
+                        id="hairColor"
+                        label="Hair color"
+                        value={hairColor}
+                        options={CREATE_HAIR_COLORS}
+                        onChange={setHairColor}
+                      />
+                      <AppearanceSelect
+                        id="outfit"
+                        label="Outfit"
+                        value={outfit}
+                        options={CREATE_OUTFITS}
+                        onChange={setOutfit}
+                      />
+                    </div>
                   </div>
                 </TabsContent>
 

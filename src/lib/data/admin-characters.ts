@@ -195,6 +195,54 @@ async function resolveUniqueSlug(base: string): Promise<string> {
   return `${base}-${Date.now()}`;
 }
 
+// Lightweight template candidates used by the user-create matching engine.
+// Only admin catalog girls (created_by IS NULL) that are published carry the
+// curated photo galleries we copy onto a user's new private girl.
+export interface TemplateCharacterCandidate {
+  id: string;
+  slug: string | null;
+  avatarUrl: string;
+  coverUrl: string | null;
+  previewVideoUrl: string | null;
+  cardDisplayMode: "image" | "video";
+  galleryItems: CharacterGalleryItem[];
+  appearance: CharacterAppearance;
+  style: string;
+  gender: string;
+}
+
+export async function listTemplateCharactersForMatch(): Promise<
+  TemplateCharacterCandidate[]
+> {
+  const { data, error } = await supabaseAdmin()
+    .from("characters")
+    .select(SELECT)
+    .is("created_by", null)
+    .eq("is_published", true);
+
+  if (error) {
+    console.error("[listTemplateCharactersForMatch]", error);
+    return [];
+  }
+  if (!data) return [];
+
+  return (data as AdminCharacterDbRow[])
+    .map(fromRow)
+    .filter((c) => c.galleryItems.length > 0)
+    .map((c) => ({
+      id: c.id,
+      slug: c.slug,
+      avatarUrl: c.avatarUrl,
+      coverUrl: c.coverUrl,
+      previewVideoUrl: c.previewVideoUrl,
+      cardDisplayMode: c.cardDisplayMode,
+      galleryItems: c.galleryItems,
+      appearance: c.appearance,
+      style: c.style,
+      gender: c.gender,
+    }));
+}
+
 export async function listAdminCharacters(): Promise<AdminCharacter[]> {
   const { data, error } = await supabaseAdmin()
     .from("characters")

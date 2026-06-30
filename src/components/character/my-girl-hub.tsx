@@ -21,11 +21,13 @@ interface MyGirlHubProps {
     age: number;
     style: string;
     voiceId: string | null;
+    photos?: string[];
   };
 }
 
 export function MyGirlHub({ character }: MyGirlHubProps) {
   const router = useRouter();
+  const photos = character.photos ?? [];
 
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-black pb-20 pt-6 text-white sm:pt-12">
@@ -130,6 +132,31 @@ export function MyGirlHub({ character }: MyGirlHubProps) {
                     >
                       {trait}
                     </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Photos */}
+            {photos.length > 0 && (
+              <div className="mt-8 border-t border-white/10 pt-6 space-y-3">
+                <h3 className="text-sm font-medium text-white/50">
+                  Photos of {character.name}
+                </h3>
+                <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                  {photos.map((photo, index) => (
+                    <div
+                      key={`${photo}-${index}`}
+                      className="relative aspect-[3/4] overflow-hidden rounded-xl border border-white/10 bg-zinc-900"
+                    >
+                      <Image
+                        src={photo}
+                        alt={`${character.name} photo ${index + 1}`}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 640px) 33vw, 200px"
+                      />
+                    </div>
                   ))}
                 </div>
               </div>
