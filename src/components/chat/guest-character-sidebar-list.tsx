@@ -1,12 +1,11 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { MessageCircle } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Skeleton } from "@/components/ui/skeleton";
 import { resolveCharacterImageUrl } from "@/constants/character-portraits";
 import type { ExploreCharacter } from "@/constants/explore-characters";
 import { ROUTES } from "@/constants/routes";
@@ -28,6 +27,30 @@ interface GuestCharacterSidebarListProps {
   onSelect?: () => void;
 }
 
+function GuestShimmerSkeleton({ isDark }: { isDark: boolean }) {
+  return (
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div className="space-y-1 p-2" aria-busy="true" aria-label="Loading companions">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="flex items-center gap-3 rounded-xl px-3 py-2.5 min-h-[56px]">
+            <div className={cn("shrink-0 h-11 w-11 rounded-full", isDark ? "bg-white/8" : "bg-muted")}>
+              <div className="h-full w-full animate-shimmer rounded-full" />
+            </div>
+            <div className="min-w-0 flex-1 space-y-2">
+              <div className={cn("h-4 w-28 rounded-md", isDark ? "bg-white/8" : "bg-muted")}>
+                <div className="h-full w-full animate-shimmer rounded-md" />
+              </div>
+              <div className={cn("h-3 w-20 rounded-md", isDark ? "bg-white/8" : "bg-muted")}>
+                <div className="h-full w-full animate-shimmer rounded-md" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function GuestCharacterSidebarList({
   variant = "dark",
   collapsed = false,
@@ -35,6 +58,12 @@ export function GuestCharacterSidebarList({
 }: GuestCharacterSidebarListProps) {
   const pathname = usePathname();
   const isDark = variant === "dark";
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const timer = requestAnimationFrame(() => setVisible(true));
+    return () => cancelAnimationFrame(timer);
+  }, []);
 
   const { data: characters = [], isLoading, isError } = useQuery({
     queryKey: ["chat-browse", "characters"],
@@ -46,17 +75,7 @@ export function GuestCharacterSidebarList({
   if (isLoading) {
     return (
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <div className="space-y-1 p-2" aria-busy="true" aria-label="Loading companions">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-3 rounded-xl px-3 py-2.5">
-              <Skeleton className={cn("h-11 w-11 shrink-0 rounded-full", isDark && "bg-white/10")} />
-              <div className="min-w-0 flex-1 space-y-2">
-                <Skeleton className={cn("h-4 w-28", isDark && "bg-white/10")} />
-                <Skeleton className={cn("h-3 w-20", isDark && "bg-white/10")} />
-              </div>
-            </div>
-          ))}
-        </div>
+        <GuestShimmerSkeleton isDark={isDark} />
       </div>
     );
   }
@@ -98,16 +117,17 @@ export function GuestCharacterSidebarList({
   }
 
   return (
-    <ScrollArea className="h-full min-h-0 flex-1">
-      <div
-        className={cn(collapsed ? "space-y-1 p-1.5" : "space-y-0.5 p-2")}
-        role="list"
-        aria-label="Companions"
-      >
-        {characters.map((character) => {
+    <div
+      className="h-full min-h-0 flex-1 overflow-y-auto scrollbar-glow overscroll-behavior-contain"
+      role="list"
+      aria-label="Companions"
+    >
+      <div className={cn(collapsed ? "space-y-1 p-1.5" : "space-y-0.5 p-2")}>
+        {characters.map((character, index) => {
           const href = ROUTES.publicChatWithCharacter(character.id);
           const active = pathname === href || decodeURIComponent(pathname) === href;
           const avatarSrc = resolveCharacterImageUrl(character.image, character.id);
+          const animDelay = visible ? `${Math.min(index * 0.04, 0.3)}s` : "0s";
 
           return (
             <Link
@@ -118,20 +138,25 @@ export function GuestCharacterSidebarList({
               role="listitem"
               title={collapsed ? character.name : undefined}
               className={cn(
-                "relative flex items-center rounded-xl transition-colors",
+                "relative flex items-center rounded-xl outline-none",
+                "transition-[background,box-shadow] duration-150 ease-out",
                 collapsed ? "justify-center p-1.5" : "gap-3 px-3 py-2.5",
-                isDark ? "hover:bg-white/[0.06]" : "hover:bg-muted/80",
+                // Min height for touch targets
+                collapsed ? "min-h-11" : "min-h-[56px]",
+                visible && "animate-slide-in",
+                isDark ? "hover:bg-white/[0.05]" : "hover:bg-muted/80",
                 active &&
                   (isDark
-                    ? "bg-white/[0.08] before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:bg-primary/80"
-                    : "bg-muted before:absolute before:inset-y-1.5 before:left-0 before:w-0.5 before:rounded-full before:bg-primary"),
+                    ? "bg-white/[0.07] after:absolute after:inset-y-2 after:left-0 after:w-[3px] after:rounded-r-full after:bg-primary after:shadow-[0_0_12px_-2px] after:shadow-primary/50"
+                    : "bg-muted after:absolute after:inset-y-1.5 after:left-0 after:w-[3px] after:rounded-r-full after:bg-primary"),
               )}
+              style={{ animationDelay: animDelay }}
               aria-current={active ? "page" : undefined}
               aria-label={collapsed ? character.name : undefined}
             >
               <Avatar
                 className={cn(
-                  "shrink-0",
+                  "shrink-0 overflow-hidden",
                   collapsed ? "h-10 w-10" : "h-11 w-11",
                   active &&
                     (isDark
@@ -139,8 +164,8 @@ export function GuestCharacterSidebarList({
                       : "ring-2 ring-primary/50 ring-offset-1 ring-offset-background"),
                 )}
               >
-                <AvatarImage src={avatarSrc} alt="" />
-                <AvatarFallback>{character.name[0]}</AvatarFallback>
+                <AvatarImage src={avatarSrc} alt="" className="object-cover" />
+                <AvatarFallback className="text-sm font-medium">{character.name[0]}</AvatarFallback>
               </Avatar>
               {!collapsed && (
                 <div className="min-w-0 flex-1">
@@ -155,7 +180,7 @@ export function GuestCharacterSidebarList({
                   {character.bio && (
                     <p
                       className={cn(
-                        "truncate text-sm leading-snug",
+                        "mt-0.5 truncate text-[13px] leading-snug",
                         isDark ? "text-white/50" : "text-muted-foreground",
                         active && isDark && "text-white/65",
                       )}
@@ -169,6 +194,6 @@ export function GuestCharacterSidebarList({
           );
         })}
       </div>
-    </ScrollArea>
+    </div>
   );
 }
