@@ -41,11 +41,23 @@ export function scoreTemplate(
     return 0;
   }
 
-  let score = 0;
-  if (eq(input.style, candidate.style)) score += WEIGHTS.style;
+  // Must match style exactly if style is provided.
+  if (input.style && candidate.style && !eq(input.style, candidate.style)) {
+    return 0;
+  }
 
   const a = input.appearance ?? {};
   const b = candidate.appearance ?? {};
+
+  // Strictly require ethnicity, hairStyle, hairColor, and bodyType to match only if both are specified.
+  // If one side doesn't specify, we allow it (does not conflict) but it won't get score points.
+  if (a.ethnicity && b.ethnicity && !eq(a.ethnicity, b.ethnicity)) return 0;
+  if (a.hairStyle && b.hairStyle && !eq(a.hairStyle, b.hairStyle)) return 0;
+  if (a.hairColor && b.hairColor && !eq(a.hairColor, b.hairColor)) return 0;
+  if (a.bodyType && b.bodyType && !eq(a.bodyType, b.bodyType)) return 0;
+
+  let score = 1; // Base score for a valid match
+  if (eq(input.style, candidate.style)) score += WEIGHTS.style;
   if (eq(a.ethnicity, b.ethnicity)) score += WEIGHTS.ethnicity;
   if (eq(a.hairColor, b.hairColor)) score += WEIGHTS.hairColor;
   if (eq(a.hairStyle, b.hairStyle)) score += WEIGHTS.hairStyle;
@@ -68,7 +80,7 @@ export function pickBestTemplate(
       best = candidate;
     }
   }
-  return bestScore >= MIN_SCORE ? best : null;
+  return best;
 }
 
 // Finds the closest-matching admin template girl for a user's wizard

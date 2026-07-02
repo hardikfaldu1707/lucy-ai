@@ -19,7 +19,7 @@ import { resolveCreateAvatar } from "@/lib/characters/resolve-create-avatar";
 import { matchTemplateCharacter } from "@/lib/characters/match-template";
 
 // Public: the home/explore catalog (published + public characters).
-export const revalidate = 120;
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   const { userId } = await auth();
@@ -70,7 +70,7 @@ export async function POST(req: Request) {
   }
 
   const creationConfig = await getPublicCreationConfig();
-  const validationError = validateCharacterAgainstConfig(creationConfig, body);
+  const validationError = await validateCharacterAgainstConfig(creationConfig, body);
   if (validationError) {
     return NextResponse.json({ error: validationError }, { status: 400 });
   }
@@ -105,8 +105,8 @@ export async function POST(req: Request) {
   });
 
   const avatarUrl =
-    body.avatarUrl?.trim() ||
     template?.avatarUrl ||
+    body.avatarUrl?.trim() ||
     resolveCreateAvatar(
       {
         style: body.style ?? "realistic",

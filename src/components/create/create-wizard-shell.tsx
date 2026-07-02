@@ -20,6 +20,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { AppearanceGrid, OptionPreviewImage } from "@/components/create/create-wizard-parts";
+import { CharacterPortraitMedia } from "@/components/home/character-portrait-media";
+import { useQueryClient } from "@tanstack/react-query";
 import type { CreateStyle } from "@/constants/create-page";
 import { ROUTES } from "@/constants/routes";
 import { submitUserCharacter } from "@/lib/characters/create-character-client";
@@ -47,6 +49,14 @@ import type { CreationConfig, CreationStep } from "@/types/character-creation-co
 
 const PROGRESS_ICONS = [User, Globe, Sparkles, User, Sparkles, Heart, Sparkles, Mic, Heart] as const;
 
+const LOADING_STEPS = [
+  "Initializing neural pathway mappings...",
+  "Applying appearance configuration (style, hair, ethnicity)...",
+  "Processing personality traits and behavioral parameters...",
+  "Scanning template library for curated photo gallery match...",
+  "Finalizing AI model configuration and audio sync...",
+];
+
 export type WizardShellMode = "create" | "edit" | "preview" | "fullscreen-preview";
 
 export interface CreateWizardShellProps {
@@ -73,15 +83,17 @@ function signInHrefForCreateWithDraft(): string {
 function CreatePortraitPreview({
   draft,
   config,
+  matchedTemplate,
 }: {
   draft: CreateCharacterDraft;
   config: CreationConfig;
+  matchedTemplate?: any;
 }) {
   const portraitSrc = useMemo(
-    () => resolveCreateAvatarFromDraftWithConfig(config, draft),
-    [config, draft],
+    () => matchedTemplate?.avatarUrl || resolveCreateAvatarFromDraftWithConfig(config, draft),
+    [config, draft, matchedTemplate],
   );
-  const displayName = draft.name.trim() || "Your AI girl";
+  const displayName = draft.name.trim() || matchedTemplate?.name || "Your AI girl";
 
   return (
     <div className="mx-auto w-full max-w-[200px] lg:max-w-none">
@@ -147,6 +159,7 @@ export function CreateWizardShell({
   const router = useRouter();
   const { isSignedIn, isLoaded } = useAuth();
   const canCreate = useFlag("user_created_characters");
+  const queryClient = useQueryClient();
   const isPreview = mode === "preview" || mode === "fullscreen-preview";
 
   const activeSteps = useMemo(() => getEnabledSteps(config), [config]);
@@ -157,6 +170,9 @@ export function CreateWizardShell({
     initialDraft || DEFAULT_CREATE_DRAFT,
   );
   const [submitting, setSubmitting] = useState(false);
+  const [revealCharacter, setRevealCharacter] = useState<any>(null);
+  const [matchedTemplate, setMatchedTemplate] = useState<any>(null);
+  const [loadingStep, setLoadingStep] = useState(0);
   const [hydrated, setHydrated] = useState(false);
   const [previewingVoice, setPreviewingVoice] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -197,12 +213,64 @@ export function CreateWizardShell({
     setHydrated(true);
   }, [mode, initialDraft, isPreview]);
 
+  useEffect(() => {
+    const fetchMatchedTemplate = async () => {
+      try {
+        const res = await fetch("/api/characters/match-template", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            style: draft.style,
+            gender: draft.gender,
+            appearance: {
+              ethnicity: draft.ethnicity || undefined,
+              hairStyle: draft.hairStyle || undefined,
+              hairColor: draft.hairColor || undefined,
+              bodyType: draft.bodyType || undefined,
+              outfit: draft.outfit || undefined,
+            },
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setMatchedTemplate(data.template || null);
+        } else {
+          setMatchedTemplate(null);
+        }
+      } catch (err) {
+        console.error("Failed to match template:", err);
+        setMatchedTemplate(null);
+      }
+    };
+
+    fetchMatchedTemplate();
+  }, [
+    draft.style,
+    draft.gender,
+    draft.ethnicity,
+    draft.hairStyle,
+    draft.hairColor,
+    draft.bodyType,
+    draft.outfit,
+  ]);
+
   const runSubmit = useCallback(async () => {
-    if (!isDraftReadyForSubmit(draft)) {
+    if (!isDraftReadyForSubmit(draft, config)) {
       toast.error("Complete all required fields first.");
       return;
     }
     setSubmitting(true);
+    setLoadingStep(0);
+
+    const interval = setInterval(() => {
+      setLoadingStep((prev) => {
+        if (prev < LOADING_STEPS.length - 1) return prev + 1;
+        return prev;
+      });
+    }, 1200);
+
+    const startTime = Date.now();
+
     try {
       const payload = draftToPayload(draft, config);
       if (mode === "edit" && characterId) {
@@ -216,42 +284,62 @@ export function CreateWizardShell({
           const err = (await res.json().catch(() => ({}))) as { error?: string };
           throw new Error(err.error ?? "Failed to update character");
         }
+        clearInterval(interval);
         toast.success("Your AI girl is updated!");
+        void queryClient.invalidateQueries({ queryKey: ["my-girls"] });
         const json = (await res.json()) as { character: { slug?: string; id: string } };
         router.push(ROUTES.myGirl(json.character.slug ?? json.character.id));
       } else {
-        const { slug } = await submitUserCharacter(payload);
+        const result = await submitUserCharacter(payload);
         clearCreateDraft();
-        toast.success("Your AI girl is ready!");
-        router.push(ROUTES.myGirl(slug));
+        void queryClient.invalidateQueries({ queryKey: ["my-girls"] });
+
+        const elapsed = Date.now() - startTime;
+        const minDuration = 5000; // 5 seconds
+        if (elapsed < minDuration) {
+          await new Promise((resolve) => setTimeout(resolve, minDuration - elapsed));
+        }
+
+        clearInterval(interval);
+        setRevealCharacter(result.character);
       }
     } catch (err) {
+      clearInterval(interval);
       toast.error(err instanceof Error ? err.message : "Failed to save");
-    } finally {
       setSubmitting(false);
     }
-  }, [draft, router, mode, characterId, config]);
+  }, [draft, router, mode, characterId, config, queryClient]);
 
   useEffect(() => {
     if (mode !== "create" || isPreview) return;
     if (!hydrated || !isLoaded || !isSignedIn) return;
     if (!shouldAutoSubmitCreate()) return;
     const loaded = loadCreateDraft();
-    if (!isDraftReadyForSubmit(loaded)) return;
+    if (!isDraftReadyForSubmit(loaded, config)) return;
     void (async () => {
       setSubmitting(true);
+      setLoadingStep(0);
+      const interval = setInterval(() => {
+        setLoadingStep((prev) => Math.min(prev + 1, LOADING_STEPS.length - 1));
+      }, 1200);
+      const startTime = Date.now();
       try {
-        const { slug } = await submitUserCharacter(draftToPayload(loaded, config));
+        const result = await submitUserCharacter(draftToPayload(loaded, config));
         clearCreateDraft();
-        toast.success("Your AI girl is ready!");
-        router.push(ROUTES.myGirl(slug));
+        void queryClient.invalidateQueries({ queryKey: ["my-girls"] });
+        const elapsed = Date.now() - startTime;
+        if (elapsed < 5000) {
+          await new Promise((resolve) => setTimeout(resolve, 5000 - elapsed));
+        }
+        clearInterval(interval);
+        setRevealCharacter(result.character);
       } catch (err) {
+        clearInterval(interval);
         toast.error(err instanceof Error ? err.message : "Failed to create");
-      } finally {
         setSubmitting(false);
       }
     })();
-  }, [hydrated, isLoaded, isSignedIn, router, mode, config, isPreview]);
+  }, [hydrated, isLoaded, isSignedIn, router, mode, config, isPreview, queryClient]);
 
   function toggleTrait(trait: string) {
     const max = config.steps.find((s) => s.stepKey === "personality")?.config.maxSelections ?? 5;
@@ -305,7 +393,7 @@ export function CreateWizardShell({
 
   function handleCreate() {
     if (isPreview) return;
-    if (!isDraftReadyForSubmit(draft)) {
+    if (!isDraftReadyForSubmit(draft, config)) {
       toast.error("Fill in all required steps before creating.");
       return;
     }
@@ -318,7 +406,7 @@ export function CreateWizardShell({
     void runSubmit();
   }
 
-  const reviewPortraitSrc = resolveCreateAvatarFromDraftWithConfig(config, draft);
+  const reviewPortraitSrc = matchedTemplate?.avatarUrl || resolveCreateAvatarFromDraftWithConfig(config, draft);
 
   if (mode === "create" && canCreate === false) {
     return (
@@ -632,6 +720,177 @@ export function CreateWizardShell({
     }
   }
 
+  if (revealCharacter) {
+    const displayName = draft.name.trim() || revealCharacter.name || "Your AI Companion";
+    const userAge = draft.age || revealCharacter.age || 24;
+    const userStyle = draft.style || revealCharacter.style || "realistic";
+    const bio = draft.description?.trim() || revealCharacter.description;
+    
+    const relationshipLabel = labelFromConfig(config, "review", draft.relationship) || 
+                              labelFromConfig(config, "bond", draft.relationship) || 
+                              draft.relationship || 
+                              "Companion";
+
+    const hairStep = config.steps.find((s) => s.stepType === "dual_select");
+    const hairStyleLabel = hairStep?.options.find((o) => o.optionKey === draft.hairStyle && o.optionGroup === "hairStyle")?.label || draft.hairStyle || "Standard";
+    const hairColorLabel = hairStep?.options.find((o) => o.optionKey === draft.hairColor && o.optionGroup === "hairColor")?.label || draft.hairColor || "Standard";
+
+    const personalityStep = config.steps.find((s) => s.stepKey === "personality");
+    const personalityLabels = draft.personality.map((traitKey) => {
+      return personalityStep?.options.find((o) => o.optionKey === traitKey)?.label || traitKey;
+    });
+
+    return (
+      <main className="relative overflow-x-hidden bg-black text-white min-h-screen py-10 px-4 md:py-16 md:px-8">
+        <div
+          className="pointer-events-none fixed inset-0 bg-[radial-gradient(ellipse_80%_40%_at_50%_0%,rgba(236,72,153,0.15),transparent_55%)]"
+          aria-hidden
+        />
+        <div className="mx-auto max-w-4xl space-y-10 relative">
+          <div className="text-center space-y-3">
+            <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent animate-pulse">
+              Generation Complete!
+            </h1>
+            <p className="text-white/60 text-base md:text-lg">
+              We matched your choices with the perfect companion and generated her profile.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] gap-8 bg-white/5 border border-white/10 rounded-3xl p-6 md:p-8 backdrop-blur-md shadow-2xl">
+            {/* Left Column: Portrait */}
+            <div className="flex flex-col items-center gap-4">
+              <div className="relative aspect-[3/4] w-full max-w-[280px] overflow-hidden rounded-2xl ring-4 ring-primary/40 shadow-[0_0_40px_-5px_rgba(236,72,153,0.3)] group">
+                <CharacterPortraitMedia
+                  character={{
+                    id: revealCharacter.id,
+                    name: displayName,
+                    age: userAge,
+                    image: revealCharacter.avatarUrl,
+                    previewVideoUrl: revealCharacter.previewVideoUrl,
+                    cardDisplayMode: revealCharacter.cardDisplayMode,
+                  }}
+                  className="!aspect-auto h-full w-full"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-10" />
+                <div className="absolute bottom-4 left-4 right-4 z-20">
+                  <h3 className="text-lg font-bold text-white">{displayName}</h3>
+                  <p className="text-xs text-white/70 capitalize">{relationshipLabel}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Profile details */}
+            <div className="space-y-6 flex flex-col justify-between">
+              <div className="space-y-4">
+                <div>
+                  <h2 className="text-2xl font-bold text-white flex flex-wrap items-center gap-2">
+                    {displayName}
+                    <span className="text-sm font-normal text-white/50 bg-white/10 px-2.5 py-0.5 rounded-full">
+                      Age {userAge}
+                    </span>
+                  </h2>
+                  <p className="text-sm text-primary font-medium mt-1 uppercase tracking-wider">
+                    {userStyle} style
+                  </p>
+                </div>
+
+                {bio && (
+                  <div className="space-y-1">
+                    <h4 className="text-xs font-semibold text-white/40 uppercase tracking-wider">Bio</h4>
+                    <p className="text-sm text-white/80 leading-relaxed italic">
+                      "{bio}"
+                    </p>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="space-y-1 bg-white/5 p-3 rounded-xl border border-white/5">
+                    <span className="text-xs text-white/40 block">Ethnicity</span>
+                    <span className="font-semibold text-white/90">
+                      {labelFromConfig(config, "ethnicity", draft.ethnicity) || "Standard"}
+                    </span>
+                  </div>
+                  <div className="space-y-1 bg-white/5 p-3 rounded-xl border border-white/5">
+                    <span className="text-xs text-white/40 block">Body Type</span>
+                    <span className="font-semibold text-white/90">
+                      {labelFromConfig(config, "body", draft.bodyType) || "Standard"}
+                    </span>
+                  </div>
+                  <div className="space-y-1 bg-white/5 p-3 rounded-xl border border-white/5">
+                    <span className="text-xs text-white/40 block">Hair Style</span>
+                    <span className="font-semibold text-white/90 capitalize">
+                      {hairStyleLabel}
+                    </span>
+                  </div>
+                  <div className="space-y-1 bg-white/5 p-3 rounded-xl border border-white/5">
+                    <span className="text-xs text-white/40 block">Hair Color</span>
+                    <span className="font-semibold text-white/90 capitalize">
+                      {hairColorLabel}
+                    </span>
+                  </div>
+                </div>
+
+                {personalityLabels.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-semibold text-white/40 uppercase tracking-wider">Personality Traits</h4>
+                    <div className="flex flex-wrap gap-1.5">
+                      {personalityLabels.map((trait: string) => (
+                        <span
+                          key={trait}
+                          className="text-xs px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary-foreground font-medium capitalize"
+                        >
+                          {trait.replace(/-/g, " ")}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-4 border-t border-white/10 flex items-center justify-end">
+                <Button
+                  onClick={() => router.push(ROUTES.myGirl(revealCharacter.slug ?? revealCharacter.id))}
+                  className="w-full sm:w-auto h-12 px-8 rounded-full bg-gradient-to-r from-pink-500 to-violet-600 hover:from-pink-600 hover:to-violet-700 text-white font-semibold text-base shadow-lg shadow-pink-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                >
+                  Start Chatting with {displayName} 💖
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Gallery Items Section */}
+          {revealCharacter.galleryItems && revealCharacter.galleryItems.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-pink-400" />
+                <h3 className="text-xl font-bold text-white">Photoshoot Gallery Matched</h3>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {revealCharacter.galleryItems.map((item: any, i: number) => (
+                  <div
+                    key={i}
+                    className="relative aspect-[3/4] overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-md group hover:border-pink-500/30 transition-all duration-300"
+                  >
+                    <img
+                      src={item.url}
+                      alt={`${displayName} gallery ${i + 1}`}
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-3">
+                      <span className="text-[10px] uppercase font-semibold text-white/80 bg-white/15 px-2 py-0.5 rounded-full">
+                        {item.type || "photo"}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
+    );
+  }
+
   const shell = (
     <main
       className={cn(
@@ -649,20 +908,29 @@ export function CreateWizardShell({
 
       {submitting && mode === "create" && !isPreview && (
         <div
-          className="fixed inset-0 z-[60] flex flex-col items-center justify-center gap-6 bg-black/90 backdrop-blur-md"
+          className="fixed inset-0 z-[60] flex flex-col items-center justify-center gap-6 bg-black/95 backdrop-blur-md px-4"
           role="status"
           aria-live="polite"
         >
-          <div className="relative flex h-20 w-20 items-center justify-center">
-            <span className="absolute inset-0 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
-            <Sparkles className="h-8 w-8 animate-pulse text-primary" aria-hidden />
+          <div className="relative flex h-24 w-24 items-center justify-center">
+            <span className="absolute inset-0 animate-spin rounded-full border-4 border-primary/20 border-t-primary" />
+            <Sparkles className="h-10 w-10 animate-pulse text-primary" aria-hidden />
           </div>
-          <div className="space-y-1 text-center">
-            <p className="text-lg font-semibold text-white">
-              Generating your AI girl…
-            </p>
-            <p className="text-sm text-white/55">
-              Bringing {draft.name.trim() || "her"} to life. This only takes a moment.
+          <div className="space-y-3 text-center max-w-md">
+            <p className="text-xl font-bold text-white">Generating your AI Companion</p>
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-primary h-6 animate-pulse">
+                {LOADING_STEPS[loadingStep]}
+              </p>
+              <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-primary transition-all duration-700 ease-out"
+                  style={{ width: `${((loadingStep + 1) / LOADING_STEPS.length) * 100}%` }}
+                />
+              </div>
+            </div>
+            <p className="text-xs text-white/40 mt-1">
+              Bringing {draft.name.trim() || "her"} to life based on your visual & personality choices.
             </p>
           </div>
         </div>
@@ -731,19 +999,8 @@ export function CreateWizardShell({
           )}
         </header>
 
-        <div className={cn("mb-6", !compact && "md:hidden")}>
-          <CreatePortraitPreview draft={draft} config={config} />
-        </div>
-
         <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
           <div className="min-w-0 flex-1">{renderStepContent(currentStep)}</div>
-          {!compact && (
-            <aside className="hidden shrink-0 lg:block lg:w-52 xl:w-56">
-              <div className="sticky top-24">
-                <CreatePortraitPreview draft={draft} config={config} />
-              </div>
-            </aside>
-          )}
         </div>
       </div>
 

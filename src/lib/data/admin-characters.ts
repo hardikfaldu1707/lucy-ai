@@ -228,7 +228,6 @@ export async function listTemplateCharactersForMatch(): Promise<
 
   return (data as AdminCharacterDbRow[])
     .map(fromRow)
-    .filter((c) => c.galleryItems.length > 0)
     .map((c) => ({
       id: c.id,
       slug: c.slug,

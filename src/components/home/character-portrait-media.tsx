@@ -39,7 +39,7 @@ export function CharacterPortraitMedia({
 }: CharacterPortraitMediaProps) {
   const imageSrc = resolveCharacterImageUrl(character.image, character.id);
   const videoUrl = character.previewVideoUrl?.trim() ?? "";
-  const showVideo = character.cardDisplayMode === "video" && Boolean(videoUrl);
+  const showVideo = Boolean(videoUrl);
   const unoptimized = useMemo(() => isGifUrl(imageSrc), [imageSrc]);
 
   const { ref: containerRef, inView } = useInView<HTMLDivElement>({

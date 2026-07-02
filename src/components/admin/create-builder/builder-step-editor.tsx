@@ -124,9 +124,9 @@ export function BuilderStepEditor({
   }
 
   return (
-    <div className="flex h-full flex-col border-t">
-      <div className="border-b px-3 py-2">
-        <h2 className="text-sm font-semibold">Step editor — {step.label}</h2>
+    <div className="flex h-full flex-col">
+      <div className="border-b px-3 py-2 bg-muted/5">
+        <h2 className="text-sm font-semibold">Step Editor — {step.label}</h2>
       </div>
       <Tabs defaultValue="general" className="flex min-h-0 flex-1 flex-col">
         <TabsList className="mx-3 mt-2 grid w-auto grid-cols-3">

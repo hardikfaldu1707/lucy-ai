@@ -17,6 +17,7 @@ import { BuilderLivePreview } from "@/components/admin/create-builder/builder-li
 import { BuilderSaveBar } from "@/components/admin/create-builder/builder-save-bar";
 import { BuilderStepEditor } from "@/components/admin/create-builder/builder-step-editor";
 import { BuilderStepsRail } from "@/components/admin/create-builder/builder-steps-rail";
+import { BuilderMatchTemplates } from "@/components/admin/create-builder/builder-match-templates";
 import { useCreationBuilder } from "@/hooks/use-creation-builder";
 import type { CreationConfig, CreationOption, CreationStep } from "@/types/character-creation-config";
 
@@ -29,6 +30,7 @@ export function CreateBuilderClient({ initialConfig }: CreateBuilderClientProps)
   const [addStepOpen, setAddStepOpen] = useState(false);
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [activeTab, setActiveTab] = useState<"steps" | "templates">("steps");
 
   function updateOption(stepId: string, optionId: string, patch: Partial<CreationOption>) {
     builder.updateDraft((prev) => ({
@@ -106,17 +108,36 @@ export function CreateBuilderClient({ initialConfig }: CreateBuilderClientProps)
   const selectedStep = builder.selectedStep;
 
   return (
-    <div className="flex h-[calc(100dvh-4rem)] flex-col">
-      <div className="border-b px-4 py-3">
-        <h1 className="text-lg font-semibold">Character Creation Builder</h1>
-        <p className="text-sm text-muted-foreground">
-          Manage the user creation wizard with live preview. Publish when ready.
-        </p>
+    <div className="flex h-[calc(100dvh-7.5rem)] flex-col">
+      <div className="border-b px-4 py-2 flex items-center justify-between">
+        <div>
+          <h1 className="text-lg font-semibold">Character Creation Builder</h1>
+          <p className="text-xs text-muted-foreground">
+            Manage the user creation wizard with live preview. Publish when ready.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant={activeTab === "steps" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setActiveTab("steps")}
+          >
+            Wizard Steps
+          </Button>
+          <Button
+            variant={activeTab === "templates" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setActiveTab("templates")}
+          >
+            Photo Match Database
+          </Button>
+        </div>
       </div>
 
-      <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[320px_1fr]">
-        <div className="flex min-h-0 flex-col border-r">
-          <div className="min-h-0 flex-1">
+      {activeTab === "steps" ? (
+        <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[240px_1fr] xl:grid-cols-[260px_1fr]">
+          {/* Left Column: Steps List */}
+          <div className="flex min-h-0 flex-col border-r bg-muted/10">
             <BuilderStepsRail
               config={builder.draftConfig}
               selectedStepId={builder.selectedStepId}
@@ -128,7 +149,9 @@ export function CreateBuilderClient({ initialConfig }: CreateBuilderClientProps)
               onAddStep={() => setAddStepOpen(true)}
             />
           </div>
-          <div className="max-h-[45%] min-h-[200px]">
+
+          {/* Center Column: Step Settings & Options Editor */}
+          <div className="flex min-h-0 flex-col bg-card">
             <BuilderStepEditor
               step={selectedStep}
               onUpdateStep={(patch) => {
@@ -149,26 +172,18 @@ export function CreateBuilderClient({ initialConfig }: CreateBuilderClientProps)
             />
           </div>
         </div>
+      ) : (
+        <BuilderMatchTemplates config={builder.draftConfig} />
+      )}
 
-        <div className="min-h-[400px] p-3 lg:min-h-0">
-          <BuilderLivePreview
-            config={builder.draftConfig}
-            device={builder.device}
-            onDeviceChange={builder.setDevice}
-            previewStep={builder.previewStep}
-            onPreviewStepChange={builder.setPreviewStep}
-            onRestart={builder.resetPreview}
-            onFullscreen={() => setFullscreenOpen(true)}
-          />
-        </div>
-      </div>
-
-      <BuilderSaveBar
-        isDirty={builder.isDirty}
-        publishing={publishing}
-        onSaveDraft={builder.saveDraft}
-        onPublish={() => void handlePublish()}
-      />
+      {activeTab === "steps" && (
+        <BuilderSaveBar
+          isDirty={builder.isDirty}
+          publishing={publishing}
+          onSaveDraft={builder.saveDraft}
+          onPublish={() => void handlePublish()}
+        />
+      )}
 
       <BuilderAddStepDialog
         open={addStepOpen}

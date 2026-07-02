@@ -63,7 +63,7 @@ export function BuilderStepsRail({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="border-b px-3 py-2">
+      <div className="border-b px-3 py-2 bg-muted/5">
         <h2 className="text-sm font-semibold">Steps</h2>
         <p className="text-xs text-muted-foreground">Drag to reorder the wizard flow</p>
       </div>

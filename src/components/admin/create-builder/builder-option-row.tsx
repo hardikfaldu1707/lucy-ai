@@ -60,13 +60,13 @@ export function BuilderOptionRow({ option, onChange, onDelete }: BuilderOptionRo
       ref={setNodeRef}
       style={style}
       className={cn(
-        "flex items-center gap-2 rounded-lg border bg-card p-2",
-        isDragging && "opacity-60 shadow-lg",
+        "flex items-center gap-3 rounded-xl border border-border/80 bg-card p-3 shadow-sm transition-all hover:shadow-md hover:border-border-hover",
+        isDragging && "opacity-60 shadow-xl border-primary bg-accent/20",
       )}
     >
       <button
         type="button"
-        className="cursor-grab touch-none text-muted-foreground hover:text-foreground"
+        className="cursor-grab touch-none text-muted-foreground/60 hover:text-foreground transition-colors"
         {...attributes}
         {...listeners}
         aria-label="Drag to reorder"
@@ -74,29 +74,48 @@ export function BuilderOptionRow({ option, onChange, onDelete }: BuilderOptionRo
         <GripVertical className="h-4 w-4" />
       </button>
 
-      <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-md bg-muted">
+      <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-border bg-muted/30">
         {option.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={option.imageUrl} alt="" className="h-full w-full object-cover" />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-            <ImageIcon className="h-4 w-4" />
+          <div className="flex h-full w-full items-center justify-center text-muted-foreground/45 bg-muted/20">
+            <ImageIcon className="h-5 w-5" />
           </div>
         )}
       </div>
 
-      <Input
-        value={option.label}
-        onChange={(e) => onChange({ label: e.target.value })}
-        className="h-8 flex-1 text-sm"
-        aria-label="Option label"
-      />
+      <div className="flex flex-1 gap-3 min-w-0">
+        <div className="flex-[2] min-w-0 space-y-1">
+          <span className="text-[10px] font-bold text-muted-foreground/80 tracking-wider uppercase block">Display Name</span>
+          <Input
+            value={option.label}
+            onChange={(e) => onChange({ label: e.target.value })}
+            className="h-8 w-full text-sm bg-background/50 border-border/60"
+            placeholder="e.g. Blonde hair"
+            aria-label="Option label"
+          />
+        </div>
+        <div className="flex-[1.2] min-w-0 space-y-1">
+          <span className="text-[10px] font-bold text-muted-foreground/80 tracking-wider uppercase block">Match Key</span>
+          <Input
+            value={option.optionKey}
+            onChange={(e) => onChange({ optionKey: e.target.value })}
+            className="h-8 w-full text-xs font-mono bg-muted/40 border-border/60"
+            placeholder="e.g. hair_blonde"
+            aria-label="Option key"
+          />
+        </div>
+      </div>
 
-      <Switch
-        checked={option.isEnabled}
-        onCheckedChange={(v) => onChange({ isEnabled: v })}
-        aria-label="Enable option"
-      />
+      <div className="flex flex-col items-center gap-1 shrink-0 px-2 border-l border-r border-border/40">
+        <span className="text-[9px] font-bold text-muted-foreground/80 tracking-wider uppercase block">Active</span>
+        <Switch
+          checked={option.isEnabled}
+          onCheckedChange={(v) => onChange({ isEnabled: v })}
+          aria-label="Enable option"
+        />
+      </div>
 
       <input
         ref={fileRef}
@@ -110,41 +129,43 @@ export function BuilderOptionRow({ option, onChange, onDelete }: BuilderOptionRo
         }}
       />
 
-      <Button
-        type="button"
-        variant="outline"
-        size="icon"
-        className="h-8 w-8 shrink-0"
-        disabled={uploading}
-        onClick={() => fileRef.current?.click()}
-        aria-label="Upload image"
-      >
-        {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
-      </Button>
+      <div className="flex items-center gap-1 shrink-0">
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="h-8 w-8 text-muted-foreground hover:text-foreground"
+          disabled={uploading}
+          onClick={() => fileRef.current?.click()}
+          aria-label="Upload image"
+        >
+          {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+        </Button>
 
-      {option.imageUrl && (
+        {option.imageUrl && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+            onClick={() => onChange({ imageUrl: null })}
+            aria-label="Remove image"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        )}
+
         <Button
           type="button"
           variant="ghost"
           size="icon"
-          className="h-8 w-8 shrink-0 text-muted-foreground"
-          onClick={() => onChange({ imageUrl: null })}
-          aria-label="Remove image"
+          className="h-8 w-8 text-destructive hover:bg-destructive/10"
+          onClick={onDelete}
+          aria-label="Delete option"
         >
           <Trash2 className="h-3.5 w-3.5" />
         </Button>
-      )}
-
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        className="h-8 w-8 shrink-0 text-destructive"
-        onClick={onDelete}
-        aria-label="Delete option"
-      >
-        <Trash2 className="h-3.5 w-3.5" />
-      </Button>
+      </div>
     </div>
   );
 }

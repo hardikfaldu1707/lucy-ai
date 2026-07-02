@@ -64,7 +64,7 @@ export async function PATCH(req: Request, context: RouteContext) {
 
   if (body.voicePersonaId !== undefined && body.voicePersonaId !== null) {
     const creationConfig = await getPublicCreationConfig();
-    const validationError = validateCharacterAgainstConfig(creationConfig, {
+    const validationError = await validateCharacterAgainstConfig(creationConfig, {
       voicePersonaId: body.voicePersonaId,
     });
     if (validationError) {
@@ -74,7 +74,7 @@ export async function PATCH(req: Request, context: RouteContext) {
 
   if (body.style || body.appearance || body.personality || body.relationship || body.tags) {
     const creationConfig = await getPublicCreationConfig();
-    const validationError = validateCharacterAgainstConfig(creationConfig, body);
+    const validationError = await validateCharacterAgainstConfig(creationConfig, body);
     if (validationError) {
       return NextResponse.json({ error: validationError }, { status: 400 });
     }
