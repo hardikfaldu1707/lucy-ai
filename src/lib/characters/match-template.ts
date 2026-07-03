@@ -17,9 +17,7 @@ const WEIGHTS = {
   outfit: 1,
 } as const;
 
-// A candidate must clear this to be considered a real match. style (3) +
-// ethnicity (3) covers it, but so does ethnicity + two hair/body attributes.
-const MIN_SCORE = 5;
+
 
 function eq(a: string | undefined, b: string | undefined): boolean {
   if (!a || !b) return false;
@@ -30,6 +28,13 @@ export interface TemplateMatchInput {
   appearance?: CharacterAppearance;
   style?: string;
   gender?: string;
+}
+
+function getVal(val: string | undefined): string | undefined {
+  if (!val) return undefined;
+  const t = val.trim().toLowerCase();
+  if (t === "" || t === "__none__" || t === "null" || t === "undefined") return undefined;
+  return t;
 }
 
 export function scoreTemplate(
@@ -49,20 +54,60 @@ export function scoreTemplate(
   const a = input.appearance ?? {};
   const b = candidate.appearance ?? {};
 
-  // Strictly require ethnicity, hairStyle, hairColor, and bodyType to match only if both are specified.
-  // If one side doesn't specify, we allow it (does not conflict) but it won't get score points.
-  if (a.ethnicity && b.ethnicity && !eq(a.ethnicity, b.ethnicity)) return 0;
-  if (a.hairStyle && b.hairStyle && !eq(a.hairStyle, b.hairStyle)) return 0;
-  if (a.hairColor && b.hairColor && !eq(a.hairColor, b.hairColor)) return 0;
-  if (a.bodyType && b.bodyType && !eq(a.bodyType, b.bodyType)) return 0;
+  const aEthnicity = getVal(a.ethnicity);
+  const bEthnicity = getVal(b.ethnicity);
+  const aHairStyle = getVal(a.hairStyle);
+  const bHairStyle = getVal(b.hairStyle);
+  const aHairColor = getVal(a.hairColor);
+  const bHairColor = getVal(b.hairColor);
+  const aBodyType = getVal(a.bodyType);
+  const bBodyType = getVal(b.bodyType);
+  const aOutfit = getVal(a.outfit);
+  const bOutfit = getVal(b.outfit);
+
+  // Strictly require ethnicity to match if both are specified (race/skin color is a hard constraint).
+  if (aEthnicity && bEthnicity && aEthnicity !== bEthnicity) return 0;
 
   let score = 1; // Base score for a valid match
   if (eq(input.style, candidate.style)) score += WEIGHTS.style;
-  if (eq(a.ethnicity, b.ethnicity)) score += WEIGHTS.ethnicity;
-  if (eq(a.hairColor, b.hairColor)) score += WEIGHTS.hairColor;
-  if (eq(a.hairStyle, b.hairStyle)) score += WEIGHTS.hairStyle;
-  if (eq(a.bodyType, b.bodyType)) score += WEIGHTS.bodyType;
-  if (eq(a.outfit, b.outfit)) score += WEIGHTS.outfit;
+
+  if (aEthnicity && bEthnicity && aEthnicity === bEthnicity) {
+    score += WEIGHTS.ethnicity;
+  } else if (aEthnicity && bEthnicity) {
+    score -= 0.5; // mismatch penalty
+  }
+
+  if (aHairColor && bHairColor) {
+    if (aHairColor === bHairColor) {
+      score += WEIGHTS.hairColor;
+    } else {
+      score -= 0.5; // mismatch penalty
+    }
+  }
+
+  if (aHairStyle && bHairStyle) {
+    if (aHairStyle === bHairStyle) {
+      score += WEIGHTS.hairStyle;
+    } else {
+      score -= 0.5; // mismatch penalty
+    }
+  }
+
+  if (aBodyType && bBodyType) {
+    if (aBodyType === bBodyType) {
+      score += WEIGHTS.bodyType;
+    } else {
+      score -= 0.5; // mismatch penalty
+    }
+  }
+
+  if (aOutfit && bOutfit) {
+    if (aOutfit === bOutfit) {
+      score += WEIGHTS.outfit;
+    } else {
+      score -= 0.5; // mismatch penalty
+    }
+  }
 
   return score;
 }

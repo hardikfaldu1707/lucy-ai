@@ -321,7 +321,10 @@ export function LandingSidebar() {
     setLandingMobileMenuOpen,
   } = useUIStore();
   const navItems = isSignedIn ? SIGNED_IN_NAV_ITEMS : PUBLIC_NAV_ITEMS;
-  const hideBottomNav = isImmersiveChatRoute(pathname);
+  const hideBottomNav =
+    isImmersiveChatRoute(pathname) ||
+    pathname === ROUTES.create ||
+    (pathname.startsWith("/my/") && pathname.endsWith("/edit"));
   const showMobileTopBar = !pathname.startsWith("/chat");
 
   useEffect(() => {

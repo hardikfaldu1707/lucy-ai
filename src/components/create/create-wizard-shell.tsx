@@ -214,6 +214,10 @@ export function CreateWizardShell({
   }, [mode, initialDraft, isPreview]);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [step]);
+
+  useEffect(() => {
     const fetchMatchedTemplate = async () => {
       try {
         const res = await fetch("/api/characters/match-template", {
@@ -406,8 +410,6 @@ export function CreateWizardShell({
     void runSubmit();
   }
 
-  const reviewPortraitSrc = matchedTemplate?.avatarUrl || resolveCreateAvatarFromDraftWithConfig(config, draft);
-
   if (mode === "create" && canCreate === false) {
     return (
       <div className="mx-auto max-w-md px-4 py-20 text-center text-white">
@@ -435,41 +437,71 @@ export function CreateWizardShell({
       case "single_select":
         if (stepDef.stepKey === "style") {
           const styles = optionsToAppearanceList(stepDef);
+          const styleDetails = {
+            realistic: {
+              title: "Realistic Style",
+              description: "Photorealistic companions with natural, lifelike details & expressions.",
+              tag: "Photorealistic"
+            },
+            anime: {
+              title: "Anime Style",
+              description: "Vibrant, anime-inspired girls with expressive & playful personalities.",
+              tag: "Artistic/Manga"
+            }
+          };
+
           return (
-            <section className="space-y-8">
-              <div className="grid grid-cols-2 gap-3 sm:gap-5">
+            <section className="space-y-8 max-w-3xl mx-auto py-4">
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                 {styles.map((item) => {
                   const selected = draft.style === item.id;
+                  const details = styleDetails[item.id as keyof typeof styleDetails] || {
+                    title: item.label,
+                    description: "",
+                    tag: "Style"
+                  };
                   return (
                     <button
                       key={item.id}
                       type="button"
                       onClick={() => !readOnly && updateDraft({ style: item.id as CreateStyle })}
                       disabled={readOnly}
-                      className={cn(
-                        "group relative overflow-hidden rounded-2xl text-left ring-2 transition-all sm:rounded-3xl",
-                        selected
-                          ? "ring-primary shadow-[0_0_32px_-8px_rgba(124,58,237,0.5)]"
-                          : "ring-white/10 hover:ring-white/25",
-                      )}
+                      className="group flex flex-col focus:outline-none text-left h-full"
                       aria-pressed={selected}
                     >
-                      <div className="relative aspect-[3/4] w-full">
+                      <div
+                        className={cn(
+                          "relative aspect-[4/3] w-full overflow-hidden rounded-3xl border transition-all duration-500 flex-shrink-0",
+                          selected
+                            ? "border-primary ring-2 ring-primary/40 shadow-[0_0_40px_-8px_rgba(124,58,237,0.5)] scale-[0.99]"
+                            : "border-white/10 hover:border-white/20 hover:scale-[1.01] hover:shadow-[0_12px_24px_-10px_rgba(0,0,0,0.5)]",
+                        )}
+                      >
                         <OptionPreviewImage src={item.image} alt={`${item.label} style`} />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
                         {selected && (
-                          <span className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-white shadow-lg">
+                          <span className="absolute right-4 top-4 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-white shadow-lg">
                             <Check className="h-4 w-4" strokeWidth={3} aria-hidden />
                           </span>
                         )}
-                        <span
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                        
+                        <span className="absolute left-4 top-4 z-10 rounded-full bg-black/60 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white/90 backdrop-blur-sm">
+                          {details.tag}
+                        </span>
+                      </div>
+                      
+                      <div className="mt-4 px-2 space-y-1">
+                        <h3
                           className={cn(
-                            "absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full px-5 py-1.5 text-sm font-semibold",
-                            selected ? "bg-primary text-white" : "bg-black/60 text-white/90",
+                            "text-lg font-bold tracking-wide transition-colors",
+                            selected ? "text-primary" : "text-white group-hover:text-primary/90",
                           )}
                         >
-                          {item.label}
-                        </span>
+                          {details.title}
+                        </h3>
+                        <p className="text-xs text-white/50 leading-relaxed group-hover:text-white/70 transition-colors">
+                          {details.description}
+                        </p>
                       </div>
                     </button>
                   );
@@ -692,8 +724,9 @@ export function CreateWizardShell({
             <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
               <h2 className="text-lg font-semibold">Review</h2>
               <div className="mt-4 flex gap-4">
-                <div className="relative h-24 w-20 shrink-0 overflow-hidden rounded-xl ring-1 ring-white/10">
-                  <OptionPreviewImage src={reviewPortraitSrc || null} alt={draft.name || "Preview"} />
+                <div className="relative h-24 w-20 shrink-0 flex items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/15 overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-tr from-pink-500/10 via-purple-500/10 to-violet-500/10" />
+                  <Sparkles className="h-7 w-7 text-primary animate-pulse relative z-10" />
                 </div>
                 <dl className="min-w-0 flex-1 space-y-2 text-sm text-white/75">
                   <div className="flex justify-between gap-4">
@@ -895,8 +928,8 @@ export function CreateWizardShell({
     <main
       className={cn(
         "relative overflow-x-hidden bg-black text-white",
-        compact ? "min-h-0 pb-4" : "min-h-screen pb-32 md:pb-16 md:pt-8",
-        mode === "fullscreen-preview" && "min-h-screen",
+        compact ? "min-h-0 pb-4 overflow-y-auto" : "min-h-screen pb-32 md:pb-16 md:pt-8",
+        mode === "fullscreen-preview" && "min-h-screen overflow-y-auto",
       )}
     >
       {!compact && (

@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { ImageIcon, Loader2, Plus, Sparkles, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -35,8 +35,7 @@ export function BuilderMatchTemplates({ config }: BuilderMatchTemplatesProps) {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Form states
-  const [name, setName] = useState("Companion Match");
+
   const [avatarUrl, setAvatarUrl] = useState("");
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const avatarFileRef = useRef<HTMLInputElement>(null);
@@ -53,6 +52,47 @@ export function BuilderMatchTemplates({ config }: BuilderMatchTemplatesProps) {
   const [galleryUrls, setGalleryUrls] = useState<string[]>([]);
   const [uploadingGallery, setUploadingGallery] = useState(false);
   const galleryFileRef = useRef<HTMLInputElement>(null);
+  const [analyzingAvatar, setAnalyzingAvatar] = useState(false);
+
+  const detectAppearance = async (urlToAnalyze: string) => {
+    if (!urlToAnalyze) return;
+    setAnalyzingAvatar(true);
+    try {
+      const res = await fetch("/api/admin/detect-appearance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ avatarUrl: urlToAnalyze }),
+      });
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(errText || "Failed to analyze image");
+      }
+      const data = (await res.json()) as {
+        appearance: {
+          style?: string;
+          ethnicity?: string;
+          hairColor?: string;
+          hairStyle?: string;
+          bodyType?: string;
+          outfit?: string;
+        };
+      };
+      const app = data.appearance;
+      if (app.style) setSelectedStyle(app.style);
+      if (app.ethnicity) setSelectedEthnicity(app.ethnicity);
+      if (app.bodyType) setSelectedBodyType(app.bodyType);
+      if (app.hairStyle) setSelectedHairStyle(app.hairStyle);
+      if (app.hairColor) setSelectedHairColor(app.hairColor);
+      if (app.outfit) setSelectedOutfit(app.outfit);
+      toast.success("AI auto-filled visual attributes successfully!");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to run AI detection");
+    } finally {
+      setAnalyzingAvatar(false);
+    }
+  };
+
+  const handleAiDetect = () => void detectAppearance(avatarUrl);
 
   // Extract wizard choices from config dynamically
   const styleStep = config.steps.find((s) => s.stepKey === "style");
@@ -61,12 +101,24 @@ export function BuilderMatchTemplates({ config }: BuilderMatchTemplatesProps) {
   const outfitStep = config.steps.find((s) => s.stepKey === "outfit");
   const hairStep = config.steps.find((s) => s.stepType === "dual_select");
 
+  const styleEnabled = styleStep?.isEnabled ?? false;
+  const ethnicityEnabled = ethnicityStep?.isEnabled ?? false;
+  const bodyEnabled = bodyStep?.isEnabled ?? false;
+  const outfitEnabled = outfitStep?.isEnabled ?? false;
+  const hairEnabled = hairStep?.isEnabled ?? false;
+
   const styleOptions = styleStep?.options.filter((o) => o.isEnabled) || [];
   const ethnicityOptions = ethnicityStep?.options.filter((o) => o.isEnabled) || [];
   const bodyOptions = bodyStep?.options.filter((o) => o.isEnabled) || [];
   const outfitOptions = outfitStep?.options.filter((o) => o.isEnabled) || [];
   const hairStyleOptions = hairStep?.options.filter((o) => o.isEnabled && o.optionGroup === "hairStyle") || [];
   const hairColorOptions = hairStep?.options.filter((o) => o.isEnabled && o.optionGroup === "hairColor") || [];
+
+  const getEthnicityLabel = (key: string) => (!key || key === "__none__") ? "" : (ethnicityOptions.find((o) => o.optionKey === key)?.label || key);
+  const getBodyLabel = (key: string) => (!key || key === "__none__") ? "" : (bodyOptions.find((o) => o.optionKey === key)?.label || key);
+  const getHairStyleLabel = (key: string) => (!key || key === "__none__") ? "" : (hairStyleOptions.find((o) => o.optionKey === key)?.label || key);
+  const getHairColorLabel = (key: string) => (!key || key === "__none__") ? "" : (hairColorOptions.find((o) => o.optionKey === key)?.label || key);
+  const getOutfitLabel = (key: string) => (!key || key === "__none__") ? "" : (outfitOptions.find((o) => o.optionKey === key)?.label || key);
 
   const fetchTemplates = async () => {
     setLoading(true);
@@ -100,6 +152,8 @@ export function BuilderMatchTemplates({ config }: BuilderMatchTemplatesProps) {
       const url = await uploadToR2(file, { scope: "character" });
       setAvatarUrl(url);
       toast.success("Main portrait uploaded");
+      // Automatically trigger AI auto fill
+      void detectAppearance(url);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Upload failed");
     } finally {
@@ -152,23 +206,38 @@ export function BuilderMatchTemplates({ config }: BuilderMatchTemplatesProps) {
     try {
       const styleLabel = selectedStyle === "realistic" ? "Realistic" : "Anime";
       const ethnicityLabel = ethnicityStep?.options.find((o) => o.optionKey === selectedEthnicity)?.label || "";
+      const bodyTypeLabel = bodyStep?.options.find((o) => o.optionKey === selectedBodyType)?.label || "";
+      const hairStyleLabel = hairStep?.options.find((o) => o.optionKey === selectedHairStyle && o.optionGroup === "hairStyle")?.label || "";
       const hairColorLabel = hairStep?.options.find((o) => o.optionKey === selectedHairColor && o.optionGroup === "hairColor")?.label || "";
-      const generatedName = [styleLabel, ethnicityLabel, hairColorLabel, "Companion"].filter(Boolean).join(" ");
+      const outfitLabel = outfitStep?.options.find((o) => o.optionKey === selectedOutfit)?.label || "";
+      const generatedName = [styleLabel, ethnicityLabel, hairStyleLabel, hairColorLabel, "Companion"].filter(Boolean).join(" ");
+
+      const details = [
+        ethnicityLabel ? `Ethnicity: ${ethnicityLabel}` : "",
+        hairStyleLabel ? `Hair: ${hairStyleLabel}` : "",
+        hairColorLabel ? `Hair Color: ${hairColorLabel}` : "",
+        bodyTypeLabel ? `Body: ${bodyTypeLabel}` : "",
+        outfitLabel ? `Outfit: ${outfitLabel}` : "",
+      ].filter(Boolean).join(", ");
 
       const payload = {
         name: generatedName,
+        tagline: details,
+        description: `Template character with style: ${styleLabel}. Details: ${details}`,
         avatarUrl,
         style: selectedStyle,
         gender: "female",
         isPublished: true,
         visibility: "public",
         appearance: {
-          ...(selectedEthnicity ? { ethnicity: selectedEthnicity } : {}),
-          ...(selectedBodyType ? { bodyType: selectedBodyType } : {}),
-          ...(selectedHairStyle ? { hairStyle: selectedHairStyle } : {}),
-          ...(selectedHairColor ? { hairColor: selectedHairColor } : {}),
-          ...(selectedOutfit ? { outfit: selectedOutfit } : {}),
+          ...(selectedEthnicity && selectedEthnicity !== "__none__" ? { ethnicity: selectedEthnicity } : {}),
+          ...(selectedBodyType && selectedBodyType !== "__none__" ? { bodyType: selectedBodyType } : {}),
+          ...(selectedHairStyle && selectedHairStyle !== "__none__" ? { hairStyle: selectedHairStyle } : {}),
+          ...(selectedHairColor && selectedHairColor !== "__none__" ? { hairColor: selectedHairColor } : {}),
+          ...(selectedOutfit && selectedOutfit !== "__none__" ? { outfit: selectedOutfit } : {}),
         },
+        tags: [styleLabel, ethnicityLabel, hairColorLabel, bodyTypeLabel].filter(Boolean),
+        personality: [ethnicityLabel, hairColorLabel, bodyTypeLabel].filter(Boolean),
         galleryItems: galleryUrls.map((url) => ({
           url,
           type: "image",
@@ -189,8 +258,7 @@ export function BuilderMatchTemplates({ config }: BuilderMatchTemplatesProps) {
 
       toast.success("New match companion added to database");
       setUploadDialogOpen(false);
-      // Reset form
-      setName("Companion Match");
+
       setAvatarUrl("");
       setGalleryUrls([]);
       setSelectedEthnicity("");
@@ -268,9 +336,21 @@ export function BuilderMatchTemplates({ config }: BuilderMatchTemplatesProps) {
                   </Button>
                 </div>
 
-                <div className="absolute bottom-3 left-3 right-3 text-white">
-                  <p className="font-bold text-sm truncate">{char.name}</p>
-                  <p className="text-[10px] text-white/70 font-semibold uppercase tracking-wider">
+                <div className="absolute bottom-3 left-3 right-3 text-white flex flex-col gap-0.5">
+                  {char.appearance?.ethnicity && (
+                    <p className="text-xs font-bold truncate">
+                      {getEthnicityLabel(char.appearance.ethnicity)}
+                    </p>
+                  )}
+                  <p className="text-[10px] text-white/90 truncate">
+                    {[
+                      char.appearance?.hairStyle && getHairStyleLabel(char.appearance.hairStyle),
+                      char.appearance?.hairColor && getHairColorLabel(char.appearance.hairColor),
+                      char.appearance?.bodyType && getBodyLabel(char.appearance.bodyType),
+                      char.appearance?.outfit && getOutfitLabel(char.appearance.outfit)
+                    ].filter(Boolean).join(", ")}
+                  </p>
+                  <p className="text-[9px] text-white/60 uppercase tracking-wider mt-0.5">
                     {char.style} style
                   </p>
                 </div>
@@ -281,27 +361,27 @@ export function BuilderMatchTemplates({ config }: BuilderMatchTemplatesProps) {
                 <div className="flex flex-wrap gap-1">
                   {char.appearance?.ethnicity && (
                     <span className="text-[9px] px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-primary-foreground font-semibold uppercase tracking-wide">
-                      {char.appearance.ethnicity}
+                      {getEthnicityLabel(char.appearance.ethnicity)}
                     </span>
                   )}
                   {char.appearance?.bodyType && (
                     <span className="text-[9px] px-2 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-600 font-semibold uppercase tracking-wide">
-                      {char.appearance.bodyType}
+                      {getBodyLabel(char.appearance.bodyType)}
                     </span>
                   )}
                   {char.appearance?.hairStyle && (
                     <span className="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-600 font-semibold uppercase tracking-wide">
-                      {char.appearance.hairStyle}
+                      {getHairStyleLabel(char.appearance.hairStyle)}
                     </span>
                   )}
                   {char.appearance?.hairColor && (
                     <span className="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 font-semibold uppercase tracking-wide">
-                      {char.appearance.hairColor}
+                      {getHairColorLabel(char.appearance.hairColor)}
                     </span>
                   )}
                   {char.appearance?.outfit && (
                     <span className="text-[9px] px-2 py-0.5 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-600 font-semibold uppercase tracking-wide">
-                      {char.appearance.outfit}
+                      {getOutfitLabel(char.appearance.outfit)}
                     </span>
                   )}
                 </div>
@@ -350,16 +430,35 @@ export function BuilderMatchTemplates({ config }: BuilderMatchTemplatesProps) {
                     className="hidden"
                     onChange={(e) => void handleAvatarUpload(e)}
                   />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={uploadingAvatar}
-                    onClick={() => avatarFileRef.current?.click()}
-                    className="gap-2"
-                  >
-                    <Upload className="h-4 w-4" /> Upload Photo
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={uploadingAvatar}
+                      onClick={() => avatarFileRef.current?.click()}
+                      className="gap-2"
+                    >
+                      <Upload className="h-4 w-4" /> Upload Photo
+                    </Button>
+                    {avatarUrl && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={analyzingAvatar}
+                        onClick={() => void handleAiDetect()}
+                        className="gap-2 text-amber-500 hover:text-amber-600 border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10"
+                      >
+                        {analyzingAvatar ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Sparkles className="h-4 w-4" />
+                        )}
+                        AI Auto Fill
+                      </Button>
+                    )}
+                  </div>
                   <p className="text-xs text-muted-foreground">JPEG, PNG, WebP. Max 10MB.</p>
                 </div>
               </div>
@@ -371,108 +470,120 @@ export function BuilderMatchTemplates({ config }: BuilderMatchTemplatesProps) {
               <Label className="text-sm font-semibold">Match Attributes (Tag selections)</Label>
               <div className="grid grid-cols-2 gap-3">
                 {/* Style */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="sel-style" className="text-xs">Art Style</Label>
-                  <Select value={selectedStyle} onValueChange={setSelectedStyle}>
-                    <SelectTrigger id="sel-style">
-                      <SelectValue placeholder="Select style" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="realistic">Realistic</SelectItem>
-                      <SelectItem value="anime">Anime</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                {styleEnabled && (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="sel-style" className="text-xs">Art Style</Label>
+                    <Select value={selectedStyle} onValueChange={setSelectedStyle}>
+                      <SelectTrigger id="sel-style">
+                        <SelectValue placeholder="Select style" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="realistic">Realistic</SelectItem>
+                        <SelectItem value="anime">Anime</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 {/* Ethnicity */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="sel-ethnicity" className="text-xs">Ethnicity</Label>
-                  <Select value={selectedEthnicity} onValueChange={setSelectedEthnicity}>
-                    <SelectTrigger id="sel-ethnicity">
-                      <SelectValue placeholder="Not set" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none__">Not set</SelectItem>
-                      {ethnicityOptions.map((o) => (
-                        <SelectItem key={o.id} value={o.optionKey}>
-                          {o.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {ethnicityEnabled && (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="sel-ethnicity" className="text-xs">Ethnicity</Label>
+                    <Select value={selectedEthnicity} onValueChange={setSelectedEthnicity}>
+                      <SelectTrigger id="sel-ethnicity">
+                        <SelectValue placeholder="Not set" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">Not set</SelectItem>
+                        {ethnicityOptions.map((o) => (
+                          <SelectItem key={o.id} value={o.optionKey}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 {/* Body Type */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="sel-body" className="text-xs">Body Type</Label>
-                  <Select value={selectedBodyType} onValueChange={setSelectedBodyType}>
-                    <SelectTrigger id="sel-body">
-                      <SelectValue placeholder="Not set" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none__">Not set</SelectItem>
-                      {bodyOptions.map((o) => (
-                        <SelectItem key={o.id} value={o.optionKey}>
-                          {o.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {bodyEnabled && (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="sel-body" className="text-xs">Body Type</Label>
+                    <Select value={selectedBodyType} onValueChange={setSelectedBodyType}>
+                      <SelectTrigger id="sel-body">
+                        <SelectValue placeholder="Not set" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">Not set</SelectItem>
+                        {bodyOptions.map((o) => (
+                          <SelectItem key={o.id} value={o.optionKey}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 {/* Hair Style */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="sel-hair-style" className="text-xs">Hair Style</Label>
-                  <Select value={selectedHairStyle} onValueChange={setSelectedHairStyle}>
-                    <SelectTrigger id="sel-hair-style">
-                      <SelectValue placeholder="Not set" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none__">Not set</SelectItem>
-                      {hairStyleOptions.map((o) => (
-                        <SelectItem key={o.id} value={o.optionKey}>
-                          {o.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {hairEnabled && (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="sel-hair-style" className="text-xs">Hair Style</Label>
+                    <Select value={selectedHairStyle} onValueChange={setSelectedHairStyle}>
+                      <SelectTrigger id="sel-hair-style">
+                        <SelectValue placeholder="Not set" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">Not set</SelectItem>
+                        {hairStyleOptions.map((o) => (
+                          <SelectItem key={o.id} value={o.optionKey}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 {/* Hair Color */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="sel-hair-color" className="text-xs">Hair Color</Label>
-                  <Select value={selectedHairColor} onValueChange={setSelectedHairColor}>
-                    <SelectTrigger id="sel-hair-color">
-                      <SelectValue placeholder="Not set" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none__">Not set</SelectItem>
-                      {hairColorOptions.map((o) => (
-                        <SelectItem key={o.id} value={o.optionKey}>
-                          {o.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {hairEnabled && (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="sel-hair-color" className="text-xs">Hair Color</Label>
+                    <Select value={selectedHairColor} onValueChange={setSelectedHairColor}>
+                      <SelectTrigger id="sel-hair-color">
+                        <SelectValue placeholder="Not set" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">Not set</SelectItem>
+                        {hairColorOptions.map((o) => (
+                          <SelectItem key={o.id} value={o.optionKey}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 {/* Outfit */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="sel-outfit" className="text-xs">Outfit</Label>
-                  <Select value={selectedOutfit} onValueChange={setSelectedOutfit}>
-                    <SelectTrigger id="sel-outfit">
-                      <SelectValue placeholder="Not set" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none__">Not set</SelectItem>
-                      {outfitOptions.map((o) => (
-                        <SelectItem key={o.id} value={o.optionKey}>
-                          {o.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {outfitEnabled && (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="sel-outfit" className="text-xs">Outfit</Label>
+                    <Select value={selectedOutfit} onValueChange={setSelectedOutfit}>
+                      <SelectTrigger id="sel-outfit">
+                        <SelectValue placeholder="Not set" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">Not set</SelectItem>
+                        {outfitOptions.map((o) => (
+                          <SelectItem key={o.id} value={o.optionKey}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </div>
             </div>
 

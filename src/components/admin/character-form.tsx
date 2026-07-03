@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import type { CreationConfig } from "@/types/character-creation-config";
 import {
   Dialog,
   DialogContent,
@@ -23,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAdminAiModels } from "@/hooks/use-ai-models";
+import { Sparkles, Loader2 } from "lucide-react";
 import { CharacterAvatarPicker } from "./character-avatar-picker";
 import { CharacterGalleryPicker } from "./character-gallery-picker";
 import { CharacterProfileMediaPicker } from "./character-profile-media-picker";
@@ -165,6 +167,55 @@ export function CharacterForm({
   const [voiceId, setVoiceId] = useState(initial?.voiceId ?? "");
   const [isPublished, setIsPublished] = useState(initial?.isPublished ?? true);
   const [activeTab, setActiveTab] = useState("basics");
+  const [analyzing, setAnalyzing] = useState(false);
+  const [config, setConfig] = useState<CreationConfig | null>(null);
+
+  useEffect(() => {
+    fetch("/api/admin/creation-config")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.config) setConfig(data.config);
+      })
+      .catch((err) => console.error("Failed to load creation config:", err));
+  }, []);
+
+  const handleAiDetect = async () => {
+    if (!avatarUrl) return;
+    setAnalyzing(true);
+    try {
+      const res = await fetch("/api/admin/detect-appearance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ avatarUrl }),
+      });
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(errText || "Failed to analyze image");
+      }
+      const data = (await res.json()) as {
+        appearance: {
+          style?: string;
+          ethnicity?: string;
+          hairColor?: string;
+          hairStyle?: string;
+          bodyType?: string;
+          outfit?: string;
+        };
+      };
+      const app = data.appearance;
+      if (app.style) setStyle(app.style);
+      if (app.ethnicity) setEthnicity(app.ethnicity);
+      if (app.bodyType) setBodyType(app.bodyType);
+      if (app.hairStyle) setHairStyle(app.hairStyle);
+      if (app.hairColor) setHairColor(app.hairColor);
+      if (app.outfit) setOutfit(app.outfit);
+      toast.success("AI auto-filled visual attributes successfully!");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to run AI detection");
+    } finally {
+      setAnalyzing(false);
+    }
+  };
 
   const {
     data: aiData,
@@ -215,6 +266,37 @@ export function CharacterForm({
       isPublished,
     });
   }
+
+  // Dynamically resolve enabled steps and options from CreationConfig
+  const ethnicityStep = config?.steps.find((s) => s.stepKey === "ethnicity");
+  const bodyStep = config?.steps.find((s) => s.stepKey === "body");
+  const outfitStep = config?.steps.find((s) => s.stepKey === "outfit");
+  const hairStep = config?.steps.find((s) => s.stepType === "dual_select");
+
+  const ethnicityEnabled = config ? (ethnicityStep?.isEnabled ?? false) : true;
+  const bodyEnabled = config ? (bodyStep?.isEnabled ?? false) : true;
+  const outfitEnabled = config ? (outfitStep?.isEnabled ?? false) : true;
+  const hairEnabled = config ? (hairStep?.isEnabled ?? false) : true;
+
+  const ethnicityOptions = config
+    ? (ethnicityStep?.options.filter((o) => o.isEnabled).map((o) => ({ id: o.optionKey, label: o.label })) ?? [])
+    : CREATE_ETHNICITIES;
+
+  const bodyOptions = config
+    ? (bodyStep?.options.filter((o) => o.isEnabled).map((o) => ({ id: o.optionKey, label: o.label })) ?? [])
+    : CREATE_BODY_TYPES;
+
+  const hairStyleOptions = config
+    ? (hairStep?.options.filter((o) => o.isEnabled && o.optionGroup === "hairStyle").map((o) => ({ id: o.optionKey, label: o.label })) ?? [])
+    : CREATE_HAIR_STYLES;
+
+  const hairColorOptions = config
+    ? (hairStep?.options.filter((o) => o.isEnabled && o.optionGroup === "hairColor").map((o) => ({ id: o.optionKey, label: o.label })) ?? [])
+    : CREATE_HAIR_COLORS;
+
+  const outfitOptions = config
+    ? (outfitStep?.options.filter((o) => o.isEnabled).map((o) => ({ id: o.optionKey, label: o.label })) ?? [])
+    : CREATE_OUTFITS;
 
   // Live image source for preview card
   const previewImageSrc = resolveCharacterImageUrl(avatarUrl, initial?.id ?? "preview-seed");
@@ -363,49 +445,78 @@ export function CharacterForm({
                   </div>
 
                   <div className="space-y-3 border-t pt-4">
-                    <div className="space-y-0.5">
-                      <Label className="text-sm font-semibold">Match attributes</Label>
-                      <p className="text-xs text-muted-foreground">
-                        Tag this girl so she can be matched when a user creates one. Her
-                        photos are copied to the user&apos;s girl when their picks match.
-                      </p>
+                    <div className="space-y-0.5 flex justify-between items-start">
+                      <div>
+                        <Label className="text-sm font-semibold">Match attributes</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Tag this girl so she can be matched when a user creates one. Her
+                          photos are copied to the user&apos;s girl when their picks match.
+                        </p>
+                      </div>
+                      {avatarUrl && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={analyzing}
+                          onClick={() => void handleAiDetect()}
+                          className="gap-2 text-amber-500 hover:text-amber-600 border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10 text-xs py-1 h-8 shrink-0"
+                        >
+                          {analyzing ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Sparkles className="h-3 w-3" />
+                          )}
+                          AI Auto Fill
+                        </Button>
+                      )}
                     </div>
                     <div className="grid grid-cols-2 gap-3">
-                      <AppearanceSelect
-                        id="ethnicity"
-                        label="Ethnicity"
-                        value={ethnicity}
-                        options={CREATE_ETHNICITIES}
-                        onChange={setEthnicity}
-                      />
-                      <AppearanceSelect
-                        id="bodyType"
-                        label="Body type"
-                        value={bodyType}
-                        options={CREATE_BODY_TYPES}
-                        onChange={setBodyType}
-                      />
-                      <AppearanceSelect
-                        id="hairStyle"
-                        label="Hair style"
-                        value={hairStyle}
-                        options={CREATE_HAIR_STYLES}
-                        onChange={setHairStyle}
-                      />
-                      <AppearanceSelect
-                        id="hairColor"
-                        label="Hair color"
-                        value={hairColor}
-                        options={CREATE_HAIR_COLORS}
-                        onChange={setHairColor}
-                      />
-                      <AppearanceSelect
-                        id="outfit"
-                        label="Outfit"
-                        value={outfit}
-                        options={CREATE_OUTFITS}
-                        onChange={setOutfit}
-                      />
+                      {ethnicityEnabled && (
+                        <AppearanceSelect
+                          id="ethnicity"
+                          label="Ethnicity"
+                          value={ethnicity}
+                          options={ethnicityOptions}
+                          onChange={setEthnicity}
+                        />
+                      )}
+                      {bodyEnabled && (
+                        <AppearanceSelect
+                          id="bodyType"
+                          label="Body type"
+                          value={bodyType}
+                          options={bodyOptions}
+                          onChange={setBodyType}
+                        />
+                      )}
+                      {hairEnabled && (
+                        <>
+                          <AppearanceSelect
+                            id="hairStyle"
+                            label="Hair style"
+                            value={hairStyle}
+                            options={hairStyleOptions}
+                            onChange={setHairStyle}
+                          />
+                          <AppearanceSelect
+                            id="hairColor"
+                            label="Hair color"
+                            value={hairColor}
+                            options={hairColorOptions}
+                            onChange={setHairColor}
+                          />
+                        </>
+                      )}
+                      {outfitEnabled && (
+                        <AppearanceSelect
+                          id="outfit"
+                          label="Outfit"
+                          value={outfit}
+                          options={outfitOptions}
+                          onChange={setOutfit}
+                        />
+                      )}
                     </div>
                   </div>
                 </TabsContent>
