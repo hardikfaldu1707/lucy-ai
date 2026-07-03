@@ -1,11 +1,11 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 import { MessageCircle } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Skeleton } from "@/components/ui/skeleton";
 import { ROUTES } from "@/constants/routes";
 import { GuestCharacterSidebarList } from "@/components/chat/guest-character-sidebar-list";
 import { useConversations } from "@/hooks/use-conversations";
@@ -21,6 +21,7 @@ interface ConversationListProps {
 }
 
 function formatUnread(count: number): string {
+  if (count > 99) return "99+";
   if (count > 9) return "9+";
   return String(count);
 }
@@ -31,6 +32,30 @@ function matchesSearch(conv: Conversation, query: string): boolean {
   return (
     conv.characterName.toLowerCase().includes(q) ||
     conv.lastMessage.toLowerCase().includes(q)
+  );
+}
+
+function ShimmerLoadingSkeleton({ isDark }: { isDark: boolean }) {
+  return (
+    <div className="min-h-0 flex-1 overflow-y-auto scrollbar-glow" aria-busy="true" aria-label="Loading conversations">
+      <div className="divide-y divide-white/[0.06]">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="flex items-center gap-3 px-3 py-3 min-h-[64px]">
+            <div className={cn("shrink-0 h-11 w-11 rounded-full", isDark ? "bg-white/8" : "bg-muted")}>
+              <div className="h-full w-full animate-shimmer rounded-full" />
+            </div>
+            <div className="min-w-0 flex-1 space-y-2.5">
+              <div className={cn("h-3.5 w-32 rounded-md", isDark ? "bg-white/8" : "bg-muted")}>
+                <div className="h-full w-full animate-shimmer rounded-md" />
+              </div>
+              <div className={cn("h-3 w-full max-w-[200px] rounded-md", isDark ? "bg-white/8" : "bg-muted")}>
+                <div className="h-full w-full animate-shimmer rounded-md" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -45,6 +70,17 @@ export function ConversationList({
   const { isSignedIn, isLoaded } = useAuth();
   const isDark = variant === "dark";
   const { data: conversations = [], isLoading, isError } = useConversations(initialConversations);
+  const [visible, setVisible] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Trigger slide-in animation after mount
+  useEffect(() => {
+    const timer = requestAnimationFrame(() => setVisible(true));
+    return () => cancelAnimationFrame(timer);
+  }, []);
+
+  // Virtual list observer for animation delays
+  const [animatedItems] = useState(() => new Map<string, boolean>());
 
   if (isLoaded && !isSignedIn) {
     return (
@@ -58,18 +94,8 @@ export function ConversationList({
 
   if (isLoading && conversations.length === 0) {
     return (
-      <div className="min-h-0 flex-1 overflow-y-auto scrollbar-thin">
-        <div className="divide-y divide-white/[0.06]" aria-busy="true" aria-label="Loading conversations">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-3 px-3 py-3">
-              <Skeleton className={cn("h-12 w-12 shrink-0 rounded-full", isDark && "bg-white/10")} />
-              <div className="min-w-0 flex-1 space-y-2">
-                <Skeleton className={cn("h-4 w-28", isDark && "bg-white/10")} />
-                <Skeleton className={cn("h-3 w-full", isDark && "bg-white/10")} />
-              </div>
-            </div>
-          ))}
-        </div>
+      <div className="min-h-0 flex-1 overflow-y-auto scrollbar-glow">
+        <ShimmerLoadingSkeleton isDark={isDark} />
       </div>
     );
   }
@@ -135,19 +161,24 @@ export function ConversationList({
 
   return (
     <div
+      ref={containerRef}
       className={cn(
-        "min-h-0 flex-1 overflow-y-auto scrollbar-thin",
-        isDark && "[&::-webkit-scrollbar-thumb]:bg-white/20",
+        "min-h-0 flex-1 overflow-y-auto",
+        "scrollbar-glow",
+        "overscroll-behavior-contain",
       )}
       role="list"
       aria-label="Conversations"
     >
-      <div className={cn("divide-y", isDark ? "divide-white/[0.06]" : "divide-border/60")}>
-        {list.map((conv) => {
+      <div className={cn("divide-y", isDark ? "divide-white/[0.04]" : "divide-border/60")}>
+        {list.map((conv, index) => {
           const href = ROUTES.publicChatWithCharacter(conv.characterId);
           const active = pathname === href || decodeURIComponent(pathname) === href;
           const hasUnread = conv.unreadCount > 0;
           const showPreview = conv.lastMessage !== "Start a conversation";
+
+          // Only animate items that haven't been seen yet
+          const animDelay = animatedItems.has(conv.id) ? "0s" : `${Math.min(index * 0.04, 0.3)}s`;
 
           return (
             <Link
@@ -155,28 +186,41 @@ export function ConversationList({
               href={href}
               prefetch
               onClick={onSelect}
+              onMouseEnter={() => animatedItems.set(conv.id, true)}
               role="listitem"
               title={collapsed ? conv.characterName : undefined}
               className={cn(
-                "relative flex items-center transition-colors",
-                collapsed ? "justify-center p-2" : "gap-3 px-3 py-2.5",
-                isDark ? "hover:bg-white/[0.06]" : "hover:bg-muted/60",
-                active && (isDark ? "bg-white/[0.08]" : "bg-muted/80"),
+                "relative flex items-center outline-none",
+                "transition-[background,box-shadow] duration-150 ease-out",
+                collapsed ? "justify-center px-1.5" : "gap-3 px-3",
+                // Min height for touch targets (44px) + animation
+                collapsed ? "min-h-11" : "min-h-[56px]",
+                visible && "animate-slide-in",
+                isDark ? "hover:bg-white/[0.05]" : "hover:bg-muted/60",
+                // Active state: subtle left border accent
                 active &&
-                  "before:absolute before:inset-y-0 before:left-0 before:w-0.5 before:bg-primary",
+                  (isDark
+                    ? "bg-white/[0.07] after:absolute after:inset-y-2 after:left-0 after:w-[3px] after:rounded-r-full after:bg-primary after:shadow-[0_0_12px_-2px] after:shadow-primary/50"
+                    : "bg-muted/80 after:absolute after:inset-y-2 after:left-0 after:w-[3px] after:rounded-r-full after:bg-primary"),
               )}
+              style={{ animationDelay: animDelay }}
               aria-current={active ? "page" : undefined}
               aria-label={collapsed ? conv.characterName : undefined}
             >
               <Avatar
                 className={cn(
-                  "shrink-0",
-                  collapsed ? "h-10 w-10" : "h-12 w-12",
-                  active && isDark && "ring-2 ring-primary/50 ring-offset-1 ring-offset-[#111111]",
+                  "shrink-0 overflow-hidden",
+                  collapsed ? "h-10 w-10" : "h-11 w-11",
+                  active &&
+                    (isDark
+                      ? "ring-2 ring-primary/50 ring-offset-1 ring-offset-[#111111]"
+                      : "ring-2 ring-primary/40 ring-offset-1 ring-offset-background"),
                 )}
               >
-                <AvatarImage src={conv.characterAvatar} alt="" />
-                <AvatarFallback>{conv.characterName[0]}</AvatarFallback>
+                <AvatarImage src={conv.characterAvatar} alt="" className="object-cover" />
+                <AvatarFallback className="text-sm font-medium">
+                  {conv.characterName[0]}
+                </AvatarFallback>
               </Avatar>
               {!collapsed && (
                 <>
@@ -184,7 +228,7 @@ export function ConversationList({
                     <div className="flex items-baseline justify-between gap-2">
                       <span
                         className={cn(
-                          "truncate text-[15px]",
+                          "truncate text-sm",
                           hasUnread ? "font-semibold" : "font-medium",
                           isDark ? "text-white" : "text-foreground",
                         )}
@@ -194,11 +238,11 @@ export function ConversationList({
                       {conv.lastMessageAt && (
                         <span
                           className={cn(
-                            "shrink-0 text-[11px] tabular-nums",
+                            "shrink-0 text-[11px] tabular-nums leading-none",
                             hasUnread
-                              ? "text-primary"
+                              ? "font-medium text-primary"
                               : isDark
-                                ? "text-white/45"
+                                ? "text-white/40"
                                 : "text-muted-foreground",
                           )}
                         >
@@ -206,23 +250,33 @@ export function ConversationList({
                         </span>
                       )}
                     </div>
-                    <p
-                      className={cn(
-                        "truncate text-[13px] leading-snug",
-                        hasUnread
-                          ? isDark
-                            ? "font-medium text-white/75"
-                            : "font-medium text-foreground/80"
-                          : isDark
-                            ? "text-white/50"
-                            : "text-muted-foreground",
-                      )}
-                    >
-                      {showPreview ? conv.lastMessage : "Tap to start chatting"}
-                    </p>
+                    <div className="relative mt-0.5">
+                      <p
+                        className={cn(
+                          "text-[13px] leading-snug",
+                          "line-clamp-1",
+                          hasUnread
+                            ? isDark
+                              ? "font-medium text-white/75"
+                              : "font-medium text-foreground/80"
+                            : isDark
+                              ? "text-white/45"
+                              : "text-muted-foreground",
+                        )}
+                      >
+                        {showPreview ? conv.lastMessage : "Tap to start chatting"}
+                      </p>
+                    </div>
                   </div>
                   {hasUnread && (
-                    <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-white">
+                    <span
+                      className={cn(
+                        "flex h-5 min-w-5 shrink-0 items-center justify-center",
+                        "rounded-full bg-primary px-1.5",
+                        "text-[10px] font-bold leading-none text-white",
+                        "shadow-[0_2px_8px_-2px] shadow-primary/40",
+                      )}
+                    >
                       {formatUnread(conv.unreadCount)}
                     </span>
                   )}
@@ -230,7 +284,12 @@ export function ConversationList({
               )}
               {collapsed && hasUnread && (
                 <span
-                  className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-white"
+                  className={cn(
+                    "absolute right-1.5 top-1.5 flex h-[18px] min-w-[18px] items-center justify-center",
+                    "rounded-full bg-primary px-1",
+                    "text-[9px] font-bold leading-none text-white",
+                    "shadow-[0_2px_6px_-2px] shadow-primary/40",
+                  )}
                   aria-label={`${conv.unreadCount} unread`}
                 >
                   {formatUnread(conv.unreadCount)}

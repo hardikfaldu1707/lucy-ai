@@ -18,6 +18,7 @@ export type CreateCharacterPayload = {
 export type CreateCharacterResult = {
   slug: string;
   id: string;
+  character: any;
 };
 
 export async function submitUserCharacter(
@@ -44,13 +45,21 @@ export async function submitUserCharacter(
   });
 
   if (!res.ok) {
-    const err = (await res.json().catch(() => ({}))) as { error?: string };
-    throw new Error(err.error ?? "Failed to create character");
+    const err = (await res.json().catch(() => ({}))) as { error?: any };
+    let errMsg = "Failed to create character";
+    if (err && err.error) {
+      if (typeof err.error === "string") {
+        errMsg = err.error;
+      } else if (typeof err.error === "object") {
+        errMsg = err.error.message || JSON.stringify(err.error);
+      }
+    }
+    throw new Error(errMsg);
   }
 
   const json = (await res.json()) as {
-    character: { id: string; slug: string | null };
+    character: { id: string; slug: string | null; [key: string]: any };
   };
   const slug = json.character.slug ?? json.character.id;
-  return { slug, id: json.character.id };
+  return { slug, id: json.character.id, character: json.character };
 }

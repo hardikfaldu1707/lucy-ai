@@ -51,10 +51,10 @@ export function AppearanceGrid({
 }) {
   const colClass =
     columns === 4
-      ? "grid-cols-2 sm:grid-cols-4"
+      ? "grid-cols-3 sm:grid-cols-4 md:grid-cols-5"
       : columns === 3
-        ? "grid-cols-2 sm:grid-cols-3"
-        : "grid-cols-2";
+        ? "grid-cols-3 sm:grid-cols-3 md:grid-cols-4"
+        : "grid-cols-2 sm:grid-cols-3";
 
   return (
     <div className={cn("grid gap-3 sm:gap-4", colClass)}>
@@ -66,32 +66,37 @@ export function AppearanceGrid({
             type="button"
             onClick={() => !readOnly && onChange(item.id)}
             disabled={readOnly}
-            className={cn(
-              "group relative overflow-hidden rounded-2xl text-left ring-2 transition-all",
-              selected
-                ? "ring-primary shadow-[0_0_32px_-8px_rgba(124,58,237,0.5)]"
-                : "ring-white/10 hover:ring-white/25",
-              readOnly && "cursor-default",
-            )}
+            className="group flex flex-col items-center focus:outline-none"
             aria-pressed={selected}
           >
-            <div className="relative aspect-[3/4] w-full">
+            <div
+              className={cn(
+                "relative aspect-square w-full overflow-hidden rounded-2xl border transition-all duration-300",
+                selected
+                  ? "border-primary ring-2 ring-primary/40 shadow-[0_0_24px_-4px_rgba(124,58,237,0.4)] scale-[0.98]"
+                  : "border-white/10 hover:border-white/25 hover:scale-[1.02]",
+                readOnly && "cursor-default hover:scale-100",
+              )}
+            >
               <OptionPreviewImage src={item.image} alt={item.label} />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
+              
               {selected && (
-                <span className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white shadow-lg sm:h-7 sm:w-7">
-                  <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4" strokeWidth={3} aria-hidden />
+                <span className="absolute right-2 top-2 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-white shadow-md">
+                  <Check className="h-3 w-3" strokeWidth={3} aria-hidden />
                 </span>
               )}
-              <span
-                className={cn(
-                  "absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-1 text-xs font-semibold sm:text-sm",
-                  selected ? "bg-primary text-white" : "bg-black/60 text-white/90",
-                )}
-              >
-                {item.label}
-              </span>
+              
+              <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-60" />
             </div>
+
+            <span
+              className={cn(
+                "mt-2 text-center text-xs font-semibold tracking-wide truncate w-full px-1 transition-colors",
+                selected ? "text-primary font-bold" : "text-white/70 group-hover:text-white",
+              )}
+            >
+              {item.label}
+            </span>
           </button>
         );
       })}

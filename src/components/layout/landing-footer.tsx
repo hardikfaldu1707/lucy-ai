@@ -1,9 +1,15 @@
 import Link from "next/link";
 import { Mail, MessageCircle } from "lucide-react";
+import { SiDiscord, SiMastercard, SiVisa, SiX } from "react-icons/si";
 import { LogoMark } from "@/components/shared/logo";
 import { Button } from "@/components/ui/button";
 import { LandingFooterServices } from "@/components/layout/landing-footer-services";
 import { ROUTES } from "@/constants/routes";
+
+const SOCIAL_LINKS = {
+  x: "https://x.com/lucyailove",
+  discord: "https://discord.gg/lucyai",
+} as const;
 
 export function LandingFooter() {
   return (
@@ -16,7 +22,7 @@ export function LandingFooter() {
           </Link>
 
           <div>
-            <h2 className="text-xl font-bold text-white sm:text-2xl">
+            <h2 className="font-display text-xl font-normal text-white sm:text-2xl">
               Chat with AI Girlfriend Online for Free
             </h2>
             <p className="mt-2 text-sm text-white/50">Sign up, swipe and enjoy</p>
@@ -49,6 +55,24 @@ export function LandingFooter() {
             >
               <Mail className="h-4 w-4" />
             </a>
+            <a
+              href={SOCIAL_LINKS.x}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Follow on X"
+              className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1a1a1a] text-white/80 transition-colors hover:bg-[#252525] hover:text-white"
+            >
+              <SiX className="h-4 w-4" aria-hidden />
+            </a>
+            <a
+              href={SOCIAL_LINKS.discord}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Join Discord"
+              className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1a1a1a] text-white/80 transition-colors hover:bg-[#252525] hover:text-white"
+            >
+              <SiDiscord className="h-4 w-4" aria-hidden />
+            </a>
           </div>
         </div>
 
@@ -57,11 +81,17 @@ export function LandingFooter() {
 
       <div className="mt-12 border-t border-white/10 pt-8 text-center">
         <div className="flex items-center justify-center gap-4">
-          <span className="rounded bg-white/10 px-3 py-1.5 text-xs font-bold tracking-wider text-white/80">
-            VISA
+          <span
+            className="flex h-8 items-center rounded bg-white/10 px-3 text-white/80"
+            aria-label="Visa accepted"
+          >
+            <SiVisa className="h-4 w-auto" aria-hidden />
           </span>
-          <span className="rounded bg-white/10 px-3 py-1.5 text-xs font-bold tracking-wider text-white/80">
-            Mastercard
+          <span
+            className="flex h-8 items-center rounded bg-white/10 px-3 text-white/80"
+            aria-label="Mastercard accepted"
+          >
+            <SiMastercard className="h-5 w-auto" aria-hidden />
           </span>
         </div>
         <p className="mt-4 text-sm text-white/50">

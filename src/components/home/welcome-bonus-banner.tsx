@@ -40,7 +40,7 @@ export function WelcomeBonusBanner() {
         />
 
         <div className="relative z-10 flex flex-col justify-center p-6 sm:p-8 md:p-10">
-          <h2 id="bonus-heading" className="text-2xl font-bold text-white sm:text-3xl md:text-4xl">
+          <h2 id="bonus-heading" className="font-display text-2xl font-normal text-white sm:text-3xl md:text-4xl">
             Create Your Account
           </h2>
           <div className="mt-3 inline-flex w-fit items-center gap-1.5 rounded-full bg-purple-900/60 px-3 py-1 text-xs font-semibold text-purple-100 ring-1 ring-white/10">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
@@ -21,7 +21,7 @@ function MobileChatListHeader() {
       <Button
         variant="ghost"
         size="icon"
-        className="h-9 w-9 shrink-0 rounded-xl text-white hover:bg-white/10"
+        className="h-9 w-9 shrink-0 rounded-xl text-white hover:bg-white/10 min-w-[44px] min-h-[44px]"
         onClick={() => setLandingMobileMenuOpen(true)}
         aria-label="Open app menu"
       >
@@ -30,7 +30,7 @@ function MobileChatListHeader() {
       <Button
         variant="ghost"
         size="icon"
-        className="h-9 w-9 shrink-0 rounded-xl text-white hover:bg-white/10"
+        className="h-9 w-9 shrink-0 rounded-xl text-white hover:bg-white/10 min-w-[44px] min-h-[44px]"
         onClick={() => setChatSidebarOpen(true)}
         aria-label="Open conversations"
       >
@@ -41,7 +41,7 @@ function MobileChatListHeader() {
         variant="outline"
         size="sm"
         asChild
-        className="h-9 shrink-0 rounded-lg border-white/[0.12] bg-white/[0.06] px-3 text-xs text-white/80 hover:bg-white/[0.1]"
+        className="h-9 shrink-0 rounded-lg border-white/[0.12] bg-white/[0.06] px-3 text-xs text-white/80 hover:bg-white/[0.1] min-w-[44px]"
       >
         <Link href={ROUTES.publicChatNew}>
           <Plus className="mr-1 h-3.5 w-3.5" />
@@ -84,6 +84,16 @@ export function ChatMessengerShell({
     guestBrowse || (isLoaded && !isSignedIn && pathname === ROUTES.publicChatNew);
   const isGuestChat = isLoaded && !isSignedIn && !isGuestBrowse;
 
+  const handleResize = useCallback((mq: MediaQueryList | MediaQueryListEvent) => {
+    const isListRoute =
+      pathname === ROUTES.publicChat || pathname === ROUTES.publicChatNew;
+    if (mq.matches && isListRoute) {
+      setChatSidebarOpen(true);
+    } else if (!mq.matches) {
+      setChatSidebarOpen(false);
+    }
+  }, [pathname, setChatSidebarOpen]);
+
   useEffect(() => {
     if (isGuestBrowse) return;
 
@@ -91,23 +101,12 @@ export function ChatMessengerShell({
       pathname === ROUTES.publicChat || pathname === ROUTES.publicChatNew;
     const mq = window.matchMedia(MD_MEDIA_QUERY);
 
-    if (mq.matches && isListRoute) {
-      setChatSidebarOpen(true);
-    } else if (!mq.matches) {
-      setChatSidebarOpen(false);
-    }
+    handleResize(mq);
 
-    const onChange = () => {
-      if (mq.matches && isListRoute) {
-        setChatSidebarOpen(true);
-      } else if (!mq.matches) {
-        setChatSidebarOpen(false);
-      }
-    };
-
+    const onChange = (e: MediaQueryListEvent) => handleResize(e);
     mq.addEventListener("change", onChange);
     return () => mq.removeEventListener("change", onChange);
-  }, [pathname, setChatSidebarOpen, isGuestBrowse]);
+  }, [pathname, handleResize, isGuestBrowse]);
 
   useEffect(() => {
     if (!chatSidebarOpen) return;
@@ -119,11 +118,11 @@ export function ChatMessengerShell({
     };
   }, [chatSidebarOpen]);
 
-  const handleConversationSelect = () => {
+  const handleConversationSelect = useCallback(() => {
     if (typeof window !== "undefined" && window.matchMedia(BELOW_MD_MEDIA_QUERY).matches) {
       setChatSidebarOpen(false);
     }
-  };
+  }, [setChatSidebarOpen]);
 
   const showMobileListHeader =
     !isEmbedded &&
@@ -157,7 +156,6 @@ export function ChatMessengerShell({
             ? "border-r border-white/[0.08] bg-[#111111] shadow-xl shadow-black/40 md:shadow-none"
             : "border-r border-border bg-background shadow-xl md:shadow-none",
           chatSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
-          "pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] md:pt-0 md:pb-0",
         )}
         aria-label="Chat sidebar"
       >
@@ -169,7 +167,7 @@ export function ChatMessengerShell({
           )}
         >
           {chatSidebarCollapsed ? (
-            <div className="flex flex-col items-center gap-2">
+            <div className="flex flex-col items-center gap-2 pt-safe">
               <Button
                 variant="ghost"
                 size="icon"
@@ -200,7 +198,7 @@ export function ChatMessengerShell({
               </Button>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-3 pt-safe">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 pt-0.5">
                   <h2

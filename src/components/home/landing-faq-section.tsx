@@ -16,7 +16,7 @@ export function LandingFaqSection() {
     >
       <h2
         id="landing-faq-heading"
-        className="text-3xl font-bold uppercase tracking-tight text-white sm:text-4xl md:text-5xl"
+        className="font-display text-3xl font-normal tracking-tight text-white sm:text-4xl md:text-5xl"
       >
         FAQ
       </h2>

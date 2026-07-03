@@ -134,7 +134,7 @@ export function ExplorePage() {
             <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/55 to-black/30" />
             <div className="relative flex h-full min-h-[200px] flex-col justify-between gap-6 p-6 sm:min-h-[240px] sm:flex-row sm:items-center sm:p-8">
               <div className="max-w-xl">
-                <h1 className="text-2xl font-black uppercase tracking-tight text-white sm:text-3xl md:text-4xl">
+                <h1 className="font-display text-2xl font-normal tracking-tight text-white sm:text-3xl md:text-4xl">
                   Create Your Own
                   <span className="block text-pink-400">AI Girlfriend</span>
                 </h1>

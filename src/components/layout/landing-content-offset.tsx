@@ -24,6 +24,8 @@ export function LandingContentOffset({ children }: { children: React.ReactNode }
   }, []);
 
   const useMobileChatViewport = isChatRoute && isMobile;
+  const isCreateOrEdit =
+    pathname === "/create" || (pathname.startsWith("/my/") && pathname.endsWith("/edit"));
 
   return (
     <div
@@ -31,7 +33,10 @@ export function LandingContentOffset({ children }: { children: React.ReactNode }
         landingNavCollapsed ? "md:pl-14" : "md:pl-[88px]",
         isChatRoute && "flex h-dvh min-h-dvh min-h-0 flex-col overflow-hidden",
         !isChatRoute &&
-          "pt-[max(3.5rem,env(safe-area-inset-top))] pb-[max(4.5rem,env(safe-area-inset-bottom))] md:pt-0 md:pb-0",
+          cn(
+            "pt-[max(3.5rem,env(safe-area-inset-top))] md:pt-0 md:pb-0",
+            isCreateOrEdit ? "pb-0" : "pb-[max(4.5rem,env(safe-area-inset-bottom))]"
+          ),
         isChatRoute &&
           !isImmersiveChat &&
           !useMobileChatViewport &&

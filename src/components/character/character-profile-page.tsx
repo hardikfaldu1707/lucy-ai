@@ -169,7 +169,7 @@ export function CharacterProfilePage({ profile }: CharacterProfilePageProps) {
         </div>
 
         <div className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight">{profile.name}</h1>
+          <h1 className="font-display text-2xl font-normal tracking-tight">{profile.name}</h1>
           <p className="text-sm text-white/50">@{profile.slug}</p>
         </div>
 

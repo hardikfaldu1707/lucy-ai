@@ -22,7 +22,7 @@ export default function FeaturesPage() {
   return (
     <Section>
       <div className="mx-auto max-w-3xl text-center">
-        <h1 className="text-4xl font-bold tracking-tight">Features</h1>
+        <h1 className="font-display text-4xl font-normal tracking-tight">Features</h1>
         <p className="mt-4 text-lg text-muted-foreground">
           Everything you need for a deep, lasting AI companionship experience.
         </p>

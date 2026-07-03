@@ -56,7 +56,7 @@ export function LimitedOfferBanner({ offerImageUrl }: { offerImageUrl?: string |
             </span>
           </div>
 
-          <h2 id="offer-heading" className="mt-4 text-2xl font-bold leading-tight text-white sm:text-3xl md:text-4xl">
+          <h2 id="offer-heading" className="font-display mt-4 text-2xl font-normal leading-tight text-white sm:text-3xl md:text-4xl">
             Sign up and get{" "}
             <Sparkles className="inline h-7 w-7 text-pink-400 sm:h-8 sm:w-8" aria-hidden />
             <br />

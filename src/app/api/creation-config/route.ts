@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import { getPublicCreationConfig } from "@/lib/data/character-creation-config";
 
-export const revalidate = 120;
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
     const config = await getPublicCreationConfig();
     return NextResponse.json(
       { config },
-      { headers: { "Cache-Control": "public, s-maxage=120, stale-while-revalidate=60" } },
+      { headers: { "Cache-Control": "no-store, max-age=0, must-revalidate" } },
     );
   } catch (err) {
     return NextResponse.json(

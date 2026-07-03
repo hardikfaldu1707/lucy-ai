@@ -194,12 +194,44 @@ export async function POST(req: NextRequest) {
       if (plan !== "free") {
         const allowance = await planAllowanceFromEconomy(plan);
         if (allowance > 0) {
+          const idempotencyKey = `sub_grant:${invoice.id}`;
+          const { data: existing } = await supabaseAdmin()
+            .from("coin_ledger")
+            .select("id")
+            .eq("profile_id", resolvedProfileId)
+            .eq("idempotency_key", idempotencyKey)
+            .maybeSingle();
+
+          if (!existing) {
+            const { data: balRow } = await supabaseAdmin()
+              .from("coin_balances")
+              .select("balance")
+              .eq("profile_id", resolvedProfileId)
+              .maybeSingle();
+            const currentBalance = balRow?.balance ?? 0;
+
+            if (currentBalance > 0) {
+              const resetIdempotencyKey = `sub_reset:${invoice.id}`;
+              const { error: resetErr } = await supabaseAdmin().rpc("spend_coins_for_profile", {
+                p_profile_id: resolvedProfileId,
+                p_amount: currentBalance,
+                p_reason: "adjustment",
+                p_metadata: { type: "sub_reset", invoiceId: invoice.id, original_balance: currentBalance },
+                p_idempotency_key: resetIdempotencyKey,
+              });
+              if (resetErr) {
+                console.error("[stripe webhook] reset failed", { profileId: resolvedProfileId, error: resetErr });
+                break;
+              }
+            }
+          }
+
           await supabaseAdmin().rpc("grant_coins", {
             p_profile_id: resolvedProfileId,
             p_amount: allowance,
             p_reason: "subscription_grant",
             p_metadata: { invoiceId: invoice.id, plan },
-            p_idempotency_key: `sub_grant:${invoice.id}`,
+            p_idempotency_key: idempotencyKey,
           });
         }
       }

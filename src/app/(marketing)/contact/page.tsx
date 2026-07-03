@@ -48,7 +48,7 @@ export default function ContactPage() {
   return (
     <Section>
       <div className="mx-auto max-w-lg">
-        <h1 className="text-center text-4xl font-bold">Contact us</h1>
+        <h1 className="font-display text-center text-4xl font-normal">Contact us</h1>
         <p className="mt-2 text-center text-muted-foreground">We typically respond within 24 hours.</p>
         <Card className="mt-8">
           <CardHeader>

@@ -41,16 +41,23 @@ export function DashboardSidebar() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+                  "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 active:scale-98",
                   active
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
-                  sidebarCollapsed && "justify-center px-2"
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm scale-[1.01]"
+                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground hover:translate-x-1",
+                  sidebarCollapsed && "justify-center px-2 hover:translate-x-0"
                 )}
                 aria-current={active ? "page" : undefined}
               >
-                <NavIcon name={item.icon} className="h-5 w-5 shrink-0" />
-                {!sidebarCollapsed && <span>{item.title}</span>}
+                <NavIcon
+                  name={item.icon}
+                  className="h-5 w-5 shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"
+                />
+                {!sidebarCollapsed && (
+                  <span className="transition-colors duration-200">
+                    {item.title}
+                  </span>
+                )}
               </Link>
             );
 

@@ -152,7 +152,7 @@ export function HomeExploreGallerySection({
           <div className="absolute inset-0 bg-gradient-to-r from-black/92 via-black/60 to-black/25" />
           <div className="relative flex h-full min-h-[200px] flex-col justify-between gap-6 p-6 sm:min-h-[240px] sm:flex-row sm:items-center sm:p-8">
             <div className="max-w-xl">
-              <h1 className="text-2xl font-black uppercase leading-[1.1] tracking-tight text-white sm:text-3xl md:text-4xl">
+              <h1 className="font-display text-2xl font-normal leading-[1.1] tracking-tight text-white sm:text-3xl md:text-4xl">
                 She Always
                 <span className="block text-pink-400">Picks Up</span>
               </h1>

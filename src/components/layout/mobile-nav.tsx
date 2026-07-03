@@ -10,8 +10,8 @@ import { Button } from "@/components/ui/button";
 import { DASHBOARD_NAV } from "@/constants/routes";
 import { useUIStore } from "@/store/ui-store";
 import { useDialogA11y, usePrefersReducedMotion } from "@/hooks/use-dialog-a11y";
+import { DashboardNavIcon } from "@/components/icons/animated-nav-icon";
 import { cn } from "@/lib/utils";
-import { NavIcon } from "./nav-icon";
 
 export function MobileNav() {
   const pathname = usePathname();
@@ -65,7 +65,7 @@ export function MobileNav() {
                       active ? "bg-sidebar-accent" : "hover:bg-sidebar-accent/50"
                     )}
                   >
-                    <NavIcon name={item.icon} className="h-5 w-5" />
+                    <DashboardNavIcon name={item.icon} className="h-5 w-5" />
                     {item.title}
                   </Link>
                 );

@@ -91,7 +91,7 @@ const isDev = process.env.NODE_ENV !== "production";
 
 const nextConfig: NextConfig = {
   experimental: {
-    optimizePackageImports: ["lucide-react", "@radix-ui/react-icons"],
+    optimizePackageImports: ["lucide-react", "react-icons"],
     // Clerk proxy buffers request bodies; default 10MB truncates admin video uploads.
     proxyClientMaxBodySize: "55mb",
   },

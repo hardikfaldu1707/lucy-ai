@@ -24,7 +24,7 @@ export function AiGirlfriendContentSection() {
     >
       <h2
         id="best-app-heading"
-        className="text-2xl font-bold text-white sm:text-3xl md:text-4xl"
+        className="font-display text-2xl font-normal text-white sm:text-3xl md:text-4xl"
       >
         The Best AI Girlfriend App
       </h2>

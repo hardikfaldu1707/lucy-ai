@@ -46,7 +46,7 @@ export default async function DashboardHomePage() {
       <PageHeader title={welcome} description="Here's what's happening with your companions today." />
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="overflow-hidden border-primary/10 bg-gradient-to-br from-primary/5 via-background to-background lg:col-span-2">
+        <Card className="overflow-hidden border-primary/10 bg-gradient-to-br from-primary/5 via-background to-background lg:col-span-2 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 hover:border-primary/20">
           <CardHeader>
             <CardTitle>Active character</CardTitle>
             <CardDescription>Your primary companion right now</CardDescription>
@@ -99,7 +99,7 @@ export default async function DashboardHomePage() {
           </CardContent>
         </Card>
 
-        <Card className="border-primary/10 bg-gradient-to-b from-muted/30 to-background">
+        <Card className="border-primary/10 bg-gradient-to-b from-muted/30 to-background transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 hover:border-primary/20">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CreditCard className="h-5 w-5 text-primary" />
@@ -119,7 +119,7 @@ export default async function DashboardHomePage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-1">
-        <Card>
+        <Card className="transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 hover:border-primary/20">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Recent chats</CardTitle>
             <Button variant="ghost" size="sm" asChild>
@@ -135,9 +135,9 @@ export default async function DashboardHomePage() {
                   key={c.id}
                   href={ROUTES.publicChatWithCharacter(c.characterId)}
                   prefetch
-                  className="flex items-center gap-3 rounded-xl p-2.5 transition-colors hover:bg-muted/80"
+                  className="group flex items-center gap-3 rounded-xl p-2.5 transition-all duration-200 hover:bg-muted/80 hover:translate-x-1"
                 >
-                  <Avatar className="h-10 w-10 shrink-0 ring-1 ring-border">
+                  <Avatar className="h-10 w-10 shrink-0 ring-1 ring-border transition-transform duration-300 group-hover:scale-105">
                     <AvatarImage src={c.characterAvatar} alt={c.characterName} />
                     <AvatarFallback>{c.characterName[0]}</AvatarFallback>
                   </Avatar>

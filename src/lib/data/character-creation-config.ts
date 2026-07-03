@@ -443,8 +443,10 @@ function isValidOptionKey(
   optionKey: string,
   group?: string | null,
 ): boolean {
-  const step = config.steps.find((s) => s.stepKey === stepKey && s.isEnabled);
-  if (!step) return false;
+  const step = config.steps.find((s) => s.stepKey.toLowerCase() === stepKey.toLowerCase());
+  if (!step || !step.isEnabled) {
+    return true; // Skip validation if step is disabled or doesn't exist
+  }
   return step.options.some(
     (o) =>
       o.isEnabled &&

@@ -117,19 +117,69 @@ export function draftToPayload(draft: CreateCharacterDraft, config?: CreationCon
   };
 }
 
-export function isDraftReadyForSubmit(draft: CreateCharacterDraft): boolean {
-  return (
-    draft.name.trim().length > 0 &&
-    draft.age >= 18 &&
-    draft.ethnicity.length > 0 &&
-    draft.hairStyle.length > 0 &&
-    draft.hairColor.length > 0 &&
-    draft.bodyType.length > 0 &&
-    draft.outfit.length > 0 &&
-    draft.personality.length > 0 &&
-    draft.voicePersonaId.length > 0 &&
-    draft.relationship.length > 0
-  );
+export function isDraftReadyForSubmit(
+  draft: CreateCharacterDraft,
+  config?: CreationConfig,
+): boolean {
+  if (!config) {
+    return (
+      draft.name.trim().length > 0 &&
+      draft.age >= 18 &&
+      draft.ethnicity.length > 0 &&
+      draft.hairStyle.length > 0 &&
+      draft.hairColor.length > 0 &&
+      draft.bodyType.length > 0 &&
+      draft.outfit.length > 0 &&
+      draft.personality.length > 0 &&
+      draft.voicePersonaId.length > 0 &&
+      draft.relationship.length > 0
+    );
+  }
+
+  for (const step of config.steps) {
+    if (!step.isEnabled || !step.isRequired) continue;
+
+    switch (step.stepType) {
+      case "single_select":
+        if (step.stepKey === "style") {
+          if (!draft.style) return false;
+        } else if (step.stepKey === "ethnicity") {
+          if (!draft.ethnicity) return false;
+        } else if (step.stepKey === "body") {
+          if (!draft.bodyType) return false;
+        } else if (step.stepKey === "outfit") {
+          if (!draft.outfit) return false;
+        }
+        break;
+
+      case "dual_select":
+        if (!draft.hairStyle || !draft.hairColor) return false;
+        break;
+
+      case "identity": {
+        const minAge = step.config.minAge ?? 18;
+        if (draft.name.trim().length === 0 || draft.age < minAge) return false;
+        break;
+      }
+
+      case "multi_select":
+        if (draft.personality.length === 0) return false;
+        break;
+
+      case "voice":
+        if (!draft.voicePersonaId) return false;
+        break;
+
+      case "review":
+        if (!draft.relationship) return false;
+        break;
+
+      default:
+        break;
+    }
+  }
+
+  return true;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
