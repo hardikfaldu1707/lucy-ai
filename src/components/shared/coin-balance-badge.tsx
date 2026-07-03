@@ -51,12 +51,12 @@ export function CoinBalanceBadge({ variant = "compact", className }: CoinBalance
       <Link
         href={ROUTES.subscriptionCoins}
         className={cn(
-          "flex h-9 items-center gap-1.5 rounded-full border border-border bg-muted/50 px-3 text-sm font-medium transition-colors hover:bg-muted",
+          "group flex h-9 items-center gap-1.5 rounded-full border border-border bg-muted/50 px-3 text-sm font-medium transition-all duration-300 hover:bg-muted hover:scale-105 active:scale-95 shadow-sm hover:shadow-primary/5",
           className,
         )}
         aria-label={`${display} coins — buy more`}
       >
-        <Coins className="h-4 w-4 text-primary" aria-hidden />
+        <Coins className="h-4 w-4 text-primary transition-transform duration-700 group-hover:rotate-360" aria-hidden />
         <span className="tabular-nums">{display}</span>
       </Link>
     );

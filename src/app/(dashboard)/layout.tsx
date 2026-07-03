@@ -15,6 +15,9 @@ const OnboardingGate = dynamic(
 const PushSubscribePrompt = dynamic(
   () => import("@/components/push/push-subscribe-prompt").then((m) => m.PushSubscribePrompt)
 );
+const SignupCongratsModal = dynamic(
+  () => import("@/components/shared/signup-congrats-modal").then((m) => m.SignupCongratsModal)
+);
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { userId } = await auth();
@@ -42,6 +45,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <div className="flex h-dvh overflow-hidden bg-background">
       <CoinBalanceHydrator balance={coinBalance} />
       <OnboardingGate />
+      <SignupCongratsModal />
       <PushSubscribePrompt />
       <DashboardSidebar />
       <MobileNav />

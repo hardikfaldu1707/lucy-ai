@@ -41,6 +41,29 @@ export async function ensureFreeMonthlyAllowance(profileId: string): Promise<voi
 
   if (existing) return;
 
+  // Use-it-or-lose-it: Reset existing balance to 0 before granting the new month's allowance
+  const { data: balRow } = await db
+    .from("coin_balances")
+    .select("balance")
+    .eq("profile_id", profileId)
+    .maybeSingle();
+  const currentBalance = balRow?.balance ?? 0;
+
+  if (currentBalance > 0) {
+    const resetIdempotencyKey = `free_monthly_reset:${profileId}:${yearMonth}`;
+    const { error: resetErr } = await db.rpc("spend_coins_for_profile", {
+      p_profile_id: profileId,
+      p_amount: currentBalance,
+      p_reason: "adjustment",
+      p_metadata: { type: "free_monthly_reset", month: yearMonth, original_balance: currentBalance },
+      p_idempotency_key: resetIdempotencyKey,
+    });
+    if (resetErr) {
+      console.error("[ensureFreeMonthlyAllowance] reset failed", { profileId, error: resetErr });
+      return;
+    }
+  }
+
   const { error } = await db.rpc("grant_coins", {
     p_profile_id: profileId,
     p_amount: allowance,
