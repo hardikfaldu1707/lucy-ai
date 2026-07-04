@@ -12,19 +12,39 @@ type CoinBalanceVariant = "compact" | "nav" | "menu" | "card";
 interface CoinBalanceBadgeProps {
   variant?: CoinBalanceVariant;
   className?: string;
+  iconOnly?: boolean;
 }
 
 function formatBalance(balance: number): string {
   return balance.toLocaleString();
 }
 
-export function CoinBalanceBadge({ variant = "compact", className }: CoinBalanceBadgeProps) {
+export function CoinBalanceBadge({
+  variant = "compact",
+  className,
+  iconOnly,
+}: CoinBalanceBadgeProps) {
   const { isSignedIn } = useAuth();
   const { data: balance } = useCoinBalance();
 
   if (!isSignedIn) return null;
 
   const display = balance === undefined ? "…" : formatBalance(balance);
+
+  if (iconOnly) {
+    return (
+      <Link
+        href={ROUTES.subscriptionCoins}
+        className={cn(
+          "group flex h-9 w-9 items-center justify-center rounded-full border border-border bg-muted/50 transition-all duration-300 hover:bg-muted hover:scale-105 active:scale-95 shadow-sm hover:shadow-primary/5",
+          className,
+        )}
+        aria-label={`${display} coins — buy more`}
+      >
+        <Coins className="h-4 w-4 text-primary transition-transform duration-700 group-hover:rotate-360" aria-hidden />
+      </Link>
+    );
+  }
 
   if (variant === "compact") {
     return (

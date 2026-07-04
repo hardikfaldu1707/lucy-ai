@@ -29,16 +29,17 @@ interface StatCardProps {
   value: string;
   icon: React.ComponentType<{ className?: string }>;
   trend?: { value: number; label: string };
-  color?: "default" | "emerald" | "amber" | "rose" | "sky";
+  color?: "default" | "emerald" | "amber" | "rose" | "sky" | "pink";
 }
 
 function StatCard({ label, value, icon: Icon, trend, color = "default" }: StatCardProps) {
   const colorStyles = {
-    default: "bg-primary/10 text-primary",
+    default: "bg-pink-500/10 text-pink-400",
     emerald: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
     amber: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
     rose: "bg-rose-500/10 text-rose-600 dark:text-rose-400",
     sky: "bg-sky-500/10 text-sky-600 dark:text-sky-400",
+    pink: "bg-pink-500/10 text-pink-400",
   };
 
   return (
@@ -95,37 +96,37 @@ export default async function AdminDashboardPage() {
           label="Total users"
           value={stats.totalUsers.toLocaleString()}
           icon={Users}
-          color="sky"
+          color="pink"
         />
         <StatCard
           label="Paid users"
           value={totalPaidUsers.toLocaleString()}
           icon={CreditCard}
-          color="emerald"
+          color="pink"
         />
         <StatCard
           label="Total messages"
           value={stats.totalMessages.toLocaleString()}
           icon={MessageCircle}
-          color="amber"
+          color="pink"
         />
         <StatCard
           label="Characters"
           value={stats.totalCharacters.toLocaleString()}
           icon={Sparkles}
-          color="rose"
+          color="pink"
         />
         <StatCard
           label="Revenue"
           value={`$${stats.totalRevenue.toLocaleString()}`}
           icon={TrendingUp}
-          color="emerald"
+          color="pink"
         />
         <StatCard
           label="Storage used"
           value={formatBytes(storage.totalBytes)}
           icon={HardDrive}
-          color="sky"
+          color="pink"
         />
       </div>
 
@@ -140,9 +141,9 @@ export default async function AdminDashboardPage() {
             <div className="space-y-3">
               {(
                 [
-                  { plan: "Free", count: stats.usersByPlan.free, color: "bg-muted-foreground/30" },
-                  { plan: "Premium", count: stats.usersByPlan.premium, color: "bg-amber-500" },
-                  { plan: "Ultimate", count: stats.usersByPlan.ultimate, color: "bg-emerald-500" },
+                  { plan: "Free", count: stats.usersByPlan.free, color: "bg-white/10" },
+                  { plan: "Premium", count: stats.usersByPlan.premium, color: "bg-pink-500" },
+                  { plan: "Ultimate", count: stats.usersByPlan.ultimate, color: "bg-fuchsia-600" },
                 ] as const
               ).map((item) => {
                 const pct = stats.totalUsers > 0 ? (item.count / stats.totalUsers) * 100 : 0;

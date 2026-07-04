@@ -8,9 +8,9 @@ export function isAdminNavActive(pathname: string, href: string): boolean {
 
 export const adminNavLinkClassName = (active: boolean) =>
   [
-    "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+    "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 active:scale-97",
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar",
     active
-      ? "bg-sidebar-accent text-sidebar-accent-foreground"
-      : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
+      ? "bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white shadow-md shadow-pink-500/10"
+      : "text-sidebar-foreground/70 hover:bg-white/[0.04] hover:text-sidebar-foreground",
   ].join(" ");

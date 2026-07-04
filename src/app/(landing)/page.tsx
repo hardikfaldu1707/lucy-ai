@@ -1,15 +1,14 @@
 import { auth } from "@clerk/nextjs/server";
-import { AuthenticatedHomePage } from "@/components/home/authenticated-home-page";
+import { redirect } from "next/navigation";
 import { PublicHomePage } from "@/components/home/public-home-page";
-import { listAuthenticatedCatalogCharacters, listHomeCharacters } from "@/lib/data/characters-public";
+import { listHomeCharacters } from "@/lib/data/characters-public";
 import { getPlatformAssetUrl } from "@/lib/data/platform-assets";
 
 export default async function HomePage() {
   const { userId } = await auth();
 
   if (userId) {
-    const initialCharacters = await listAuthenticatedCatalogCharacters(userId);
-    return <AuthenticatedHomePage initialCharacters={initialCharacters} />;
+    redirect("/homepage");
   }
 
   const [initialCharacters, offerImageUrl] = await Promise.all([

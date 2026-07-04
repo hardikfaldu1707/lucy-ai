@@ -153,7 +153,7 @@ export function ChatMessengerShell({
           chatSidebarCollapsed ? "md:w-[72px]" : "md:w-80",
           "w-[min(20rem,85vw)]",
           isDark
-            ? "border-r border-white/[0.08] bg-[#111111] shadow-xl shadow-black/40 md:shadow-none"
+            ? "border-r border-white/5 bg-[#0a0a0a]/80 backdrop-blur-xl shadow-xl shadow-black/40 md:shadow-none"
             : "border-r border-border bg-background shadow-xl md:shadow-none",
           chatSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
         )}
@@ -162,7 +162,7 @@ export function ChatMessengerShell({
         <header
           className={cn(
             "shrink-0 border-b",
-            isDark ? "border-white/[0.08] bg-[#111111]" : "border-border bg-background",
+            isDark ? "border-white/5 bg-[#0a0a0a]/30" : "border-border bg-background",
             chatSidebarCollapsed ? "px-2 py-3" : "px-3 py-3.5",
           )}
         >
@@ -175,8 +175,8 @@ export function ChatMessengerShell({
                 className={cn(
                   "h-10 w-10 rounded-xl",
                   isDark
-                    ? "bg-white/[0.08] text-white hover:bg-white/[0.12]"
-                    : "bg-primary/10 text-primary hover:bg-primary/15",
+                    ? "bg-gradient-to-r from-pink-500 to-fuchsia-600 hover:from-pink-400 hover:to-fuchsia-500 text-white shadow-md shadow-pink-500/10 active:scale-95 transition-transform"
+                    : "bg-primary text-primary-foreground",
                 )}
                 aria-label="Start new chat"
               >
@@ -184,18 +184,7 @@ export function ChatMessengerShell({
                   <Plus className="h-5 w-5" />
                 </Link>
               </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className={cn(
-                  "hidden h-8 w-8 md:flex",
-                  isDark && "text-white/50 hover:bg-white/10 hover:text-white",
-                )}
-                onClick={toggleChatSidebarCollapsed}
-                aria-label="Expand conversations"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
+              {/* ChevronRight expand toggle removed for clean UI layout */}
             </div>
           ) : (
             <div className="space-y-3 pt-safe">
@@ -248,9 +237,9 @@ export function ChatMessengerShell({
               <Button
                 asChild
                 className={cn(
-                  "h-9 w-full gap-2 rounded-lg font-medium",
+                  "h-9 w-full gap-2 rounded-lg font-bold shadow-md shadow-pink-500/15 transition-transform active:scale-98",
                   isDark
-                    ? "bg-white/[0.08] text-white hover:bg-white/[0.12]"
+                    ? "bg-gradient-to-r from-pink-500 to-fuchsia-600 hover:from-pink-400 hover:to-fuchsia-500 text-white"
                     : "bg-primary text-primary-foreground hover:bg-primary/90",
                 )}
               >
@@ -273,9 +262,9 @@ export function ChatMessengerShell({
                   value={chatSearch}
                   onChange={(e) => setChatSearch(e.target.value)}
                   className={cn(
-                    "h-9 rounded-lg pl-9 text-base",
+                    "h-9 rounded-lg pl-9 text-sm focus-visible:ring-pink-500/30",
                     isDark &&
-                      "border-white/[0.08] bg-white/[0.06] text-white placeholder:text-white/40 focus-visible:ring-primary/40",
+                      "border-white/5 bg-white/[0.03] text-white placeholder:text-white/40 focus-visible:border-pink-500/30",
                   )}
                   aria-label="Search conversations"
                 />

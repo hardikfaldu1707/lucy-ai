@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { m } from "framer-motion";
 import { Mic, Info, Sparkles } from "lucide-react";
 import { HeartLoader } from "@/components/shared/heart-loader";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -125,7 +126,10 @@ export function MessageBubble({
   const gapClass = (groupPosition === "middle" || groupPosition === "last") ? "py-0.5" : "py-2";
 
   return (
-    <div
+    <m.div
+      initial={{ opacity: 0, y: 10, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.22, ease: "easeOut" }}
       className={cn(
         "flex w-full gap-3",
         isUser ? "justify-end" : "justify-start",
@@ -274,6 +278,6 @@ export function MessageBubble({
           </div>
         )}
       </div>
-    </div>
+    </m.div>
   );
 }

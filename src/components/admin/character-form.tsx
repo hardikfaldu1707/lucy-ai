@@ -97,15 +97,15 @@ function AppearanceSelect({
 }) {
   return (
     <div className="space-y-2">
-      <Label htmlFor={id}>{label}</Label>
+      <Label htmlFor={id} className="text-white/80 font-medium text-xs">{label}</Label>
       <Select
         value={value || APPEARANCE_NONE}
         onValueChange={(v) => onChange(v === APPEARANCE_NONE ? "" : v)}
       >
-        <SelectTrigger id={id}>
+        <SelectTrigger id={id} className="bg-white/[0.02] border-white/5 text-white rounded-xl focus:ring-pink-500/30">
           <SelectValue placeholder="Not set" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="bg-zinc-950 border-white/5 text-white">
           <SelectItem value={APPEARANCE_NONE}>Not set</SelectItem>
           {options.map((o) => (
             <SelectItem key={o.id} value={o.id}>
@@ -307,71 +307,77 @@ export function CharacterForm({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-h-[90vh] overflow-y-auto sm:max-w-4xl p-0 gap-0"
+        className="max-h-[95vh] overflow-y-auto sm:max-w-4xl p-0 gap-0 bg-[#0d0d0d] border-white/5 text-white shadow-2xl shadow-black/80 backdrop-blur-2xl"
         onInteractOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
-        <DialogHeader className="p-6 pb-2">
-          <DialogTitle>{initial ? "Edit Character" : "New Character"}</DialogTitle>
-          <DialogDescription>
+        <DialogHeader className="p-6 pb-2 border-b border-white/5">
+          <DialogTitle className="text-xl font-bold bg-gradient-to-r from-pink-500 via-purple-400 to-indigo-400 bg-clip-text text-transparent">
+            {initial ? "Edit Companion Profile" : "Create New AI Companion"}
+          </DialogTitle>
+          <DialogDescription className="text-white/50 text-xs">
             Configure the companion profile, appearance, AI settings, and visibility options.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="p-6 pt-2">
+        <form onSubmit={handleSubmit} className="p-6 pt-4">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
             {/* Left Column: Labeled Tabs for settings */}
             <div className="md:col-span-7">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid grid-cols-5 w-full mb-4">
-                  <TabsTrigger value="basics" className="text-xs">Basics</TabsTrigger>
-                  <TabsTrigger value="appearance" className="text-xs">Appearance</TabsTrigger>
-                  <TabsTrigger value="profile" className="text-xs">Profile</TabsTrigger>
-                  <TabsTrigger value="ai" className="text-xs">AI</TabsTrigger>
-                  <TabsTrigger value="publish" className="text-xs">Publish</TabsTrigger>
+                <TabsList className="grid grid-cols-5 w-full mb-6 bg-white/[0.03] border border-white/5 p-1 rounded-xl">
+                  <TabsTrigger value="basics" className="text-xs rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-500 data-[state=active]:to-fuchsia-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300">Basics</TabsTrigger>
+                  <TabsTrigger value="appearance" className="text-xs rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-500 data-[state=active]:to-fuchsia-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300">Appearance</TabsTrigger>
+                  <TabsTrigger value="profile" className="text-xs rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-500 data-[state=active]:to-fuchsia-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300">Profile</TabsTrigger>
+                  <TabsTrigger value="ai" className="text-xs rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-500 data-[state=active]:to-fuchsia-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300">AI Config</TabsTrigger>
+                  <TabsTrigger value="publish" className="text-xs rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-500 data-[state=active]:to-fuchsia-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300">Publish</TabsTrigger>
                 </TabsList>
 
                 {/* Basics Section */}
                 <TabsContent value="basics" className="space-y-4 focus-visible:outline-none">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Name</Label>
+                    <Label htmlFor="name" className="text-white/80 font-medium text-xs">Name</Label>
                     <Input
                       id="name"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder="e.g. Barbara"
                       required
+                      className="bg-white/[0.02] border-white/5 focus-visible:ring-pink-500/30 text-white placeholder-white/30 rounded-xl"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="tagline">Tagline</Label>
+                    <Label htmlFor="tagline" className="text-white/80 font-medium text-xs">Tagline</Label>
                     <Input
                       id="tagline"
                       value={tagline}
                       onChange={(e) => setTagline(e.target.value)}
                       placeholder="e.g. MILF · Boss · Caring"
+                      className="bg-white/[0.02] border-white/5 focus-visible:ring-pink-500/30 text-white placeholder-white/30 rounded-xl"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="description">Bio Description</Label>
+                    <Label htmlFor="description" className="text-white/80 font-medium text-xs">Bio Description</Label>
                     <Textarea
                       id="description"
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       rows={4}
                       placeholder="Describe character's background, traits, and roleplay vibe..."
+                      className="bg-white/[0.02] border-white/5 focus-visible:ring-pink-500/30 text-white placeholder-white/30 rounded-xl"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="category">Category</Label>
+                    <Label htmlFor="category" className="text-white/80 font-medium text-xs">Category</Label>
                     <Input
                       id="category"
                       value={category}
                       onChange={(e) => setCategory(e.target.value)}
                       placeholder="e.g. Romance, Anime, Fitness"
+                      className="bg-white/[0.02] border-white/5 focus-visible:ring-pink-500/30 text-white placeholder-white/30 rounded-xl"
                     />
                   </div>
                 </TabsContent>
@@ -379,7 +385,7 @@ export function CharacterForm({
                 {/* Appearance Section */}
                 <TabsContent value="appearance" className="space-y-4 focus-visible:outline-none">
                   <div className="space-y-2">
-                    <Label>Profile media (photo or video)</Label>
+                    <Label className="text-white/80 font-medium text-xs">Profile media (photo or video)</Label>
                     <CharacterProfileMediaPicker
                       value={{
                         avatarUrl,
@@ -402,10 +408,12 @@ export function CharacterForm({
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
-                      <Label htmlFor="style">Style</Label>
+                      <Label htmlFor="style" className="text-white/80 font-medium text-xs">Style</Label>
                       <Select value={style} onValueChange={setStyle}>
-                        <SelectTrigger id="style"><SelectValue /></SelectTrigger>
-                        <SelectContent>
+                        <SelectTrigger id="style" className="bg-white/[0.02] border-white/5 text-white rounded-xl focus:ring-pink-500/30">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-zinc-950 border-white/5 text-white">
                           <SelectItem value="realistic">Realistic</SelectItem>
                           <SelectItem value="anime">Anime</SelectItem>
                         </SelectContent>
@@ -413,42 +421,45 @@ export function CharacterForm({
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="age">Age</Label>
+                      <Label htmlFor="age" className="text-white/80 font-medium text-xs">Age</Label>
                       <Input
                         id="age"
                         type="number"
                         min={18}
                         value={age}
                         onChange={(e) => setAge(e.target.value)}
+                        className="bg-white/[0.02] border-white/5 focus-visible:ring-pink-500/30 text-white placeholder-white/30 rounded-xl"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="tags">Tags (comma separated)</Label>
+                    <Label htmlFor="tags" className="text-white/80 font-medium text-xs">Tags (comma separated)</Label>
                     <Input
                       id="tags"
                       value={tags}
                       onChange={(e) => setTags(e.target.value)}
                       placeholder="Caring, Confident, Warm"
+                      className="bg-white/[0.02] border-white/5 focus-visible:ring-pink-500/30 text-white placeholder-white/30 rounded-xl"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="personality">Personality (comma separated)</Label>
+                    <Label htmlFor="personality" className="text-white/80 font-medium text-xs">Personality (comma separated)</Label>
                     <Input
                       id="personality"
                       value={personality}
                       onChange={(e) => setPersonality(e.target.value)}
                       placeholder="Caring, Playful, Flirty"
+                      className="bg-white/[0.02] border-white/5 focus-visible:ring-pink-500/30 text-white placeholder-white/30 rounded-xl"
                     />
                   </div>
 
-                  <div className="space-y-3 border-t pt-4">
+                  <div className="space-y-3 border-t border-white/5 pt-4">
                     <div className="space-y-0.5 flex justify-between items-start">
                       <div>
-                        <Label className="text-sm font-semibold">Match attributes</Label>
-                        <p className="text-xs text-muted-foreground">
+                        <Label className="text-sm font-semibold text-white">Match attributes</Label>
+                        <p className="text-xs text-white/55">
                           Tag this girl so she can be matched when a user creates one. Her
                           photos are copied to the user&apos;s girl when their picks match.
                         </p>
@@ -460,7 +471,7 @@ export function CharacterForm({
                           size="sm"
                           disabled={analyzing}
                           onClick={() => void handleAiDetect()}
-                          className="gap-2 text-amber-500 hover:text-amber-600 border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10 text-xs py-1 h-8 shrink-0"
+                          className="gap-2 text-pink-400 hover:text-pink-300 border-pink-500/20 bg-pink-500/5 hover:bg-pink-500/10 text-xs py-1 h-8 shrink-0 shadow-md shadow-pink-500/5 rounded-xl transition-all duration-200"
                         >
                           {analyzing ? (
                             <Loader2 className="h-3 w-3 animate-spin" />
@@ -524,7 +535,7 @@ export function CharacterForm({
                 {/* Profile / Media Section */}
                 <TabsContent value="profile" className="space-y-4 focus-visible:outline-none">
                   <div className="space-y-2">
-                    <Label>Cover banner (X-style header)</Label>
+                    <Label className="text-white/80 font-medium text-xs">Cover banner (X-style header)</Label>
                     <CharacterAvatarPicker
                       value={coverUrl}
                       onChange={setCoverUrl}
@@ -534,9 +545,9 @@ export function CharacterForm({
                     />
                   </div>
 
-                  <div className="space-y-2 border-t pt-4">
-                    <Label className="text-sm font-semibold">Chat media library</Label>
-                    <p className="text-xs text-muted-foreground">
+                  <div className="space-y-2 border-t border-white/5 pt-4">
+                    <Label className="text-sm font-semibold text-white">Chat media library</Label>
+                    <p className="text-xs text-white/55">
                       Powers the user + button in chat (Photo / Video requests). Separate from
                       profile media on the Appearance tab.
                     </p>
@@ -566,7 +577,7 @@ export function CharacterForm({
                 {/* AI Configuration Section */}
                 <TabsContent value="ai" className="space-y-4 focus-visible:outline-none">
                   <div className="space-y-2">
-                    <Label htmlFor="aiModel">AI Model</Label>
+                    <Label htmlFor="aiModel" className="text-white/80 font-medium text-xs">AI Model</Label>
                     {modelsError && (
                       <p className="text-sm text-destructive" role="alert">
                         {(modelsFetchError as Error)?.message ?? "Failed to load AI models"}
@@ -577,10 +588,10 @@ export function CharacterForm({
                       onValueChange={setAiModel}
                       disabled={modelsLoading || modelsError}
                     >
-                      <SelectTrigger id="aiModel">
+                      <SelectTrigger id="aiModel" className="bg-white/[0.02] border-white/5 text-white rounded-xl focus:ring-pink-500/30">
                         <SelectValue placeholder={modelsLoading ? "Loading…" : "Select a model"} />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-zinc-950 border-white/5 text-white">
                         <SelectItem value={DEFAULT_MODEL_VALUE}>Default (platform)</SelectItem>
                         {allModels.map((m) => (
                           <SelectItem key={m.id} value={m.id}>
@@ -592,12 +603,12 @@ export function CharacterForm({
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="voiceId">Voice persona (realtime calls)</Label>
+                    <Label htmlFor="voiceId" className="text-white/80 font-medium text-xs">Voice persona (realtime calls)</Label>
                     <Select value={voiceId || "__none__"} onValueChange={(v) => setVoiceId(v === "__none__" ? "" : v)}>
-                      <SelectTrigger id="voiceId">
+                      <SelectTrigger id="voiceId" className="bg-white/[0.02] border-white/5 text-white rounded-xl focus:ring-pink-500/30">
                         <SelectValue placeholder="Select voice" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-zinc-950 border-white/5 text-white">
                         <SelectItem value="__none__">Default (Warm & Sweet)</SelectItem>
                         {CREATE_VOICE_OPTIONS.map((v) => (
                           <SelectItem key={v.id} value={v.id}>
@@ -609,15 +620,16 @@ export function CharacterForm({
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="systemPrompt">System prompt (custom behavior rules)</Label>
+                    <Label htmlFor="systemPrompt" className="text-white/80 font-medium text-xs">System prompt (custom behavior rules)</Label>
                     <Textarea
                       id="systemPrompt"
                       value={systemPrompt}
                       onChange={(e) => setSystemPrompt(e.target.value)}
                       rows={6}
                       placeholder="Leave empty to auto-build from name/tagline/personality. When set, this exact prompt drives her replies."
+                      className="bg-white/[0.02] border-white/5 focus-visible:ring-pink-500/30 text-white placeholder-white/30 rounded-xl"
                     />
-                    <p className="text-[10px] text-muted-foreground">
+                    <p className="text-[10px] text-white/45">
                       Overrides the default personality instructions when filled in. SAFETY_RULES are always appended.
                     </p>
                   </div>
@@ -626,22 +638,22 @@ export function CharacterForm({
                 {/* Publish Section */}
                 <TabsContent value="publish" className="space-y-4 focus-visible:outline-none">
                   <div className="space-y-2">
-                    <Label htmlFor="visibility">Visibility Settings</Label>
+                    <Label htmlFor="visibility" className="text-white/80 font-medium text-xs">Visibility Settings</Label>
                     <Select value={visibility} onValueChange={setVisibility}>
-                      <SelectTrigger id="visibility">
+                      <SelectTrigger id="visibility" className="bg-white/[0.02] border-white/5 text-white rounded-xl focus:ring-pink-500/30">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-zinc-950 border-white/5 text-white">
                         <SelectItem value="public">Public (visible on homepage for everyone)</SelectItem>
                         <SelectItem value="private">Private (visible only to signed-in users)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
-                  <div className="flex items-center justify-between rounded-xl border p-4 bg-muted/30">
+                  <div className="flex items-center justify-between rounded-xl border border-white/5 p-4 bg-white/[0.02]">
                     <div className="space-y-0.5">
-                      <Label htmlFor="isPublished" className="text-sm font-semibold">Published Status</Label>
-                      <p className="text-xs text-muted-foreground">Toggle availability for chat conversations.</p>
+                      <Label htmlFor="isPublished" className="text-sm font-semibold text-white">Published Status</Label>
+                      <p className="text-xs text-white/55">Toggle availability for chat conversations.</p>
                     </div>
                     <Switch
                       id="isPublished"
@@ -655,12 +667,12 @@ export function CharacterForm({
 
             {/* Right Column: Sticky Live Preview Card */}
             <div className="md:col-span-5 h-full flex flex-col">
-              <div className="sticky top-0 space-y-2">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
+              <div className="sticky top-0 space-y-3">
+                <span className="text-xs font-semibold text-white/50 uppercase tracking-wider block">
                   Live Card Preview
                 </span>
                 
-                <div className="group relative mx-auto aspect-[3/4] w-full max-w-[280px] overflow-hidden rounded-2xl bg-zinc-900 shadow-xl ring-1 ring-white/10 md:max-w-[240px]">
+                <div className="group relative mx-auto aspect-[3/4] w-full max-w-[280px] overflow-hidden rounded-2xl bg-zinc-950 border border-white/5 shadow-2xl shadow-pink-500/5 ring-2 ring-pink-500/10 md:max-w-[240px]">
                   <CharacterPortraitMedia
                     character={{
                       id: initial?.id ?? "preview-seed",
@@ -673,7 +685,7 @@ export function CharacterForm({
                     sizes="280px"
                   />
 
-                  <div className="absolute inset-x-0 bottom-0 z-10 space-y-2 p-4">
+                  <div className="absolute inset-x-0 bottom-0 z-10 space-y-2 p-4 bg-gradient-to-t from-black via-black/80 to-transparent pt-12">
                     <h3 className="text-lg font-bold leading-tight text-white">
                       {name || "Companion Name"}{" "}
                       <span className="font-semibold text-white/80">{age}</span>
@@ -700,12 +712,13 @@ export function CharacterForm({
             </div>
           </div>
 
-          <DialogFooter className="mt-6 pt-4 border-t gap-2 sm:gap-0">
+          <DialogFooter className="mt-6 pt-4 border-t border-white/5 gap-2 sm:gap-0">
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
               disabled={isSubmitting}
+              className="rounded-xl border-white/10 hover:bg-white/[0.06] text-white/80 hover:text-white"
             >
               Cancel
             </Button>
@@ -717,6 +730,7 @@ export function CharacterForm({
                 modelCatalogBlocked ||
                 (!initial && !avatarUrl.trim())
               }
+              className="rounded-xl bg-gradient-to-r from-pink-500 to-fuchsia-600 font-bold text-white shadow-md shadow-pink-500/20 hover:from-pink-400 hover:to-fuchsia-500 transition-all duration-200 active:scale-95 disabled:opacity-40"
             >
               {isSubmitting ? "Saving…" : initial ? "Save changes" : "Create"}
             </Button>

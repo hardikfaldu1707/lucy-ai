@@ -28,7 +28,7 @@ function buildSecurityHeaders() {
   const scriptSrcDirective =
     "script-src 'self' 'unsafe-inline'" +
     (isDev ? " 'unsafe-eval'" : "") +
-    " https://clerk.lucyailove.com https://*.clerk.accounts.dev";
+    " https://clerk.lucyailove.com https://*.clerk.accounts.dev https://va.vercel-scripts.com";
 
   return [
     { key: "X-Frame-Options", value: "DENY" },
@@ -47,11 +47,12 @@ function buildSecurityHeaders() {
       value: [
         "default-src 'self'",
         scriptSrcDirective,
+        "worker-src 'self' blob:",
         "style-src 'self' 'unsafe-inline'",
-        `img-src 'self' data: blob: https://img.clerk.com https://api.dicebear.com https://*.supabase.co https://images.unsplash.com https://picsum.photos${r2ImgSrc}`,
+        `img-src 'self' data: blob: https://img.clerk.com https://api.dicebear.com https://*.supabase.co https://images.unsplash.com https://picsum.photos https://fastly.picsum.photos${r2ImgSrc}`,
         `media-src 'self' blob:${r2ImgSrc}`,
         "font-src 'self' https://fonts.gstatic.com",
-        "connect-src 'self' https://*.supabase.co https://*.clerk.accounts.dev wss://*.supabase.co https://vitals.vercel-insights.com https://*.r2.cloudflarestorage.com" +
+        "connect-src 'self' https://*.supabase.co https://*.clerk.accounts.dev https://clerk-telemetry.com wss://*.supabase.co https://vitals.vercel-insights.com https://*.r2.cloudflarestorage.com" +
           r2PresignConnectSrc() +
           r2ImgSrc,
         "frame-src https://clerk.lucyailove.com https://*.clerk.accounts.dev",
@@ -71,6 +72,7 @@ const imageRemotePatterns: NonNullable<NextConfig["images"]>["remotePatterns"] =
   },
   { protocol: "https", hostname: "images.unsplash.com" },
   { protocol: "https", hostname: "picsum.photos" },
+  { protocol: "https", hostname: "fastly.picsum.photos" },
 ];
 
 if (r2Host) {

@@ -36,7 +36,7 @@ export function ChatCharacterProfileBar({
     useUIStore();
 
   return (
-    <header className="sticky top-0 z-10 shrink-0 border-b border-white/[0.08] bg-[#0c0c0c]/95 pt-[env(safe-area-inset-top)] backdrop-blur-md supports-[backdrop-filter]:bg-[#0c0c0c]/85">
+    <header className="sticky top-0 z-10 shrink-0 border-b border-white/5 bg-[#0a0a0a]/80 pt-[env(safe-area-inset-top)] backdrop-blur-md supports-[backdrop-filter]:bg-[#0a0a0a]/80">
       <div className="flex h-14 items-center gap-2 px-2 sm:gap-3 sm:px-4">
         <Button
           variant="ghost"
@@ -77,15 +77,21 @@ export function ChatCharacterProfileBar({
           </Avatar>
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold text-white">{characterName}</p>
-            <p
-              className={cn(
-                "truncate text-[11px]",
-                isTyping ? "text-emerald-400/90" : "text-white/45",
-              )}
-              aria-live="polite"
-            >
-              {isTyping ? "typing…" : "Online"}
-            </p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+              </span>
+              <p
+                className={cn(
+                  "truncate text-[11px] font-medium leading-none",
+                  isTyping ? "text-emerald-400" : "text-emerald-400/95",
+                )}
+                aria-live="polite"
+              >
+                {isTyping ? "typing…" : "Online"}
+              </p>
+            </div>
           </div>
         </Link>
 

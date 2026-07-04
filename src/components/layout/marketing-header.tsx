@@ -39,16 +39,16 @@ export function MarketingHeader() {
         <div className="hidden items-center gap-2 md:flex">
           <ThemeToggle />
           <Show when="signed-out">
-            <SignInButton forceRedirectUrl={ROUTES.home} fallbackRedirectUrl={ROUTES.home}>
+            <SignInButton forceRedirectUrl={ROUTES.homepage} fallbackRedirectUrl={ROUTES.homepage}>
               <Button variant="ghost">Log in</Button>
             </SignInButton>
-            <SignUpButton forceRedirectUrl={ROUTES.home} fallbackRedirectUrl={ROUTES.home}>
+            <SignUpButton forceRedirectUrl={ROUTES.homepage} fallbackRedirectUrl={ROUTES.homepage}>
               <Button className="glow-primary">Get started</Button>
             </SignUpButton>
           </Show>
           <Show when="signed-in">
             <Button variant="ghost" asChild>
-              <Link href={ROUTES.home}>Home</Link>
+              <Link href={ROUTES.homepage}>Home</Link>
             </Button>
             <UserButton />
           </Show>
@@ -81,12 +81,12 @@ export function MarketingHeader() {
                 </Link>
               ))}
               <Show when="signed-out">
-                <SignInButton forceRedirectUrl={ROUTES.home} fallbackRedirectUrl={ROUTES.home}>
+                <SignInButton forceRedirectUrl={ROUTES.homepage} fallbackRedirectUrl={ROUTES.homepage}>
                   <Button variant="ghost" className="mt-2" onClick={() => setOpen(false)}>
                     Log in
                   </Button>
                 </SignInButton>
-                <SignUpButton forceRedirectUrl={ROUTES.home} fallbackRedirectUrl={ROUTES.home}>
+                <SignUpButton forceRedirectUrl={ROUTES.homepage} fallbackRedirectUrl={ROUTES.homepage}>
                   <Button className="mt-1" onClick={() => setOpen(false)}>
                     Get started
                   </Button>
@@ -94,7 +94,7 @@ export function MarketingHeader() {
               </Show>
               <Show when="signed-in">
                 <Button asChild className="mt-2" onClick={() => setOpen(false)}>
-                  <Link href={ROUTES.home}>Go to home</Link>
+                  <Link href={ROUTES.homepage}>Go to home</Link>
                 </Button>
               </Show>
             </div>
