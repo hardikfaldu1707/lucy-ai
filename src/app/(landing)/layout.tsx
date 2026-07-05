@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { LandingContentOffset } from "@/components/layout/landing-content-offset";
 import { LandingSidebar } from "@/components/layout/landing-sidebar";
 import { CoinBalanceHydrator } from "@/components/shared/coin-balance-hydrator";
+import { FuturisticBackground } from "@/components/shared/futuristic-background";
 import { cachedEnsureProfile, cachedGetBalanceForProfile } from "@/lib/server/request-cache";
 
 export default async function LandingLayout({ children }: { children: React.ReactNode }) {
@@ -17,7 +18,8 @@ export default async function LandingLayout({ children }: { children: React.Reac
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-black text-white relative">
+      <FuturisticBackground />
       <CoinBalanceHydrator balance={coinBalance} />
       <LandingSidebar />
       <LandingContentOffset>{children}</LandingContentOffset>
