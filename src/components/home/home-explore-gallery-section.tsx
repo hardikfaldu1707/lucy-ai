@@ -150,59 +150,67 @@ export function HomeExploreGallerySection({
     <section className="w-full" aria-label="Discover AI companions">
       {/* Hero banner — reference-style voice CTA */}
       <section
-        className="relative mb-8 overflow-hidden rounded-2xl border border-white/10 sm:rounded-3xl"
+        className="relative mb-8 overflow-hidden rounded-3xl border border-white/5 bg-zinc-950/40 h-[390px] sm:h-auto sm:min-h-[240px]"
         aria-label="Voice calls"
       >
-        <div className="relative min-h-[200px] sm:min-h-[240px]">
-          <Image
-            src={HOME_HERO_IMAGE}
-            alt=""
-            fill
-            className="object-cover object-center"
-            priority
-            sizes="100vw"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/92 via-black/60 to-black/25" />
-          <div className="relative flex h-full min-h-[200px] flex-col justify-between gap-6 p-6 sm:min-h-[240px] sm:flex-row sm:items-center sm:p-8">
-            <div className="max-w-xl">
-              <h1 className="font-display text-2xl font-normal leading-[1.1] tracking-tight text-white sm:text-3xl md:text-4xl">
-                She Always
-                <span className="block text-pink-400">Picks Up</span>
+        <Image
+          src={HOME_HERO_IMAGE}
+          alt=""
+          fill
+          className="object-cover object-center"
+          priority
+          sizes="(max-width: 640px) 100vw, 1400px"
+        />
+        {/* Scrim matching the index.html redesign */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/85 via-black/20 to-black/95 sm:bg-gradient-to-r sm:from-black/92 sm:via-black/60 sm:to-black/25 z-10" />
+
+        {/* Content Container */}
+        <div className="absolute inset-0 p-6 sm:p-8 flex flex-col justify-between sm:flex-row sm:items-center sm:relative sm:inset-auto sm:p-0 z-20 h-full">
+          <div className="max-w-xl flex flex-col justify-between h-full sm:h-auto sm:justify-start">
+            <div>
+              <div className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-pink-300">
+                Voice, reimagined
+              </div>
+              <h1 className="font-display text-3xl sm:text-4xl font-normal leading-[1.08] tracking-tight text-white mt-1 sm:mt-2">
+                She Always <span className="block sm:inline text-pink-400 font-semibold italic">picks up.</span>
               </h1>
-              <p className="mt-2 text-sm text-white/70 sm:text-base">
-                Real-time voice with your AI companion — warm, present, and just for you.
+              <p className="mt-2 text-xs sm:text-base text-white/70 max-w-sm sm:max-w-xl leading-relaxed">
+                Real-time voice with your companion — warm, present, and entirely yours.
               </p>
-              {voiceEnabled !== false && (
+            </div>
+            
+            {voiceEnabled !== false && (
+              <div className="mt-4 sm:mt-5">
                 <Button
                   asChild
-                  className="mt-5 h-11 rounded-full bg-gradient-to-r from-pink-500 to-fuchsia-600 px-6 text-sm font-semibold text-white shadow-lg shadow-pink-500/35 hover:from-pink-400 hover:to-fuchsia-500"
+                  className="h-11 rounded-full bg-white text-black hover:bg-white/90 px-6 text-sm font-bold shadow-lg transition-transform hover:scale-[1.02] active:scale-[0.98] sm:bg-gradient-to-r sm:from-pink-500 sm:to-fuchsia-600 sm:text-white sm:hover:from-pink-400 sm:hover:to-fuchsia-500"
                 >
-                  <Link href={isSignedIn ? ROUTES.voice : ROUTES.signup}>
-                    <Phone className="mr-2 h-4 w-4" aria-hidden />
-                    Try Calls
+                  <Link href={isSignedIn ? ROUTES.voice : ROUTES.signup} className="flex items-center gap-2">
+                    <Phone className="h-4 w-4 fill-current sm:text-white" />
+                    Try a call
                   </Link>
                 </Button>
-              )}
-            </div>
-
-            <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
-              <p className="text-xs font-semibold uppercase tracking-wider text-white/50">
-                Join in
-              </p>
-              <div className="flex -space-x-2">
-                {HOME_JOIN_AVATARS.map((src, i) => (
-                  <span
-                    key={`home-join-${i}`}
-                    className="relative h-10 w-10 overflow-hidden rounded-full ring-2 ring-black sm:h-11 sm:w-11"
-                  >
-                    <Image src={src} alt="" fill className="object-cover" sizes="44px" />
-                  </span>
-                ))}
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-pink-500 text-xs font-bold ring-2 ring-black sm:h-11 sm:w-11">
-                  +2k
-                </span>
               </div>
+            )}
+          </div>
+
+          <div className="flex sm:flex-col items-center sm:items-end gap-2.5 mt-4 sm:mt-0">
+            <div className="flex -space-x-2">
+              {HOME_JOIN_AVATARS.map((src, i) => (
+                <span
+                  key={`home-join-${i}`}
+                  className="relative h-7 w-7 sm:h-8 sm:w-8 overflow-hidden rounded-full ring-2 ring-black"
+                >
+                  <Image src={src} alt="" fill className="object-cover" sizes="32px" />
+                </span>
+              ))}
+              <span className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-pink-500 text-[10px] sm:text-xs font-bold ring-2 ring-black">
+                +2k
+              </span>
             </div>
+            <p className="text-[11px] sm:text-xs text-white/50 font-semibold uppercase tracking-wider">
+              +<b className="text-white">2,014</b> joined
+            </p>
           </div>
         </div>
       </section>

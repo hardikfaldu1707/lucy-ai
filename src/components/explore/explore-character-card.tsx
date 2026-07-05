@@ -1,7 +1,7 @@
-"use client";
-
-import { memo } from "react";
+import { memo, useState, useEffect } from "react";
 import Link from "next/link";
+import { Heart } from "lucide-react";
+import { useAuth } from "@clerk/nextjs";
 import { DeleteCharacterDialog } from "@/components/character/delete-character-dialog";
 import { CharacterPortraitMedia } from "@/components/home/character-portrait-media";
 import type { ExploreCharacter } from "@/constants/explore-characters";
@@ -23,6 +23,17 @@ function CardContent({
   priority?: boolean;
   compact?: boolean;
 }) {
+  const getSubtitle = () => {
+    if (!character.tags || character.tags.length === 0) {
+      return character.bio || "Companion";
+    }
+    const trait = character.tags[0];
+    const styleStr = character.style
+      ? character.style.charAt(0).toUpperCase() + character.style.slice(1)
+      : "";
+    return [trait, styleStr].filter(Boolean).join(" · ");
+  };
+
   return (
     <div className="relative aspect-[15/22] w-full overflow-hidden bg-zinc-900">
       <CharacterPortraitMedia
@@ -56,37 +67,20 @@ function CardContent({
 
       <div
         className={cn(
-          "absolute inset-x-0 bottom-0 z-10 space-y-1",
-          compact ? "p-2" : "space-y-2 p-3 sm:p-4",
+          "absolute inset-x-0 bottom-0 z-10 space-y-0.5 p-4 sm:p-5",
         )}
       >
         <h3
           className={cn(
-            "font-bold leading-tight text-white",
-            compact ? "text-sm" : "text-lg sm:text-xl",
+            "font-display font-medium leading-tight text-white",
+            compact ? "text-lg" : "text-xl sm:text-2xl",
           )}
         >
-          {character.name}{" "}
-          <span className="font-semibold text-white/80">{character.age}</span>
+          {character.name}
         </h3>
-        {!compact && (
-          <p className="line-clamp-2 text-[11px] leading-snug text-white/90 sm:text-xs">
-            {character.bio}
-          </p>
-        )}
-        <div className="flex flex-wrap gap-1">
-          {character.tags.slice(0, compact ? 2 : 3).map((tag) => (
-            <span
-              key={tag}
-              className={cn(
-                "rounded-full bg-white/12 font-medium text-white/90 backdrop-blur-sm transition-colors group-hover/card:bg-white/20 group-hover/card:text-white",
-                compact ? "px-1.5 py-0.5 text-[9px]" : "px-2 py-0.5 text-[10px]",
-              )}
-            >
-              {tag}
-            </span>
-          ))}
-        </div>
+        <p className="line-clamp-1 text-xs text-white/70 font-sans">
+          {getSubtitle()}
+        </p>
       </div>
     </div>
   );
@@ -97,6 +91,33 @@ export const ExploreCharacterCard = memo(function ExploreCharacterCard({
   priority,
   compact = false,
 }: ExploreCharacterCardProps) {
+  const { isSignedIn } = useAuth();
+  const [isFavorite, setIsFavorite] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem(`fav-${character.id}`);
+    if (saved === "true") {
+      setIsFavorite(true);
+    }
+  }, [character.id]);
+
+  const toggleFavorite = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const nextState = !isFavorite;
+    setIsFavorite(nextState);
+    localStorage.setItem(`fav-${character.id}`, String(nextState));
+
+    if (isSignedIn) {
+      try {
+        await fetch(`/api/characters/${character.id}/favorite`, { method: "POST" });
+      } catch (err) {
+        console.error("Failed to toggle favorite API:", err);
+      }
+    }
+  };
+
   const linkClass =
     "group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#df1a97]";
 
@@ -116,6 +137,21 @@ export const ExploreCharacterCard = memo(function ExploreCharacterCard({
           />
         </div>
       )}
+
+      {/* Heart button */}
+      <button
+        onClick={toggleFavorite}
+        className="absolute right-3 top-3 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md transition-all hover:bg-black/60 hover:scale-105 active:scale-95"
+        aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+      >
+        <Heart
+          className={cn(
+            "h-4 w-4 transition-colors",
+            isFavorite ? "fill-rose-500 text-rose-500" : "text-white"
+          )}
+        />
+      </button>
+
       <Link
         href={ROUTES.publicChatWithCharacter(character.id)}
         className={linkClass}

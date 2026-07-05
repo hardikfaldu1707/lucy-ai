@@ -14,6 +14,9 @@ import {
   Plus,
   UserCircle,
   X,
+  Home,
+  Star,
+  User,
 } from "lucide-react";
 import { LandingNavIcon } from "@/components/icons/animated-nav-icon";
 import { Show, SignInButton, SignUpButton, useAuth, UserButton } from "@clerk/nextjs";
@@ -47,6 +50,14 @@ const SIGNED_IN_NAV_ITEMS: NavItem[] = [
   { label: "Chat", icon: MessageCircle, href: ROUTES.publicChat },
   { label: "Profile", icon: UserCircle, href: ROUTES.dashboard },
   { label: "Premium", icon: Crown, href: ROUTES.pricing, badge: "70%" },
+];
+
+const MOBILE_BOTTOM_NAV_ITEMS = [
+  { label: "Explore", icon: Home, href: ROUTES.explore },
+  { label: "Chat", icon: MessageCircle, href: ROUTES.publicChat },
+  { label: "Create", icon: Plus, href: ROUTES.create, isCenter: true },
+  { label: "Profile", icon: User, href: ROUTES.dashboard },
+  { label: "Premium", icon: Star, href: ROUTES.pricing },
 ];
 
 function createNavHref(isSignedIn: boolean): string {
@@ -427,24 +438,41 @@ export function LandingSidebar() {
       {/* Mobile bottom nav — hidden during active 1:1 chat */}
       {!hideBottomNav && (
         <nav
-          className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around border-t border-white/5 bg-black px-1 pb-[env(safe-area-inset-bottom)] pt-2 md:hidden"
+          className="fixed bottom-0 left-0 right-0 z-40 flex h-20 items-center justify-around border-t border-white/5 bg-zinc-950/95 backdrop-blur-md px-2 pb-safe pt-2 md:hidden"
           aria-label="Mobile navigation"
         >
-          {navItems.map((item) => (
-            <Link
-              key={item.label}
-              href={item.href}
-              title={item.label}
-              aria-label={item.label}
-              className={cn(
-                "flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-0.5 px-0.5 text-[10px] max-[360px]:text-[9px]",
-                isNavActive(pathname, item.href) ? "text-pink-400" : "text-white/60",
-              )}
-            >
-              <LandingNavIcon label={item.label} className="h-5 w-5 shrink-0" />
-              <span className="max-w-full truncate max-[360px]:hidden">{item.label}</span>
-            </Link>
-          ))}
+          {MOBILE_BOTTOM_NAV_ITEMS.map((item) => {
+            const active = isNavActive(pathname, item.href);
+            const Icon = item.icon;
+
+            if (item.isCenter) {
+              const createHref = isSignedIn ? ROUTES.create : signInHrefForCreate();
+              return (
+                <Link
+                  key={item.label}
+                  href={createHref}
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#df6a62] text-white shadow-lg shadow-[#df6a62]/20 transition-transform active:scale-90"
+                  aria-label="Create AI Companion"
+                >
+                  <Icon className="h-6 w-6" />
+                </Link>
+              );
+            }
+
+            return (
+              <Link
+                key={item.label}
+                href={item.href}
+                className={cn(
+                  "flex flex-1 flex-col items-center justify-center gap-1 py-1 text-[11px] font-medium transition-colors duration-200",
+                  active ? "text-white" : "text-zinc-500 hover:text-white/80"
+                )}
+              >
+                <Icon className={cn("h-[22px] w-[22px]", active ? "text-white" : "text-zinc-500")} />
+                <span className="text-[10px] tracking-wide font-sans">{item.label}</span>
+              </Link>
+            );
+          })}
         </nav>
       )}
     </TooltipProvider>

@@ -93,7 +93,12 @@ export function ExplorePage() {
   const { visibleItems, hasMore, sentinelRef } = useProgressiveRender(filtered);
 
   const gridItems = useMemo(() => {
-    const items: ReactNode[] = [<ExploreCreateCard key="create" />];
+    const items: ReactNode[] = [];
+    items.push(
+      <div key="create-wrapper" className="hidden md:block">
+        <ExploreCreateCard />
+      </div>
+    );
     visibleItems.forEach((character, index) => {
       items.push(
         <ExploreCharacterCard
@@ -103,7 +108,11 @@ export function ExplorePage() {
         />
       );
       if (index === 4) {
-        items.push(<ExplorePromoCard key="promo" />);
+        items.push(
+          <div key="promo-wrapper" className="hidden md:block">
+            <ExplorePromoCard />
+          </div>
+        );
       }
     });
     return items;
@@ -116,61 +125,68 @@ export function ExplorePage() {
         aria-hidden
       />
 
-      <div className="relative mx-auto max-w-[1600px] px-3 sm:px-5 md:px-6 lg:px-8">
+      <div className="relative mx-auto max-w-[1600px] px-3 sm:px-5 md:px-6 lg:px-8 pt-3 md:pt-0">
         {/* Hero banner */}
         <section
-          className="relative mb-8 overflow-hidden rounded-2xl border border-white/10 sm:rounded-3xl"
+          className="hidden md:block relative mb-8 overflow-hidden rounded-3xl border border-white/5 bg-zinc-950/40 h-[390px] sm:h-auto sm:min-h-[240px]"
           aria-label="Create your own"
         >
-          <div className="relative min-h-[200px] sm:min-h-[240px]">
-            <Image
-              src={EXPLORE_HERO_IMAGE}
-              alt=""
-              fill
-              className="object-cover object-[center_20%]"
-              priority
-              sizes="100vw"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/55 to-black/30" />
-            <div className="relative flex h-full min-h-[200px] flex-col justify-between gap-6 p-6 sm:min-h-[240px] sm:flex-row sm:items-center sm:p-8">
-              <div className="max-w-xl">
-                <h1 className="font-display text-2xl font-normal tracking-tight text-white sm:text-3xl md:text-4xl">
-                  Create Your Own
-                  <span className="block text-pink-400">AI Girlfriend</span>
+          <Image
+            src={EXPLORE_HERO_IMAGE}
+            alt=""
+            fill
+            className="object-cover object-[center_20%]"
+            priority
+            sizes="(max-width: 640px) 100vw, 1400px"
+          />
+          {/* Scrim matching the index.html redesign */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/85 via-black/20 to-black/95 sm:bg-gradient-to-r sm:from-black/90 sm:via-black/55 sm:to-black/30 z-10" />
+
+          {/* Content Container */}
+          <div className="absolute inset-0 p-6 sm:p-8 flex flex-col justify-between sm:flex-row sm:items-center sm:relative sm:inset-auto sm:p-0 z-20 h-full">
+            <div className="max-w-xl flex flex-col justify-between h-full sm:h-auto sm:justify-start">
+              <div>
+                <div className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-pink-300">
+                  Custom Girls
+                </div>
+                <h1 className="font-display text-3xl sm:text-4xl font-normal leading-[1.08] tracking-tight text-white mt-1 sm:mt-2">
+                  Create Your Own <span className="block sm:inline text-pink-400 font-semibold italic">AI Companion</span>
                 </h1>
-                <p className="mt-2 text-sm text-white/70 sm:text-base">
-                  Your fantasy. Your rules. Craft her look, voice, and bond — then bring her to
-                  life.
+                <p className="mt-2 text-xs sm:text-base text-white/70 max-w-sm sm:max-w-xl leading-relaxed">
+                  Your fantasy. Your rules. Craft her look, voice, and bond — then bring her to life.
                 </p>
+              </div>
+
+              <div className="mt-4 sm:mt-5">
                 <Button
                   asChild
-                  className="mt-5 h-11 rounded-full bg-white px-6 text-sm font-semibold text-black hover:bg-pink-50"
+                  className="h-11 rounded-full bg-white text-black hover:bg-white/90 px-6 text-sm font-bold shadow-lg transition-transform hover:scale-[1.02] active:scale-[0.98] sm:bg-gradient-to-r sm:from-pink-500 sm:to-fuchsia-600 sm:text-white sm:hover:from-pink-400 sm:hover:to-fuchsia-500"
                 >
-                  <Link href={createHref}>
+                  <Link href={createHref} className="flex items-center gap-1">
                     Bring her to life
-                    <ArrowRight className="ml-1 h-4 w-4" aria-hidden />
+                    <ArrowRight className="h-4 w-4" aria-hidden />
                   </Link>
                 </Button>
               </div>
+            </div>
 
-              <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
-                <p className="text-xs font-semibold uppercase tracking-wider text-white/50">
-                  Join in
-                </p>
-                <div className="flex -space-x-2">
-                  {EXPLORE_JOIN_AVATARS.map((src, i) => (
-                    <span
-                      key={`join-${i}`}
-                      className="relative h-10 w-10 overflow-hidden rounded-full ring-2 ring-black sm:h-11 sm:w-11"
-                    >
-                      <Image src={src} alt="" fill className="object-cover" sizes="44px" />
-                    </span>
-                  ))}
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-pink-500 text-xs font-bold ring-2 ring-black sm:h-11 sm:w-11">
-                    +2k
+            <div className="flex sm:flex-col items-center sm:items-end gap-2.5 mt-4 sm:mt-0">
+              <div className="flex -space-x-2">
+                {EXPLORE_JOIN_AVATARS.map((src, i) => (
+                  <span
+                    key={`join-${i}`}
+                    className="relative h-7 w-7 sm:h-8 sm:w-8 overflow-hidden rounded-full ring-2 ring-black"
+                  >
+                    <Image src={src} alt="" fill className="object-cover" sizes="32px" />
                   </span>
-                </div>
+                ))}
+                <span className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-pink-500 text-[10px] sm:text-xs font-bold ring-2 ring-black">
+                  +2k
+                </span>
               </div>
+              <p className="text-[11px] sm:text-xs text-white/50 font-semibold uppercase tracking-wider">
+                +<b className="text-white">2k</b> joined
+              </p>
             </div>
           </div>
         </section>
@@ -180,19 +196,19 @@ export function ExplorePage() {
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
             {/* Unified Search Input */}
             <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
+              <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="e.g. shy gamer, romantic MILF, latina dancer..."
-                className="h-11 rounded-xl border-white/5 bg-white/[0.02] pl-10 pr-4 text-sm text-white placeholder:text-white/30 focus-visible:ring-pink-500/30 focus:border-pink-500/30 transition-all duration-200"
+                placeholder="Shy gamer, romantic MILF, latina..."
+                className="h-12 rounded-2xl border-white/10 bg-white/[0.03] pl-11 pr-4 text-sm text-white placeholder:text-zinc-500 focus-visible:ring-pink-500/30 focus:border-pink-500/30 transition-all duration-200"
               />
             </div>
             
             {/* Unified Filter Row / Grid on Mobile */}
             <div className="grid grid-cols-3 gap-2 w-full lg:flex lg:w-auto lg:gap-2">
               <Select value={gender} onValueChange={(v) => setGender(v as ExploreGender | "all")}>
-                <SelectTrigger className="h-11 w-full rounded-xl border-white/5 bg-white/[0.02] text-xs sm:text-sm text-white hover:bg-white/[0.04] transition-all focus:ring-2 focus:ring-pink-500/30 focus:border-pink-500/30 lg:w-[120px]">
+                <SelectTrigger className="h-12 w-full rounded-2xl border border-zinc-800 bg-zinc-900/40 text-sm font-medium text-white hover:bg-zinc-900/60 transition-all focus:ring-1 focus:ring-zinc-700 lg:w-[120px]">
                   <SelectValue placeholder="Gender" />
                 </SelectTrigger>
                 <SelectContent>
@@ -202,7 +218,7 @@ export function ExplorePage() {
                 </SelectContent>
               </Select>
               <Select value={style} onValueChange={(v) => setStyle(v as ExploreStyle | "all")}>
-                <SelectTrigger className="h-11 w-full rounded-xl border-white/5 bg-white/[0.02] text-xs sm:text-sm text-white hover:bg-white/[0.04] transition-all focus:ring-2 focus:ring-pink-500/30 focus:border-pink-500/30 lg:w-[120px]">
+                <SelectTrigger className="h-12 w-full rounded-2xl border border-zinc-800 bg-zinc-900/40 text-sm font-medium text-white hover:bg-zinc-900/60 transition-all focus:ring-1 focus:ring-zinc-700 lg:w-[120px]">
                   <SelectValue placeholder="Style" />
                 </SelectTrigger>
                 <SelectContent>
@@ -212,7 +228,7 @@ export function ExplorePage() {
                 </SelectContent>
               </Select>
               <Select value={ageRange} onValueChange={(v) => setAgeRange(v as ExploreAgeRange)}>
-                <SelectTrigger className="h-11 w-full rounded-xl border-white/5 bg-white/[0.02] text-xs sm:text-sm text-white hover:bg-white/[0.04] transition-all focus:ring-2 focus:ring-pink-500/30 focus:border-pink-500/30 lg:w-[110px]">
+                <SelectTrigger className="h-12 w-full rounded-2xl border border-zinc-800 bg-zinc-900/40 text-sm font-medium text-white hover:bg-zinc-900/60 transition-all focus:ring-1 focus:ring-zinc-700 lg:w-[110px]">
                   <SelectValue placeholder="Age" />
                 </SelectTrigger>
                 <SelectContent>
@@ -239,10 +255,10 @@ export function ExplorePage() {
                   role="listitem"
                   onClick={() => setActiveTag(tag)}
                   className={cn(
-                    "shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition-all sm:text-sm",
+                    "shrink-0 rounded-full px-5 py-2 text-sm font-medium transition-all",
                     activeTag === tag
-                      ? "bg-pink-500 text-white shadow-lg shadow-pink-500/25"
-                      : "bg-white/[0.04] border border-white/5 text-white/65 hover:bg-white/[0.08] hover:text-white"
+                      ? "bg-white text-black font-semibold shadow-md"
+                      : "bg-zinc-900/40 border border-zinc-800/80 text-zinc-300 hover:bg-zinc-800/50 hover:text-white"
                   )}
                 >
                   {tag}
@@ -251,7 +267,7 @@ export function ExplorePage() {
             </div>
 
             {/* Character count & sorting options */}
-            <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-white/50">
+            <div className="hidden md:flex flex-wrap items-center gap-2 text-xs sm:text-sm text-white/50">
               <SlidersHorizontal className="h-3.5 w-3.5 text-pink-400" aria-hidden />
               <span className="font-bold text-white/80">{filtered.length}</span>
               <span>companions</span>
@@ -280,6 +296,27 @@ export function ExplorePage() {
             </div>
           </div>
         </section>
+
+        {/* Section Title */}
+        {filtered.length > 0 && (
+          <div className="flex items-center justify-between mb-4 mt-6">
+            <h2 className="font-display text-2xl font-normal text-white">
+              {activeTag === "All" ? "Newest arrivals" : `${activeTag} companions`}
+            </h2>
+            <button
+              onClick={() => {
+                setQuery("");
+                setGender("female");
+                setStyle("realistic");
+                setAgeRange("any");
+                setActiveTag("All");
+              }}
+              className="text-sm font-semibold text-[#e5c583] hover:text-[#e5c583]/80 transition-colors"
+            >
+              See all
+            </button>
+          </div>
+        )}
 
         {/* Grid */}
         {filtered.length === 0 ? (

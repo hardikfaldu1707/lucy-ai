@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 import { resolveCharacterImageUrl } from "@/constants/character-portraits";
 import { useInView } from "@/hooks/use-in-view";
 import { cn } from "@/lib/utils";
@@ -46,29 +46,8 @@ export function CharacterPortraitMedia({
     rootMargin: "80px",
     initialInView: priority,
   });
-  const videoRef = useRef<HTMLVideoElement>(null);
 
   const shouldPlayVideo = showVideo && inView;
-  const [videoLoaded, setVideoLoaded] = useState(false);
-
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video || !showVideo) return;
-
-    if (shouldPlayVideo) {
-      if (video.src !== videoUrl) {
-        video.src = videoUrl;
-        video.load();
-      }
-      void video.play().catch(() => {});
-      return;
-    }
-
-    video.pause();
-    video.removeAttribute("src");
-    video.load();
-    setVideoLoaded(false);
-  }, [shouldPlayVideo, showVideo, videoUrl]);
 
   return (
     <div
@@ -79,27 +58,20 @@ export function CharacterPortraitMedia({
         src={imageSrc}
         alt={`${character.name}, ${character.age}`}
         fill
-        className={cn(
-          "object-cover object-top transition-opacity duration-300",
-          shouldPlayVideo && videoLoaded ? "opacity-0" : "opacity-100",
-        )}
+        className="object-cover object-top transition-transform duration-300 motion-reduce:transition-none group-hover:scale-[1.02] motion-reduce:group-hover:scale-100"
         sizes={sizes}
         priority={priority}
         unoptimized={unoptimized}
       />
-      {showVideo && (
+      {showVideo && shouldPlayVideo && (
         <video
-          ref={videoRef}
+          src={videoUrl}
           poster={imageSrc}
-          className={cn(
-            "absolute inset-0 h-full w-full object-cover object-top transition-opacity duration-300",
-            shouldPlayVideo && videoLoaded ? "opacity-100" : "opacity-0",
-          )}
+          className="absolute inset-0 h-full w-full object-cover object-top"
           loop
           muted
           playsInline
-          aria-hidden={!shouldPlayVideo}
-          onCanPlay={() => setVideoLoaded(true)}
+          autoPlay
         />
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/35 to-black/5" />
