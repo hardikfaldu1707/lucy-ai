@@ -50,7 +50,6 @@ interface HomeExploreGallerySectionProps {
 
 export function HomeExploreGallerySection({
   initialCharacters,
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   page = 1,
 }: HomeExploreGallerySectionProps) {
   const { isSignedIn, isLoaded } = useAuth();

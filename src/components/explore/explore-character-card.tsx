@@ -103,7 +103,7 @@ export const ExploreCharacterCard = memo(function ExploreCharacterCard({
   return (
     <article
       className={cn(
-        "group/card relative overflow-hidden ring-1 ring-white/10 transition-transform duration-200 will-change-transform hover:-translate-y-1",
+        "group/card relative overflow-hidden ring-1 ring-white/10 transition-transform duration-200 hover:-translate-y-1 accelerate-gpu",
         compact ? "rounded-xl" : "rounded-2xl",
       )}
     >

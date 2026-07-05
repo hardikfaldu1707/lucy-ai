@@ -124,8 +124,7 @@ export function MatchExploreSection({ characters }: MatchExploreSectionProps) {
         <p className="py-16 text-center text-white/50">No characters available yet.</p>
       ) : (
         <>
-          <m.div
-            layout
+          <div
             className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4"
             role="tabpanel"
           >
@@ -133,11 +132,10 @@ export function MatchExploreSection({ characters }: MatchExploreSectionProps) {
               {visibleItems.map((character, index) => (
                 <m.div
                   key={character.id}
-                  layout
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.3 }}
+                  transition={{ duration: 0.22 }}
                 >
                   <ExploreCharacterCard
                     character={character}
@@ -146,7 +144,7 @@ export function MatchExploreSection({ characters }: MatchExploreSectionProps) {
                 </m.div>
               ))}
             </AnimatePresence>
-          </m.div>
+          </div>
           
           {hasMore && (
             <div

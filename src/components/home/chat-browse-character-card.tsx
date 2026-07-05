@@ -51,7 +51,7 @@ export function ChatBrowseCharacterCard({ character, priority }: ChatBrowseChara
     "group relative block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500 focus-visible:ring-offset-2 focus-visible:ring-offset-black";
 
   return (
-    <article className="overflow-hidden rounded-2xl transition-transform duration-200 ease-out hover:scale-[1.02] motion-reduce:transform-none sm:rounded-3xl">
+    <article className="overflow-hidden rounded-2xl transition-transform duration-200 ease-out hover:scale-[1.02] motion-reduce:transform-none sm:rounded-3xl accelerate-gpu">
       <Link
         href={ROUTES.publicChatWithCharacter(character.id)}
         className={linkClass}
