@@ -178,18 +178,21 @@ export function ExplorePage() {
         {/* Search & filters */}
         <section className="mb-6 space-y-4" aria-label="Search and filters">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+            {/* Unified Search Input */}
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
+              <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="e.g. shy gamer, romantic MILF, latina dancer..."
-                className="h-11 rounded-xl border-white/10 bg-[#141414] pl-10 text-white placeholder:text-white/35 focus-visible:ring-pink-500/50"
+                className="h-11 rounded-xl border-white/5 bg-white/[0.02] pl-10 pr-4 text-sm text-white placeholder:text-white/30 focus-visible:ring-pink-500/30 focus:border-pink-500/30 transition-all duration-200"
               />
             </div>
-            <div className="flex flex-wrap gap-2">
+            
+            {/* Unified Filter Row / Grid on Mobile */}
+            <div className="grid grid-cols-3 gap-2 w-full lg:flex lg:w-auto lg:gap-2">
               <Select value={gender} onValueChange={(v) => setGender(v as ExploreGender | "all")}>
-                <SelectTrigger className="h-11 min-w-0 flex-1 rounded-xl border-white/10 bg-[#141414] text-white sm:w-[120px] sm:flex-none">
+                <SelectTrigger className="h-11 w-full rounded-xl border-white/5 bg-white/[0.02] text-xs sm:text-sm text-white hover:bg-white/[0.04] transition-all focus:ring-2 focus:ring-pink-500/30 focus:border-pink-500/30 lg:w-[120px]">
                   <SelectValue placeholder="Gender" />
                 </SelectTrigger>
                 <SelectContent>
@@ -199,7 +202,7 @@ export function ExplorePage() {
                 </SelectContent>
               </Select>
               <Select value={style} onValueChange={(v) => setStyle(v as ExploreStyle | "all")}>
-                <SelectTrigger className="h-11 min-w-0 flex-1 rounded-xl border-white/10 bg-[#141414] text-white sm:w-[120px] sm:flex-none">
+                <SelectTrigger className="h-11 w-full rounded-xl border-white/5 bg-white/[0.02] text-xs sm:text-sm text-white hover:bg-white/[0.04] transition-all focus:ring-2 focus:ring-pink-500/30 focus:border-pink-500/30 lg:w-[120px]">
                   <SelectValue placeholder="Style" />
                 </SelectTrigger>
                 <SelectContent>
@@ -209,7 +212,7 @@ export function ExplorePage() {
                 </SelectContent>
               </Select>
               <Select value={ageRange} onValueChange={(v) => setAgeRange(v as ExploreAgeRange)}>
-                <SelectTrigger className="h-11 min-w-0 flex-1 rounded-xl border-white/10 bg-[#141414] text-white sm:w-[110px] sm:flex-none">
+                <SelectTrigger className="h-11 w-full rounded-xl border-white/5 bg-white/[0.02] text-xs sm:text-sm text-white hover:bg-white/[0.04] transition-all focus:ring-2 focus:ring-pink-500/30 focus:border-pink-500/30 lg:w-[110px]">
                   <SelectValue placeholder="Age" />
                 </SelectTrigger>
                 <SelectContent>
@@ -223,8 +226,9 @@ export function ExplorePage() {
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            {/* Quick Filters Scrollable Row (Hidden scrollbars) */}
             <div
-              className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin"
+              className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
               role="list"
               aria-label="Quick filters"
             >
@@ -235,10 +239,10 @@ export function ExplorePage() {
                   role="listitem"
                   onClick={() => setActiveTag(tag)}
                   className={cn(
-                    "shrink-0 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors sm:text-sm",
+                    "shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition-all sm:text-sm",
                     activeTag === tag
-                      ? "bg-pink-500 text-white shadow-md shadow-pink-500/30"
-                      : "bg-white/8 text-white/65 hover:bg-white/12 hover:text-white"
+                      ? "bg-pink-500 text-white shadow-lg shadow-pink-500/25"
+                      : "bg-white/[0.04] border border-white/5 text-white/65 hover:bg-white/[0.08] hover:text-white"
                   )}
                 >
                   {tag}
@@ -246,28 +250,29 @@ export function ExplorePage() {
               ))}
             </div>
 
-            <div className="flex items-center gap-2 text-sm text-white/50">
-              <SlidersHorizontal className="h-4 w-4" aria-hidden />
-              <span className="font-medium text-white/80">{filtered.length}</span>
-              <span>characters</span>
-              <span className="mx-1 text-white/25">·</span>
+            {/* Character count & sorting options */}
+            <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-white/50">
+              <SlidersHorizontal className="h-3.5 w-3.5 text-pink-400" aria-hidden />
+              <span className="font-bold text-white/80">{filtered.length}</span>
+              <span>companions</span>
+              <span className="mx-1 text-white/20">·</span>
               <button
                 type="button"
                 onClick={() => setSort("newest")}
                 className={cn(
-                  "font-medium transition-colors",
-                  sort === "newest" ? "text-pink-400" : "hover:text-white"
+                  "font-semibold transition-colors duration-150",
+                  sort === "newest" ? "text-pink-400" : "hover:text-white/80"
                 )}
               >
                 Newest
               </button>
-              <span className="text-white/25">/</span>
+              <span className="text-white/20">/</span>
               <button
                 type="button"
                 onClick={() => setSort("popular")}
                 className={cn(
-                  "font-medium transition-colors",
-                  sort === "popular" ? "text-pink-400" : "hover:text-white"
+                  "font-semibold transition-colors duration-150",
+                  sort === "popular" ? "text-pink-400" : "hover:text-white/80"
                 )}
               >
                 Popular

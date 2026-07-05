@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useMemo, useState, useEffect, useRef, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@clerk/nextjs";
-import { Phone, Search, SlidersHorizontal } from "lucide-react";
+import { Phone, Search, SlidersHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
 import { ExploreCharacterCard } from "@/components/explore/explore-character-card";
 import { ExploreCreateCard } from "@/components/explore/explore-create-card";
 import { ExplorePromoCard } from "@/components/explore/explore-promo-card";
@@ -45,10 +45,13 @@ async function fetchHomeCharacters(): Promise<ExploreCharacter[]> {
 
 interface HomeExploreGallerySectionProps {
   initialCharacters?: ExploreCharacter[];
+  page?: number;
 }
 
 export function HomeExploreGallerySection({
   initialCharacters,
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  page = 1,
 }: HomeExploreGallerySectionProps) {
   const { isSignedIn, isLoaded } = useAuth();
   const queryClient = useQueryClient();
@@ -114,24 +117,35 @@ export function HomeExploreGallerySection({
     return list;
   }, [baseList, query, gender, style, ageRange, activeTag, sort]);
 
-  const { visibleItems, hasMore, sentinelRef } = useProgressiveRender(filtered);
+  const ITEMS_PER_PAGE = 120;
+  
+  const pageFiltered = useMemo(() => {
+    const startIndex = (page - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    return filtered.slice(startIndex, endIndex);
+  }, [filtered, page]);
+
+  const { visibleItems, hasMore, sentinelRef } = useProgressiveRender(pageFiltered);
 
   const gridItems = useMemo(() => {
-    const items: ReactNode[] = [<ExploreCreateCard key="create" />];
+    const items: ReactNode[] = [];
+    if (page === 1) {
+      items.push(<ExploreCreateCard key="create" />);
+    }
     visibleItems.forEach((character, index) => {
       items.push(
         <ExploreCharacterCard
           key={character.id}
           character={character}
-          priority={index < 5}
+          priority={page === 1 && index < 5}
         />
       );
-      if (index === 4) {
+      if (page === 1 && index === 4) {
         items.push(<ExplorePromoCard key="promo" />);
       }
     });
     return items;
-  }, [visibleItems]);
+  }, [visibleItems, page]);
 
   return (
     <section className="w-full" aria-label="Discover AI companions">
@@ -318,6 +332,93 @@ export function HomeExploreGallerySection({
               Loading more…
             </div>
           )}
+
+          {/* Futuristic Pagination Controls */}
+          {(() => {
+            const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+            if (totalPages <= 1) return null;
+
+            const prevHref = page === 2 ? "/home" : `/home/page/${page - 1}`;
+            const nextHref = `/home/page/${page + 1}`;
+            const hasPrev = page > 1;
+            const hasNext = page < totalPages;
+
+            const renderPageNumbers = () => {
+              const buttons = [];
+              for (let i = 1; i <= totalPages; i++) {
+                const targetHref = i === 1 ? "/home" : `/home/page/${i}`;
+                const isCurrent = i === page;
+                buttons.push(
+                  <Button
+                    key={i}
+                    asChild
+                    variant={isCurrent ? "default" : "ghost"}
+                    className={cn(
+                      "h-9 w-9 rounded-xl text-xs font-bold transition-all duration-200",
+                      isCurrent
+                        ? "bg-pink-500 text-white shadow-lg shadow-pink-500/25 hover:bg-pink-400"
+                        : "text-white/60 hover:bg-white/10 hover:text-white"
+                    )}
+                  >
+                    <Link href={targetHref}>{i}</Link>
+                  </Button>
+                );
+              }
+              return buttons;
+            };
+
+            return (
+              <div className="mt-12 flex items-center justify-center gap-3 border-t border-white/5 pt-8">
+                <Button
+                  asChild={hasPrev}
+                  disabled={!hasPrev}
+                  variant="ghost"
+                  className={cn(
+                    "h-10 rounded-xl px-4 text-xs font-semibold gap-1.5 transition-colors border border-white/5 bg-white/[0.01]",
+                    !hasPrev ? "opacity-30 cursor-not-allowed" : "text-white/80 hover:bg-white/10 hover:text-white"
+                  )}
+                >
+                  {hasPrev ? (
+                    <Link href={prevHref}>
+                      <ChevronLeft className="h-4 w-4" />
+                      Prev
+                    </Link>
+                  ) : (
+                    <>
+                      <ChevronLeft className="h-4 w-4" />
+                      Prev
+                    </>
+                  )}
+                </Button>
+
+                <div className="flex items-center gap-1.5 px-2 overflow-x-auto no-scrollbar">
+                  {renderPageNumbers()}
+                </div>
+
+                <Button
+                  asChild={hasNext}
+                  disabled={!hasNext}
+                  variant="ghost"
+                  className={cn(
+                    "h-10 rounded-xl px-4 text-xs font-semibold gap-1.5 transition-colors border border-white/5 bg-white/[0.01]",
+                    !hasNext ? "opacity-30 cursor-not-allowed" : "text-white/80 hover:bg-white/10 hover:text-white"
+                  )}
+                >
+                  {hasNext ? (
+                    <Link href={nextHref}>
+                      Next
+                      <ChevronRight className="h-4 w-4" />
+                    </Link>
+                  ) : (
+                    <>
+                      Next
+                      <ChevronRight className="h-4 w-4" />
+                    </>
+                  )}
+                </Button>
+              </div>
+            );
+          })()}
         </>
       )}
 
