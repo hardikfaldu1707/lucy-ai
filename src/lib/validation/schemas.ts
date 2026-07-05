@@ -130,10 +130,28 @@ export type UpdateUserCharacterInput = z.infer<typeof updateUserCharacterSchema>
 
 export const subscriptionUpgradeSchema = z.object({
   plan: z.enum(["free", "premium", "ultimate"]),
+  paymentMethod: z.string().optional(),
+  cardDetails: z
+    .object({
+      cardholderName: z.string().min(1),
+      cardNumber: z.string().min(15),
+      expiryDate: z.string().min(4),
+      cvc: z.string().min(3),
+    })
+    .optional(),
 });
 
 export const coinPurchaseSchema = z.object({
   packId: z.string().uuid(),
+  paymentMethod: z.string().optional(),
+  cardDetails: z
+    .object({
+      cardholderName: z.string().min(1),
+      cardNumber: z.string().min(15),
+      expiryDate: z.string().min(4),
+      cvc: z.string().min(3),
+    })
+    .optional(),
 });
 
 export const adminCoinPackSchema = z.object({

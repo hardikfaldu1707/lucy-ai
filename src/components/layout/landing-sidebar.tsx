@@ -28,6 +28,7 @@ import { ROUTES, signInHrefForCreate } from "@/constants/routes";
 import { isImmersiveChatRoute } from "@/lib/chat-route-utils";
 import { useUIStore } from "@/store/ui-store";
 import { cn } from "@/lib/utils";
+import { AnimatePresence, m } from "framer-motion";
 
 type NavItem = {
   label: string;
@@ -321,6 +322,37 @@ function SidebarContent({
   );
 }
 
+const CompassDial = ({ active }: { active: boolean }) => {
+  return (
+    <m.div
+      className={cn(
+        "relative flex h-[24px] w-[24px] items-center justify-center rounded-full border transition-all duration-300",
+        active
+          ? "border-pink-500 bg-pink-500/10 shadow-[0_0_10px_rgba(236,72,153,0.3)]"
+          : "border-zinc-700 bg-zinc-900/50"
+      )}
+      animate={active ? { rotate: [0, -15, 10, -5, 0] } : {}}
+      transition={{ duration: 0.8, ease: "easeOut" }}
+    >
+      {/* Compass Needle */}
+      <div
+        className={cn(
+          "absolute w-[2px] h-[75%] transition-colors duration-300 rotate-[45deg] bg-gradient-to-b",
+          active ? "from-pink-500 to-pink-500/10" : "from-zinc-500 to-zinc-700/10"
+        )}
+      />
+      <span
+        className={cn(
+          "relative z-10 font-sans text-[10px] font-black tracking-tighter leading-none select-none transition-colors duration-300",
+          active ? "text-white" : "text-zinc-400"
+        )}
+      >
+        N
+      </span>
+    </m.div>
+  );
+};
+
 export function LandingSidebar() {
   const pathname = usePathname();
   const { isSignedIn } = useAuth();
@@ -451,10 +483,17 @@ export function LandingSidebar() {
                 <Link
                   key={item.label}
                   href={createHref}
-                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#df6a62] text-white shadow-lg shadow-[#df6a62]/20 transition-transform active:scale-90"
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white shadow-lg shadow-pink-500/25 transition-transform duration-200"
                   aria-label="Create AI Companion"
                 >
-                  <Icon className="h-6 w-6" />
+                  <m.div
+                    whileHover={{ scale: 1.1, rotate: 90 }}
+                    whileTap={{ scale: 0.9, rotate: 180 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                    className="flex items-center justify-center"
+                  >
+                    <Icon className="h-6 w-6" />
+                  </m.div>
                 </Link>
               );
             }
@@ -465,10 +504,21 @@ export function LandingSidebar() {
                 href={item.href}
                 className={cn(
                   "flex flex-1 flex-col items-center justify-center gap-1 py-1 text-[11px] font-medium transition-colors duration-200",
-                  active ? "text-white" : "text-zinc-500 hover:text-white/80"
+                  active ? "text-pink-400" : "text-zinc-500 hover:text-white/80"
                 )}
               >
-                <Icon className={cn("h-[22px] w-[22px]", active ? "text-white" : "text-zinc-500")} />
+                <m.div
+                  whileTap={{ scale: 0.85 }}
+                  animate={active ? { scale: [1, 1.12, 1] } : {}}
+                  transition={{ duration: 0.35, ease: "easeInOut" }}
+                  className="flex items-center justify-center"
+                >
+                  {item.label === "Explore" ? (
+                    <CompassDial active={active} />
+                  ) : (
+                    <Icon className={cn("h-[22px] w-[22px]", active ? "text-pink-400" : "text-zinc-500")} />
+                  )}
+                </m.div>
                 <span className="text-[10px] tracking-wide font-sans">{item.label}</span>
               </Link>
             );
