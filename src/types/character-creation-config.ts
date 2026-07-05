@@ -14,6 +14,7 @@ export type CreationStepConfig = {
   storageKey?: string;
   nameLabel?: string;
   ageLabel?: string;
+  styleFilter?: "all" | "realistic" | "anime";
 };
 
 export type CreationOptionMetadata = {
@@ -28,6 +29,7 @@ export type CreationOptionMetadata = {
   sentenceLength?: string;
   emojiLevel?: string;
   toneNote?: string;
+  imageUrlAnime?: string;
 };
 
 export type CreationOption = {

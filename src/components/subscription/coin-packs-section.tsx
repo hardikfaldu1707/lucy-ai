@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { CoinCharacterUsageSection } from "@/components/subscription/coin-character-usage-section";
 import { cn } from "@/lib/utils";
+import { PaymentDialog } from "@/components/subscription/payment-dialog";
 
 export interface CoinPackOption {
   id: string;
@@ -41,7 +42,7 @@ function formatPrice(cents: number, currency: string): string {
 export function CoinPacksSection({ packs, enabled }: CoinPacksSectionProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [selectedPack, setSelectedPack] = useState<CoinPackOption | null>(null);
 
   if (!enabled) {
     return (
@@ -73,88 +74,75 @@ export function CoinPacksSection({ packs, enabled }: CoinPacksSectionProps) {
     );
   }
 
-  async function buyPack(packId: string) {
-    setLoadingId(packId);
-    try {
-      const res = await fetch("/api/coins/purchase", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ packId }),
-      });
-      if (!res.ok) {
-        const err = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(err.error ?? "Failed to start checkout");
-      }
-      const { checkoutUrl } = (await res.json()) as { checkoutUrl?: string | null };
-      if (checkoutUrl) {
-        window.location.assign(checkoutUrl);
-      } else {
-        toast.success("Coins added to your balance.");
-        queryClient.invalidateQueries({ queryKey: ["coin-balance"] });
-        router.refresh();
-      }
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Purchase failed");
-    } finally {
-      setLoadingId(null);
-    }
-  }
-
   return (
     <div className="space-y-6">
       <CoinCharacterUsageSection />
       <div className="space-y-4">
-      <div>
-        <h2 className="text-lg font-semibold">Buy coins</h2>
-        <p className="text-sm text-muted-foreground">
-          Top up your balance anytime — works on Free and paid plans, including after your
-          subscription ends.
-        </p>
+        <div>
+          <h2 className="text-lg font-semibold">Buy coins</h2>
+          <p className="text-sm text-muted-foreground">
+            Top up your balance anytime — works on Free and paid plans, including after your
+            subscription ends.
+          </p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {packs.map((pack) => (
+            <Card
+              key={pack.id}
+              className={cn(pack.badge && "border-primary/40 shadow-sm")}
+            >
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between gap-2">
+                  <CardTitle className="text-base">{pack.label}</CardTitle>
+                  {pack.badge && (
+                    <Badge variant="secondary" className="shrink-0">
+                      {pack.badge}
+                    </Badge>
+                  )}
+                </div>
+                <CardDescription className="flex items-center gap-1.5">
+                  <Coins className="h-4 w-4 text-primary" aria-hidden />
+                  <span className="font-semibold text-foreground tabular-nums">
+                    {pack.coinAmount.toLocaleString()}
+                  </span>
+                  coins
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="mb-4 text-2xl font-bold tabular-nums">
+                  {formatPrice(pack.priceCents, pack.currency)}
+                </p>
+                <Button
+                  className="w-full"
+                  onClick={() => setSelectedPack(pack)}
+                >
+                  <Sparkles className="mr-2 h-4 w-4" aria-hidden />
+                  Buy coins
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {packs.map((pack) => (
-          <Card
-            key={pack.id}
-            className={cn(pack.badge && "border-primary/40 shadow-sm")}
-          >
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between gap-2">
-                <CardTitle className="text-base">{pack.label}</CardTitle>
-                {pack.badge && (
-                  <Badge variant="secondary" className="shrink-0">{pack.badge}</Badge>
-                )}
-              </div>
-              <CardDescription className="flex items-center gap-1.5">
-                <Coins className="h-4 w-4 text-primary" aria-hidden />
-                <span className="font-semibold text-foreground tabular-nums">
-                  {pack.coinAmount.toLocaleString()}
-                </span>
-                coins
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="mb-4 text-2xl font-bold tabular-nums">
-                {formatPrice(pack.priceCents, pack.currency)}
-              </p>
-              <Button
-                className="w-full"
-                onClick={() => buyPack(pack.id)}
-                disabled={loadingId !== null}
-              >
-                {loadingId === pack.id ? (
-                  "Redirecting…"
-                ) : (
-                  <>
-                    <Sparkles className="mr-2 h-4 w-4" aria-hidden />
-                    Buy coins
-                  </>
-                )}
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-      </div>
+
+      {selectedPack && (
+        <PaymentDialog
+          open={selectedPack !== null}
+          onOpenChange={(open) => {
+            if (!open) setSelectedPack(null);
+          }}
+          type="coin_pack"
+          targetId={selectedPack.id}
+          title={`Buy ${selectedPack.label}`}
+          description={`Securely purchase ${selectedPack.coinAmount.toLocaleString()} coins credit.`}
+          priceLabel={formatPrice(selectedPack.priceCents, selectedPack.currency)}
+          coinAmount={selectedPack.coinAmount}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ["coin-balance"] });
+            router.refresh();
+          }}
+        />
+      )}
     </div>
   );
 }

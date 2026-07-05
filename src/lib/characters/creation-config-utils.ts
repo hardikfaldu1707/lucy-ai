@@ -28,12 +28,27 @@ export type WizardAppearanceOption = { id: string; label: string; image: string 
 export function optionsToAppearanceList(
   step: CreationStep,
   group?: string | null,
+  style?: string | null,
 ): WizardAppearanceOption[] {
-  return getEnabledOptions(step, group).map((o) => ({
-    id: o.optionKey,
-    label: o.label,
-    image: o.imageUrl,
-  }));
+  let options = getEnabledOptions(step, group);
+
+  if (step.stepKey !== "style") {
+    if (style === "anime") {
+      options = options.filter((o) => !!o.metadata?.imageUrlAnime);
+    } else if (style === "realistic") {
+      options = options.filter((o) => !!o.imageUrl);
+    }
+  }
+
+  return options.map((o) => {
+    const isAnime = style === "anime";
+    const image = isAnime ? (o.metadata?.imageUrlAnime || o.imageUrl) : o.imageUrl;
+    return {
+      id: o.optionKey,
+      label: o.label,
+      image,
+    };
+  });
 }
 
 export function labelFromConfig(

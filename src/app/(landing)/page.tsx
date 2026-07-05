@@ -8,11 +8,11 @@ export default async function HomePage() {
   const { userId } = await auth();
 
   if (userId) {
-    redirect("/homepage");
+    redirect("/home");
   }
 
   const [initialCharacters, offerImageUrl] = await Promise.all([
-    listHomeCharacters(),
+    listHomeCharacters().then((chars) => chars.slice(0, 50)),
     getPlatformAssetUrl("offer-banner"),
   ]);
   return <PublicHomePage initialCharacters={initialCharacters} offerImageUrl={offerImageUrl} />;

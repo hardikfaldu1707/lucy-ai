@@ -4,7 +4,7 @@ export function characterProfilePath(slug: string): string {
 
 export const ROUTES = {
   home: "/",
-  homepage: "/homepage",
+  homepage: "/home",
   features: "/features",
   pricing: "/pricing",
   faq: "/faq",

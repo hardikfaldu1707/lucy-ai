@@ -118,6 +118,7 @@
   body {
     @apply bg-background text-foreground antialiased;
     overscroll-behavior-y: none;
+    -webkit-overflow-scrolling: touch;
   }
   /* Global smooth transitions for interactive elements */
   button, a, input, select, textarea {
@@ -136,6 +137,12 @@
 }
 
 @layer utilities {
+  .accelerate-gpu {
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+    will-change: transform;
+  }
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -206,6 +213,15 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+@keyframes gridTravel {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 0 600px;
   }
 }
 

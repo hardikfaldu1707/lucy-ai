@@ -20,8 +20,11 @@ interface BuilderOptionRowProps {
 }
 
 export function BuilderOptionRow({ option, onChange, onDelete }: BuilderOptionRowProps) {
-  const [uploading, setUploading] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploadingRealistic, setUploadingRealistic] = useState(false);
+  const [uploadingAnime, setUploadingAnime] = useState(false);
+  const fileRealisticRef = useRef<HTMLInputElement>(null);
+  const fileAnimeRef = useRef<HTMLInputElement>(null);
+
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: option.id,
   });
@@ -31,7 +34,7 @@ export function BuilderOptionRow({ option, onChange, onDelete }: BuilderOptionRo
     transition,
   };
 
-  async function handleUpload(file: File) {
+  async function handleUploadRealistic(file: File) {
     if (!isAllowedImageFile(file)) {
       toast.error("Please upload JPEG, PNG, WebP, or GIF");
       return;
@@ -40,18 +43,47 @@ export function BuilderOptionRow({ option, onChange, onDelete }: BuilderOptionRo
       toast.error("Image must be less than 10MB");
       return;
     }
-    setUploading(true);
+    setUploadingRealistic(true);
     try {
       const url = await uploadToR2(
         file,
         resolveCreationConfigUploadOptions(option.optionKey),
       );
       onChange({ imageUrl: url });
-      toast.success("Image uploaded");
+      toast.success("Realistic image uploaded");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Upload failed");
     } finally {
-      setUploading(false);
+      setUploadingRealistic(false);
+    }
+  }
+
+  async function handleUploadAnime(file: File) {
+    if (!isAllowedImageFile(file)) {
+      toast.error("Please upload JPEG, PNG, WebP, or GIF");
+      return;
+    }
+    if (file.size > IMAGE_MAX_UPLOAD_BYTES) {
+      toast.error("Image must be less than 10MB");
+      return;
+    }
+    setUploadingAnime(true);
+    try {
+      const url = await uploadToR2(
+        file,
+        resolveCreationConfigUploadOptions(option.optionKey + "_anime"),
+      );
+      onChange({
+        metadata: {
+          ...option.metadata,
+          imageUrlAnime: url,
+        },
+      });
+      toast.success("Anime image uploaded");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setUploadingAnime(false);
     }
   }
 
@@ -74,15 +106,90 @@ export function BuilderOptionRow({ option, onChange, onDelete }: BuilderOptionRo
         <GripVertical className="h-4 w-4" />
       </button>
 
-      <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-border bg-muted/30">
-        {option.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={option.imageUrl} alt="" className="h-full w-full object-cover" />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-muted-foreground/45 bg-muted/20">
-            <ImageIcon className="h-5 w-5" />
+      {/* Realistic Thumbnail Container */}
+      <div className="flex flex-col items-center gap-1 shrink-0">
+        <span className="text-[9px] font-bold text-muted-foreground/80 tracking-wider uppercase">Realistic</span>
+        <div className="group/img relative h-12 w-12 overflow-hidden rounded-lg border border-border bg-muted/30">
+          {option.imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={option.imageUrl} alt="" className="h-full w-full object-cover" />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-muted-foreground/45 bg-muted/20">
+              <ImageIcon className="h-5 w-5" />
+            </div>
+          )}
+          {/* Hover Overlay */}
+          <div className="absolute inset-0 bg-black/70 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center gap-1">
+            <button
+              type="button"
+              disabled={uploadingRealistic}
+              onClick={() => fileRealisticRef.current?.click()}
+              className="p-1 rounded bg-background/80 hover:bg-background text-foreground transition-colors"
+              title="Upload Realistic"
+            >
+              {uploadingRealistic ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Upload className="h-3 w-3" />
+              )}
+            </button>
+            {option.imageUrl && (
+              <button
+                type="button"
+                onClick={() => onChange({ imageUrl: null })}
+                className="p-1 rounded bg-background/80 hover:bg-destructive hover:text-destructive-foreground text-foreground transition-colors"
+                title="Remove Realistic"
+              >
+                <Trash2 className="h-3 w-3" />
+              </button>
+            )}
           </div>
-        )}
+        </div>
+      </div>
+
+      {/* Anime Thumbnail Container */}
+      <div className="flex flex-col items-center gap-1 shrink-0">
+        <span className="text-[9px] font-bold text-muted-foreground/80 tracking-wider uppercase">Anime</span>
+        <div className="group/img relative h-12 w-12 overflow-hidden rounded-lg border border-border bg-muted/30">
+          {option.metadata?.imageUrlAnime ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={option.metadata.imageUrlAnime} alt="" className="h-full w-full object-cover" />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-muted-foreground/45 bg-muted/20">
+              <ImageIcon className="h-5 w-5" />
+            </div>
+          )}
+          {/* Hover Overlay */}
+          <div className="absolute inset-0 bg-black/70 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center gap-1">
+            <button
+              type="button"
+              disabled={uploadingAnime}
+              onClick={() => fileAnimeRef.current?.click()}
+              className="p-1 rounded bg-background/80 hover:bg-background text-foreground transition-colors"
+              title="Upload Anime"
+            >
+              {uploadingAnime ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Upload className="h-3 w-3" />
+              )}
+            </button>
+            {option.metadata?.imageUrlAnime && (
+              <button
+                type="button"
+                onClick={() => {
+                  const updatedMetadata = { ...option.metadata };
+                  delete updatedMetadata.imageUrlAnime;
+                  onChange({ metadata: updatedMetadata });
+                }}
+                className="p-1 rounded bg-background/80 hover:bg-destructive hover:text-destructive-foreground text-foreground transition-colors"
+                title="Remove Anime"
+              >
+                <Trash2 className="h-3 w-3" />
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="flex flex-1 gap-3 min-w-0">
@@ -118,43 +225,30 @@ export function BuilderOptionRow({ option, onChange, onDelete }: BuilderOptionRo
       </div>
 
       <input
-        ref={fileRef}
+        ref={fileRealisticRef}
         type="file"
         accept="image/*"
         className="hidden"
         onChange={(e) => {
           const file = e.target.files?.[0];
-          if (file) void handleUpload(file);
+          if (file) void handleUploadRealistic(file);
+          e.target.value = "";
+        }}
+      />
+
+      <input
+        ref={fileAnimeRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) void handleUploadAnime(file);
           e.target.value = "";
         }}
       />
 
       <div className="flex items-center gap-1 shrink-0">
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          className="h-8 w-8 text-muted-foreground hover:text-foreground"
-          disabled={uploading}
-          onClick={() => fileRef.current?.click()}
-          aria-label="Upload image"
-        >
-          {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
-        </Button>
-
-        {option.imageUrl && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-            onClick={() => onChange({ imageUrl: null })}
-            aria-label="Remove image"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
-        )}
-
         <Button
           type="button"
           variant="ghost"

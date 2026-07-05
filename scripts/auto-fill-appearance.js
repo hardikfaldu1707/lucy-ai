@@ -104,8 +104,11 @@ async function analyzeImage(avatarUrl) {
 
     const data = await response.json();
     const reply = data.choices?.[0]?.message?.content?.trim() || "";
-    const cleanJsonText = reply.replace(/^```json\s*/i, "").replace(/```$/, "").trim();
-    return JSON.parse(cleanJsonText);
+    const match = reply.match(/\{[\s\S]*\}/);
+    if (!match) {
+      throw new Error(`Failed to find JSON object in reply: ${reply}`);
+    }
+    return JSON.parse(match[0]);
   } catch (err) {
     console.error(`Failed to analyze image ${avatarUrl}:`, err.message);
     return null;

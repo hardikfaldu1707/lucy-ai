@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { AuthenticatedHomePage } from "@/components/home/authenticated-home-page";
 import { listAuthenticatedCatalogCharacters } from "@/lib/data/characters-public";
 
-export default async function HomepageRoute() {
+export default async function HomeRoute() {
   const { userId } = await auth();
 
   if (!userId) {
@@ -11,5 +11,5 @@ export default async function HomepageRoute() {
   }
 
   const initialCharacters = await listAuthenticatedCatalogCharacters(userId);
-  return <AuthenticatedHomePage initialCharacters={initialCharacters} />;
+  return <AuthenticatedHomePage initialCharacters={initialCharacters} page={1} />;
 }

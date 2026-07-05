@@ -37,7 +37,6 @@ import {
   CREATE_HAIR_STYLES,
   CREATE_HAIR_COLORS,
   CREATE_BODY_TYPES,
-  CREATE_OUTFITS,
   type CharacterAppearance,
 } from "@/constants/create-appearance";
 import type { CharacterGalleryItem } from "@/types/gallery";
@@ -163,7 +162,6 @@ export function CharacterForm({
   const [hairStyle, setHairStyle] = useState(initial?.appearance?.hairStyle ?? "");
   const [hairColor, setHairColor] = useState(initial?.appearance?.hairColor ?? "");
   const [bodyType, setBodyType] = useState(initial?.appearance?.bodyType ?? "");
-  const [outfit, setOutfit] = useState(initial?.appearance?.outfit ?? "");
   const [voiceId, setVoiceId] = useState(initial?.voiceId ?? "");
   const [isPublished, setIsPublished] = useState(initial?.isPublished ?? true);
   const [activeTab, setActiveTab] = useState("basics");
@@ -199,7 +197,6 @@ export function CharacterForm({
           hairColor?: string;
           hairStyle?: string;
           bodyType?: string;
-          outfit?: string;
         };
       };
       const app = data.appearance;
@@ -208,7 +205,6 @@ export function CharacterForm({
       if (app.bodyType) setBodyType(app.bodyType);
       if (app.hairStyle) setHairStyle(app.hairStyle);
       if (app.hairColor) setHairColor(app.hairColor);
-      if (app.outfit) setOutfit(app.outfit);
       toast.success("AI auto-filled visual attributes successfully!");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to run AI detection");
@@ -260,7 +256,6 @@ export function CharacterForm({
         ...(hairStyle ? { hairStyle } : {}),
         ...(hairColor ? { hairColor } : {}),
         ...(bodyType ? { bodyType } : {}),
-        ...(outfit ? { outfit } : {}),
       },
       voiceId: voiceId.trim() || null,
       isPublished,
@@ -270,12 +265,10 @@ export function CharacterForm({
   // Dynamically resolve enabled steps and options from CreationConfig
   const ethnicityStep = config?.steps.find((s) => s.stepKey === "ethnicity");
   const bodyStep = config?.steps.find((s) => s.stepKey === "body");
-  const outfitStep = config?.steps.find((s) => s.stepKey === "outfit");
   const hairStep = config?.steps.find((s) => s.stepType === "dual_select");
 
   const ethnicityEnabled = config ? (ethnicityStep?.isEnabled ?? false) : true;
   const bodyEnabled = config ? (bodyStep?.isEnabled ?? false) : true;
-  const outfitEnabled = config ? (outfitStep?.isEnabled ?? false) : true;
   const hairEnabled = config ? (hairStep?.isEnabled ?? false) : true;
 
   const ethnicityOptions = config
@@ -293,10 +286,6 @@ export function CharacterForm({
   const hairColorOptions = config
     ? (hairStep?.options.filter((o) => o.isEnabled && o.optionGroup === "hairColor").map((o) => ({ id: o.optionKey, label: o.label })) ?? [])
     : CREATE_HAIR_COLORS;
-
-  const outfitOptions = config
-    ? (outfitStep?.options.filter((o) => o.isEnabled).map((o) => ({ id: o.optionKey, label: o.label })) ?? [])
-    : CREATE_OUTFITS;
 
   // Live image source for preview card
   const previewImageSrc = resolveCharacterImageUrl(avatarUrl, initial?.id ?? "preview-seed");
@@ -518,15 +507,6 @@ export function CharacterForm({
                             onChange={setHairColor}
                           />
                         </>
-                      )}
-                      {outfitEnabled && (
-                        <AppearanceSelect
-                          id="outfit"
-                          label="Outfit"
-                          value={outfit}
-                          options={outfitOptions}
-                          onChange={setOutfit}
-                        />
                       )}
                     </div>
                   </div>

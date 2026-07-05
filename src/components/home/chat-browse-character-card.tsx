@@ -28,8 +28,8 @@ function CardContent({
       </span>
 
       <div className="absolute inset-x-0 bottom-0 p-4">
-        <h3 className="text-xl font-bold text-white sm:text-2xl">
-          {character.name}, {character.age}
+        <h3 className="font-display font-medium text-2xl text-white sm:text-3xl">
+          {character.name}, <span className="font-sans font-semibold text-white/70 text-[0.85em]">{character.age}</span>
         </h3>
         <div className="mt-2 flex flex-wrap gap-1.5">
           {character.tags.slice(0, 4).map((tag) => (
@@ -51,7 +51,7 @@ export function ChatBrowseCharacterCard({ character, priority }: ChatBrowseChara
     "group relative block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500 focus-visible:ring-offset-2 focus-visible:ring-offset-black";
 
   return (
-    <article className="overflow-hidden rounded-2xl transition-transform duration-200 ease-out hover:scale-[1.02] motion-reduce:transform-none sm:rounded-3xl">
+    <article className="overflow-hidden rounded-2xl transition-transform duration-200 ease-out hover:scale-[1.02] motion-reduce:transform-none sm:rounded-3xl accelerate-gpu">
       <Link
         href={ROUTES.publicChatWithCharacter(character.id)}
         className={linkClass}
