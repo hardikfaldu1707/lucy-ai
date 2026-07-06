@@ -125,7 +125,6 @@ export const DASHBOARD_NAV = [
   { title: "Voice", href: ROUTES.voice, icon: "Phone" },
   { title: "Memory", href: ROUTES.memory, icon: "Brain" },
   { title: "Subscription", href: ROUTES.subscription, icon: "CreditCard" },
-  { title: "Profile", href: ROUTES.profile, icon: "User" },
   { title: "Settings", href: ROUTES.settings, icon: "Settings" },
 ] as const;
 

@@ -82,6 +82,7 @@ export function DashboardSidebar() {
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch
                 className={cn(
                   "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 active:scale-98",
                   active
@@ -151,7 +152,7 @@ export function DashboardSidebar() {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Link
-                    href={ROUTES.profile}
+                    href={ROUTES.settings}
                     className="flex h-10 w-10 items-center justify-center rounded-xl bg-sidebar-accent/20 hover:bg-sidebar-accent/50 border border-sidebar-border/35 transition-colors"
                   >
                     <Avatar className="h-7 w-7 border border-sidebar-border/40">
@@ -170,7 +171,7 @@ export function DashboardSidebar() {
             </TooltipProvider>
           ) : (
             <div className="flex flex-1 items-center gap-2.5 min-w-0 rounded-xl p-1.5 bg-sidebar-accent/20 border border-sidebar-border/20">
-              <Link href={ROUTES.profile} className="shrink-0">
+              <Link href={ROUTES.settings} className="shrink-0">
                 <Avatar className="h-7 w-7 border border-sidebar-border/40 transition-transform hover:scale-105">
                   <AvatarImage src={user?.imageUrl} alt={displayName} />
                   <AvatarFallback className="text-[10px] bg-pink-500/10 text-pink-500">{initials}</AvatarFallback>
