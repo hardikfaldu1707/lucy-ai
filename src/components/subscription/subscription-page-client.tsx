@@ -71,7 +71,7 @@ export function SubscriptionPageClient({
       />
 
       <Tabs defaultValue={defaultTab} className="space-y-6">
-        <TabsList>
+        <TabsList className="max-w-full overflow-x-auto justify-start no-scrollbar flex w-full">
           <TabsTrigger value="plan">Your plan</TabsTrigger>
           <TabsTrigger value="upgrade">Upgrade</TabsTrigger>
           <TabsTrigger value="coins">Buy coins</TabsTrigger>

@@ -42,7 +42,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   }
 
   return (
-    <div className="flex h-dvh overflow-hidden bg-background">
+    <div className="flex h-dvh overflow-hidden bg-black text-white relative">
       <CoinBalanceHydrator balance={coinBalance} />
       <OnboardingGate />
       <SignupCongratsModal />
@@ -51,7 +51,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <MobileNav />
       <div className="flex flex-1 flex-col overflow-hidden">
         <DashboardTopNav />
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6">{children}</main>
       </div>
     </div>
   );
