@@ -108,8 +108,9 @@ const nextConfig: NextConfig = {
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: imageRemotePatterns,
-    // Avoid Next image optimizer upstream timeouts to R2 during local dev.
-    unoptimized: isDev,
+    // Bypass Vercel's image optimizer limits in production by disabling it.
+    // Images will load directly from R2/remote host.
+    unoptimized: true,
   },
 };
 
