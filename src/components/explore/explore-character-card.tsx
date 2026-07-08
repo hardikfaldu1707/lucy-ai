@@ -97,7 +97,8 @@ export const ExploreCharacterCard = memo(function ExploreCharacterCard({
   useEffect(() => {
     const saved = localStorage.getItem(`fav-${character.id}`);
     if (saved === "true") {
-      setIsFavorite(true);
+      const id = requestAnimationFrame(() => setIsFavorite(true));
+      return () => cancelAnimationFrame(id);
     }
   }, [character.id]);
 

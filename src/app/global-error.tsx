@@ -15,7 +15,7 @@ export default function GlobalError({
   }, [error]);
 
   return (
-    <html lang="en">
+    <html lang="en" data-scroll-behavior="smooth">
       <body className="flex min-h-screen items-center justify-center bg-background p-8 font-sans">
         <ErrorState
           title="Something went wrong"

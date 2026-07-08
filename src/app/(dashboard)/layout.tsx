@@ -4,9 +4,6 @@ import { DashboardSidebar } from "@/components/layout/dashboard-sidebar";
 import { DashboardTopNav } from "@/components/layout/dashboard-top-nav";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { BannedNotice } from "@/components/shared/banned-notice";
-import { CoinBalanceHydrator } from "@/components/shared/coin-balance-hydrator";
-import { getBalanceForProfile } from "@/lib/data/coins";
-import { ensureProfile } from "@/lib/ensure-profile";
 import { createServerSupabase } from "@/lib/supabase/server";
 
 const OnboardingGate = dynamic(
@@ -21,7 +18,6 @@ const SignupCongratsModal = dynamic(
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { userId } = await auth();
-  let coinBalance: number | undefined;
 
   if (userId) {
     const { data } = await createServerSupabase()
@@ -32,18 +28,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
     if (data?.is_banned) {
       return <BannedNotice reason={data.banned_reason} />;
     }
-
-    try {
-      await ensureProfile();
-      coinBalance = await getBalanceForProfile(userId);
-    } catch {
-      // Supabase not configured
-    }
   }
 
   return (
     <div className="flex h-dvh overflow-hidden bg-black text-white relative">
-      <CoinBalanceHydrator balance={coinBalance} />
       <OnboardingGate />
       <SignupCongratsModal />
       <PushSubscribePrompt />

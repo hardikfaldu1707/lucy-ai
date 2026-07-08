@@ -5,23 +5,28 @@ import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
-  ChevronLeft,
-  ChevronRight,
   Compass,
-  Crown,
   Menu,
   MessageCircle,
   Plus,
+  PlusCircle,
   UserCircle,
+  Crown,
   X,
   Home,
   Star,
   User,
+  HelpCircle,
+  FileText,
+  Shield,
+  Mail,
+  MoreHorizontal,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { LandingNavIcon } from "@/components/icons/animated-nav-icon";
 import { Show, SignInButton, SignUpButton, useAuth, UserButton } from "@clerk/nextjs";
 import { LogoMark } from "@/components/shared/logo";
-import { CoinBalanceBadge } from "@/components/shared/coin-balance-badge";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ROUTES, signInHrefForCreate } from "@/constants/routes";
@@ -29,6 +34,14 @@ import { isImmersiveChatRoute } from "@/lib/chat-route-utils";
 import { useUIStore } from "@/store/ui-store";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, m } from "framer-motion";
+import { UserMenu } from "./user-menu";
+import { useCoinBalance } from "@/hooks/use-coin-balance";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 type NavItem = {
   label: string;
@@ -41,7 +54,7 @@ const PUBLIC_NAV_ITEMS: NavItem[] = [
   { label: "Create", icon: Plus, href: ROUTES.create },
   { label: "Explore", icon: Compass, href: ROUTES.explore },
   { label: "Chat", icon: MessageCircle, href: ROUTES.publicChat },
-  { label: "Profile", icon: UserCircle, href: ROUTES.dashboard },
+  { label: "Profile", icon: UserCircle, href: ROUTES.dashboard, badge: "NEW" },
   { label: "Premium", icon: Crown, href: ROUTES.pricing, badge: "70%" },
 ];
 
@@ -49,7 +62,7 @@ const SIGNED_IN_NAV_ITEMS: NavItem[] = [
   { label: "Create", icon: Plus, href: ROUTES.create },
   { label: "Explore", icon: Compass, href: ROUTES.explore },
   { label: "Chat", icon: MessageCircle, href: ROUTES.publicChat },
-  { label: "Profile", icon: UserCircle, href: ROUTES.dashboard },
+  { label: "Profile", icon: UserCircle, href: ROUTES.dashboard, badge: "NEW" },
   { label: "Premium", icon: Crown, href: ROUTES.pricing, badge: "70%" },
 ];
 
@@ -65,6 +78,7 @@ function createNavHref(isSignedIn: boolean): string {
   return isSignedIn ? ROUTES.create : signInHrefForCreate();
 }
 
+// Custom route active checks to match your original configuration
 function isNavActive(pathname: string, href: string) {
   if (href === ROUTES.home) return pathname === ROUTES.home;
   if (href === ROUTES.publicChat) return pathname.startsWith("/chat");
@@ -84,6 +98,8 @@ function SidebarContent({
   const { isSignedIn } = useAuth();
   const navItems = isSignedIn ? SIGNED_IN_NAV_ITEMS : PUBLIC_NAV_ITEMS;
   const isDrawer = layout === "drawer";
+  const { data: balance } = useCoinBalance();
+  const displayBalance = isSignedIn ? (balance === undefined ? "…" : balance.toLocaleString()) : "0";
 
   if (isDrawer) {
     return (
@@ -99,7 +115,17 @@ function SidebarContent({
             <span className="text-sm font-semibold text-white">Lucy AI</span>
           </Link>
           {isSignedIn ? (
-            <CoinBalanceBadge variant="compact" />
+            <div className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-medium text-white">
+              <span className="tabular-nums">{displayBalance}</span>
+              <Link
+                href={ROUTES.pricing}
+                onClick={onNavigate}
+                className="flex h-5 w-5 items-center justify-center rounded-full bg-pink-500 text-[10px] font-bold text-white hover:bg-pink-400"
+                aria-label="Get more coins"
+              >
+                +
+              </Link>
+            </div>
           ) : (
             <div className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-medium text-white">
               <span>0</span>
@@ -190,134 +216,170 @@ function SidebarContent({
     );
   }
 
+  // Desktop rail view
   return (
     <>
       <Link
         href={isSignedIn ? ROUTES.homepage : ROUTES.home}
-        className={cn("mb-3 flex flex-col items-center gap-1", collapsed && "mb-2")}
+        className="mb-6 flex flex-col items-center gap-1"
         onClick={onNavigate}
         aria-label="Lucy AI home"
       >
         <LogoMark
-          size={collapsed ? 30 : 36}
-          className="shadow-md shadow-purple-500/20"
+          size={42}
+          className="transition-transform duration-300 hover:scale-105"
         />
       </Link>
 
-      {!collapsed && (
-        <div className="mb-2">
-          {isSignedIn ? (
-            <CoinBalanceBadge variant="compact" />
-          ) : (
-            <div className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-xs font-medium text-white">
-              <span>0</span>
-              <Link
-                href={ROUTES.pricing}
-                onClick={onNavigate}
-                className="flex h-5 w-5 items-center justify-center rounded-full bg-pink-500 text-[10px] font-bold text-white hover:bg-pink-400"
-                aria-label="Get more coins"
-              >
-                +
-              </Link>
-            </div>
-          )}
-        </div>
-      )}
+      <div className="mb-6 flex justify-center">
+        <Link
+          href={ROUTES.pricing}
+          onClick={onNavigate}
+          className="flex h-8 items-center justify-between gap-2.5 rounded-full border border-white/10 bg-zinc-900/60 pl-3.5 pr-1 py-1 text-xs font-semibold text-white transition-all duration-200 hover:bg-zinc-800/80 hover:border-white/20 active:scale-95"
+          aria-label="Coin balance"
+        >
+          <span className="tabular-nums font-bold tracking-tight text-[11px] min-w-[12px] text-center">{displayBalance}</span>
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-r from-pink-500 to-fuchsia-600 text-xs font-bold text-white shadow-sm shadow-pink-500/20">
+            +
+          </span>
+        </Link>
+      </div>
 
-      <nav className="flex-1 w-full flex flex-col items-center gap-2.5 py-1" aria-label="Main">
+      <nav className="flex-1 w-full flex flex-col items-center gap-6 py-2" aria-label="Main">
         {navItems.map((item) => {
           const active = isNavActive(pathname, item.href);
           const href = item.label === "Create" ? createNavHref(Boolean(isSignedIn)) : item.href;
-          const link = (
-            <Link
-              href={href}
-              prefetch
-              onClick={onNavigate}
-              className={cn(
-                "group flex flex-col items-center gap-0.5 text-[10px] transition-colors",
-                active ? "text-pink-400" : "text-white/60 hover:text-white",
-                collapsed && "gap-0",
-              )}
-              aria-label={collapsed ? item.label : undefined}
-            >
-              <span
-                className={cn(
-                  "flex h-8.5 w-8.5 items-center justify-center rounded-xl transition-colors group-hover:bg-white/10",
-                  active && "bg-pink-500/15",
-                )}
-              >
-                <LandingNavIcon label={item.label} className="h-4.5 w-4.5" />
-              </span>
-              {!collapsed && item.label}
-            </Link>
-          );
-
-          if (collapsed) {
-            return (
-              <div key={item.label} className="relative flex flex-col items-center">
-                {item.badge && (
-                  <span className="absolute -top-1 z-10 rounded bg-pink-500 px-1 py-0.5 text-[8px] font-bold leading-none text-white">
-                    {item.badge}
-                  </span>
-                )}
-                <Tooltip>
-                  <TooltipTrigger asChild>{link}</TooltipTrigger>
-                  <TooltipContent side="right">{item.label}</TooltipContent>
-                </Tooltip>
-              </div>
-            );
-          }
+          const Icon = item.icon;
 
           return (
-            <div key={item.label} className="relative flex flex-col items-center">
-              {item.badge && (
-                <span className="absolute -top-1 z-10 rounded bg-pink-500 px-1 py-0.5 text-[8px] font-bold leading-none text-white">
-                  {item.badge}
-                </span>
+            <div key={item.label} className="w-full flex flex-col items-center animate-fade-in">
+              {item.label === "Premium" && (
+                <div className="w-8 h-[1px] bg-white/10 mb-6" />
               )}
-              {link}
+
+              <Link
+                href={href}
+                prefetch
+                onClick={onNavigate}
+                className={cn(
+                  "group relative flex flex-col items-center justify-center gap-1.5 transition-all duration-200 active:scale-95",
+                  active ? "text-pink-400 font-semibold" : "text-white/60 hover:text-white"
+                )}
+              >
+                <div className="relative flex items-center justify-center">
+                  {item.badge && (
+                    <span
+                      className={cn(
+                        "absolute -top-1.5 -right-5 z-10 rounded-full px-1.5 py-0.5 text-[8px] font-extrabold uppercase leading-none text-white shadow-sm shadow-pink-500/20",
+                        item.badge === "NEW" ? "bg-pink-500" : "bg-gradient-to-r from-pink-500 to-fuchsia-600"
+                      )}
+                    >
+                      {item.badge}
+                    </span>
+                  )}
+
+                  <LandingNavIcon
+                    label={item.label}
+                    className={cn(
+                      "h-[18px] w-[18px] shrink-0 transition-transform duration-200 group-hover:scale-105",
+                      active ? "text-pink-400" : "text-white/60 group-hover:text-white"
+                    )}
+                  />
+                </div>
+
+                <span className="text-[11px] font-medium tracking-wide font-sans mt-0.5">
+                  {item.label}
+                </span>
+              </Link>
             </div>
           );
         })}
       </nav>
 
-      <div className="mt-auto flex w-full flex-col items-center gap-2 pb-1">
+      <div className="mt-auto flex w-full flex-col items-center gap-4 pb-2">
         <Show when="signed-out">
-          {!collapsed && (
+          <div className="flex flex-col items-center gap-3.5">
             <SignInButton forceRedirectUrl={ROUTES.homepage} fallbackRedirectUrl={ROUTES.homepage}>
               <button
                 type="button"
                 onClick={onNavigate}
-                className="text-[10px] font-medium text-white/80 hover:text-white"
+                className="text-[13px] font-medium text-white/80 hover:text-white transition-colors"
               >
-                Sign in
+                Sign In
               </button>
             </SignInButton>
-          )}
-          <SignUpButton forceRedirectUrl={ROUTES.homepage} fallbackRedirectUrl={ROUTES.homepage}>
-            <Button
-              onClick={onNavigate}
-              className={cn(
-                "rounded-full bg-gradient-to-r from-pink-500 to-fuchsia-600 font-bold text-white shadow-md shadow-pink-500/25 transition-all duration-200 hover:from-pink-400 hover:to-fuchsia-500 active:scale-95",
-                collapsed ? "h-8 w-8 p-0 flex items-center justify-center" : "my-0.5 h-8 w-[72px] text-[10px] px-1 tracking-tight uppercase"
-              )}
-              aria-label={collapsed ? "Join free" : undefined}
-            >
-              {collapsed ? <Plus className="h-4 w-4" /> : "Join Free"}
-            </Button>
-          </SignUpButton>
+            <SignUpButton forceRedirectUrl={ROUTES.homepage} fallbackRedirectUrl={ROUTES.homepage}>
+              <Button
+                onClick={onNavigate}
+                className="h-8 w-[76px] rounded-full bg-gradient-to-r from-pink-500 to-fuchsia-600 text-[10px] font-bold text-white shadow-md shadow-pink-500/25 transition-all duration-200 hover:from-pink-400 hover:to-fuchsia-500 active:scale-95 px-1 tracking-tight uppercase"
+              >
+                Join Free
+              </Button>
+            </SignUpButton>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="text-white/45 hover:text-white transition-colors p-1" aria-label="More menu">
+                  <MoreHorizontal className="h-4 w-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="center" side="right" className="w-40 bg-zinc-950 border-white/10 text-white">
+                <DropdownMenuItem asChild>
+                  <Link href={ROUTES.faq} className="cursor-pointer flex items-center gap-2 text-xs">
+                    <HelpCircle className="h-3.5 w-3.5" /> FAQ
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href={ROUTES.contact} className="cursor-pointer flex items-center gap-2 text-xs">
+                    <Mail className="h-3.5 w-3.5" /> Contact
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href={ROUTES.terms} className="cursor-pointer flex items-center gap-2 text-xs">
+                    <FileText className="h-3.5 w-3.5" /> Terms
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href={ROUTES.privacy} className="cursor-pointer flex items-center gap-2 text-xs">
+                    <Shield className="h-3.5 w-3.5" /> Privacy
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </Show>
         <Show when="signed-in">
-          {!collapsed && (
-            <Link
-              href={ROUTES.dashboard}
-              onClick={onNavigate}
-              className="text-[10px] font-medium text-white/80 hover:text-white"
-            >
-              Profile
-            </Link>
-          )}
-          <UserButton />
+          <div className="flex flex-col items-center gap-3.5">
+            <UserMenu />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="text-white/45 hover:text-white transition-colors p-1" aria-label="More menu">
+                  <MoreHorizontal className="h-4 w-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="center" side="right" className="w-40 bg-zinc-950 border-white/10 text-white">
+                <DropdownMenuItem asChild>
+                  <Link href={ROUTES.faq} className="cursor-pointer flex items-center gap-2 text-xs">
+                    <HelpCircle className="h-3.5 w-3.5" /> FAQ
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href={ROUTES.contact} className="cursor-pointer flex items-center gap-2 text-xs">
+                    <Mail className="h-3.5 w-3.5" /> Contact
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href={ROUTES.terms} className="cursor-pointer flex items-center gap-2 text-xs">
+                    <FileText className="h-3.5 w-3.5" /> Terms
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href={ROUTES.privacy} className="cursor-pointer flex items-center gap-2 text-xs">
+                    <Shield className="h-3.5 w-3.5" /> Privacy
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </Show>
       </div>
     </>
@@ -359,12 +421,9 @@ export function LandingSidebar() {
   const pathname = usePathname();
   const { isSignedIn } = useAuth();
   const {
-    landingNavCollapsed,
-    toggleLandingNav,
     landingMobileMenuOpen,
     setLandingMobileMenuOpen,
   } = useUIStore();
-  const navItems = isSignedIn ? SIGNED_IN_NAV_ITEMS : PUBLIC_NAV_ITEMS;
   const hideBottomNav =
     isImmersiveChatRoute(pathname) ||
     pathname === ROUTES.create ||
@@ -386,29 +445,12 @@ export function LandingSidebar() {
 
   return (
     <TooltipProvider delayDuration={0}>
-      {/* Desktop sidebar — always visible; collapsed = slim icon rail */}
+      {/* Desktop sidebar — always visible, fixed width matching design */}
       <aside
-        className={cn(
-          "fixed left-0 top-0 z-40 hidden h-screen flex-col items-center border-r border-white/5 bg-black py-4 transition-[width] duration-300 md:flex",
-          landingNavCollapsed ? "w-14 px-1" : "w-[88px] py-6",
-        )}
+        className="fixed left-0 top-0 z-40 hidden h-screen w-[92px] flex-col items-center border-r border-white/5 bg-black py-6 md:flex"
         aria-label="Sidebar"
       >
-        <SidebarContent collapsed={landingNavCollapsed} />
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="mt-3 h-8 w-8 shrink-0 text-white/50 hover:bg-white/10 hover:text-white"
-          onClick={toggleLandingNav}
-          aria-label={landingNavCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          {landingNavCollapsed ? (
-            <ChevronRight className="h-4 w-4" aria-hidden />
-          ) : (
-            <ChevronLeft className="h-4 w-4" aria-hidden />
-          )}
-        </Button>
+        <SidebarContent collapsed={false} />
       </aside>
 
       {/* Mobile top bar */}

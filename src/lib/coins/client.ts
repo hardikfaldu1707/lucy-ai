@@ -1,7 +1,19 @@
 export const COIN_BALANCE_QUERY_KEY = ["coins", "balance"] as const;
 
-export async function fetchCoinBalance(): Promise<number> {
-  const res = await fetch("/api/coins/balance", { credentials: "include" });
+export async function fetchCoinBalance(token?: string | null): Promise<number> {
+  const headers: Record<string, string> = {
+    "Cache-Control": "no-cache, no-store, must-revalidate",
+    "Pragma": "no-cache",
+  };
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const res = await fetch(`/api/coins/balance?t=${Date.now()}`, {
+    credentials: "include",
+    headers,
+  });
   if (!res.ok) {
     if (res.status === 401) {
       throw new Error("Unauthorized");

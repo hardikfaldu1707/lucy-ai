@@ -31,9 +31,15 @@ export function useSpeechDictation({
   const [errorKind, setErrorKind] = useState<DictationErrorKind>(null);
   const [interimText, setInterimText] = useState("");
   const [showPermissionPrompt, setShowPermissionPrompt] = useState(false);
-  const [isSupported] = useState(() =>
-    typeof window !== "undefined" ? isSpeechRecognitionSupported() : false,
-  );
+  const [isSupported, setIsSupported] = useState(false);
+
+  useEffect(() => {
+    const supported = isSpeechRecognitionSupported();
+    if (supported) {
+      const id = requestAnimationFrame(() => setIsSupported(true));
+      return () => cancelAnimationFrame(id);
+    }
+  }, []);
 
   const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
   const listeningRef = useRef(false);

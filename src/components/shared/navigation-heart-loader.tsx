@@ -23,7 +23,7 @@ function isInternalNavigationLink(anchor: HTMLAnchorElement, currentPath: string
   return next !== current;
 }
 
-const SHOW_DELAY_MS = 300;
+const SHOW_DELAY_MS = 800;
 
 function isAdminRoute(path: string): boolean {
   return path.startsWith("/admin");

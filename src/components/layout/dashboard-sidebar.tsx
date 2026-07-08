@@ -15,6 +15,60 @@ import { DASHBOARD_NAV, ROUTES } from "@/constants/routes";
 import { useUIStore } from "@/store/ui-store";
 import { cn } from "@/lib/utils";
 import { NavIcon } from "./nav-icon";
+import { memo, useCallback } from "react";
+
+function NavItem({
+  item,
+  active,
+  collapsed,
+}: {
+  item: { title: string; href: string; icon: string };
+  active: boolean;
+  collapsed: boolean;
+}) {
+  const link = (
+    <Link
+      key={item.href}
+      href={item.href}
+      prefetch
+      className={cn(
+        "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 active:scale-98",
+        active
+          ? "bg-gradient-to-r from-pink-500/10 to-fuchsia-500/10 text-pink-500 dark:text-pink-400 font-semibold shadow-sm border-l-2 border-pink-500 rounded-l-none pl-2.5"
+          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/40 hover:text-sidebar-foreground hover:translate-x-0.5",
+        collapsed && "justify-center px-2 hover:translate-x-0 rounded-xl border-l-0 pl-2"
+      )}
+      aria-current={active ? "page" : undefined}
+    >
+      <NavIcon
+        name={item.icon}
+        className={cn(
+          "h-5 w-5 shrink-0 transition-transform duration-300 group-hover:scale-110",
+          active ? "text-pink-500 dark:text-pink-400" : "text-sidebar-foreground/50 group-hover:text-sidebar-foreground"
+        )}
+      />
+      {!collapsed && (
+        <span className="transition-colors duration-200">
+          {item.title}
+        </span>
+      )}
+    </Link>
+  );
+
+  if (collapsed) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>{link}</TooltipTrigger>
+        <TooltipContent side="right" className="bg-popover text-popover-foreground border border-border">
+          {item.title}
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+  return link;
+}
+
+const MemoizedNavItem = memo(NavItem);
 
 export function DashboardSidebar() {
   const pathname = usePathname();
@@ -26,7 +80,7 @@ export function DashboardSidebar() {
   const email = user?.primaryEmailAddress?.emailAddress ?? "";
   const initials = displayName.slice(0, 2).toUpperCase();
 
-  const handleSignOut = async () => {
+  const handleSignOut = useCallback(async () => {
     try {
       localStorage.clear();
       sessionStorage.clear();
@@ -54,7 +108,7 @@ export function DashboardSidebar() {
     }
 
     await signOut({ redirectUrl: ROUTES.home });
-  };
+  }, [signOut]);
 
   return (
     <aside
@@ -77,47 +131,15 @@ export function DashboardSidebar() {
               item.href === "/dashboard"
                 ? pathname === "/dashboard"
                 : pathname === item.href || pathname.startsWith(item.href + "/");
-            
-            const link = (
-              <Link
-                key={item.href}
-                href={item.href}
-                prefetch
-                className={cn(
-                  "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 active:scale-98",
-                  active
-                    ? "bg-gradient-to-r from-pink-500/10 to-fuchsia-500/10 text-pink-500 dark:text-pink-400 font-semibold shadow-sm border-l-2 border-pink-500 rounded-l-none pl-2.5"
-                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent/40 hover:text-sidebar-foreground hover:translate-x-0.5",
-                  sidebarCollapsed && "justify-center px-2 hover:translate-x-0 rounded-xl border-l-0 pl-2"
-                )}
-                aria-current={active ? "page" : undefined}
-              >
-                <NavIcon
-                  name={item.icon}
-                  className={cn(
-                    "h-5 w-5 shrink-0 transition-transform duration-300 group-hover:scale-110",
-                    active ? "text-pink-500 dark:text-pink-400" : "text-sidebar-foreground/50 group-hover:text-sidebar-foreground"
-                  )}
-                />
-                {!sidebarCollapsed && (
-                  <span className="transition-colors duration-200">
-                    {item.title}
-                  </span>
-                )}
-              </Link>
-            );
 
-            if (sidebarCollapsed) {
-              return (
-                <Tooltip key={item.href}>
-                  <TooltipTrigger asChild>{link}</TooltipTrigger>
-                  <TooltipContent side="right" className="bg-popover text-popover-foreground border border-border">
-                    {item.title}
-                  </TooltipContent>
-                </Tooltip>
-              );
-            }
-            return link;
+            return (
+              <MemoizedNavItem
+                key={item.href}
+                item={item}
+                active={active}
+                collapsed={sidebarCollapsed}
+              />
+            );
           })}
         </nav>
       </TooltipProvider>

@@ -96,15 +96,14 @@ export async function ensureProfile(opts?: EnsureProfileOptions): Promise<string
   const { userId } = await auth();
   if (!userId) return null;
 
-  const exists = await profileRowExists(userId);
-  const cachedExists = exists ? true : await cachedProfileExists(userId);
+  const cachedExists = await cachedProfileExists(userId);
 
-  if (!exists || !cachedExists) {
-    await seedProfileRows(userId);
-  } else {
-    await supabaseAdmin()
-      .from("user_settings")
-      .upsert({ profile_id: userId }, { onConflict: "profile_id" });
+  if (!cachedExists) {
+    // Check DB directly in case of cache lag
+    const exists = await profileRowExists(userId);
+    if (!exists) {
+      await seedProfileRows(userId);
+    }
   }
 
   if (!opts?.skipAllowance) {

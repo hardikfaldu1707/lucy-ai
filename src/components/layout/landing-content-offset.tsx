@@ -30,7 +30,7 @@ export function LandingContentOffset({ children }: { children: React.ReactNode }
   return (
     <div
       className={cn(
-        landingNavCollapsed ? "md:pl-14" : "md:pl-[88px]",
+        "md:pl-[92px]",
         isChatRoute && "flex h-dvh min-h-dvh min-h-0 flex-col overflow-hidden",
         !isChatRoute &&
           cn(
