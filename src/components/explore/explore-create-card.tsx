@@ -19,6 +19,7 @@ export function ExploreCreateCard() {
           fill
           className="object-cover object-center transition-transform duration-300 motion-reduce:transition-none group-hover:scale-[1.02]"
           sizes="20vw"
+          priority
           aria-hidden
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />

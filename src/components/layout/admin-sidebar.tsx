@@ -20,7 +20,7 @@ export function AdminSidebar() {
       <div className="flex h-16 shrink-0 items-center px-4">
         <Logo />
         <span
-          className="ml-2 rounded-lg bg-primary/15 px-2 py-0.5 text-xs font-medium text-primary"
+          className="ml-2 rounded-lg bg-pink-500/10 border border-pink-500/10 px-2 py-0.5 text-[10px] font-bold text-pink-500 uppercase tracking-wider"
           translate="no"
         >
           Admin

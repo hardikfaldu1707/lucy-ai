@@ -215,7 +215,7 @@ export function ChatInput({
       className={cn(
         "shrink-0 border-t backdrop-blur-xl",
         isDark
-          ? "border-white/10 bg-[#0a0a0a]/95"
+          ? "border-white/5 bg-[#0a0a0a]/80"
           : "border-border bg-background/80",
       )}
     >
@@ -258,7 +258,7 @@ export function ChatInput({
           className={cn(
             "mx-auto flex max-w-3xl items-end gap-1 rounded-[1.35rem] border p-1.5 sm:gap-1.5 sm:p-2",
             isDark
-              ? "border-white/[0.08] bg-white/[0.04]"
+              ? "border-white/5 bg-white/[0.02] focus-within:border-pink-500/30 focus-within:ring-1 focus-within:ring-pink-500/20 transition-all duration-200"
               : "border-border bg-muted/30",
           )}
         >

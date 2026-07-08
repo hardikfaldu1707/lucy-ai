@@ -14,6 +14,9 @@ import {
   Plus,
   UserCircle,
   X,
+  Home,
+  Star,
+  User,
 } from "lucide-react";
 import { LandingNavIcon } from "@/components/icons/animated-nav-icon";
 import { Show, SignInButton, SignUpButton, useAuth, UserButton } from "@clerk/nextjs";
@@ -25,6 +28,7 @@ import { ROUTES, signInHrefForCreate } from "@/constants/routes";
 import { isImmersiveChatRoute } from "@/lib/chat-route-utils";
 import { useUIStore } from "@/store/ui-store";
 import { cn } from "@/lib/utils";
+import { AnimatePresence, m } from "framer-motion";
 
 type NavItem = {
   label: string;
@@ -47,6 +51,14 @@ const SIGNED_IN_NAV_ITEMS: NavItem[] = [
   { label: "Chat", icon: MessageCircle, href: ROUTES.publicChat },
   { label: "Profile", icon: UserCircle, href: ROUTES.dashboard },
   { label: "Premium", icon: Crown, href: ROUTES.pricing, badge: "70%" },
+];
+
+const MOBILE_BOTTOM_NAV_ITEMS = [
+  { label: "Explore", icon: Home, href: ROUTES.explore },
+  { label: "Chat", icon: MessageCircle, href: ROUTES.publicChat },
+  { label: "Create", icon: Plus, href: ROUTES.create, isCenter: true },
+  { label: "Profile", icon: User, href: ROUTES.dashboard },
+  { label: "Premium", icon: Star, href: ROUTES.pricing },
 ];
 
 function createNavHref(isSignedIn: boolean): string {
@@ -111,6 +123,7 @@ function SidebarContent({
               <Link
                 key={item.label}
                 href={href}
+                prefetch
                 onClick={onNavigate}
                 className={cn(
                   "flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
@@ -140,7 +153,7 @@ function SidebarContent({
 
         <div className="mt-4 flex shrink-0 flex-col gap-2 border-t border-white/10 pt-4">
           <Show when="signed-out">
-            <SignInButton forceRedirectUrl={ROUTES.home} fallbackRedirectUrl={ROUTES.home}>
+            <SignInButton forceRedirectUrl={ROUTES.homepage} fallbackRedirectUrl={ROUTES.homepage}>
               <button
                 type="button"
                 onClick={onNavigate}
@@ -149,10 +162,10 @@ function SidebarContent({
                 Sign in
               </button>
             </SignInButton>
-            <SignUpButton forceRedirectUrl={ROUTES.home} fallbackRedirectUrl={ROUTES.home}>
+            <SignUpButton forceRedirectUrl={ROUTES.homepage} fallbackRedirectUrl={ROUTES.homepage}>
               <Button
                 onClick={onNavigate}
-                className="h-11 w-full rounded-full bg-gradient-to-r from-pink-500 to-fuchsia-600 text-sm font-semibold text-white shadow-lg shadow-pink-500/40 hover:from-pink-400 hover:to-fuchsia-500"
+                className="h-11 w-full rounded-full bg-gradient-to-r from-pink-500 to-fuchsia-600 text-sm font-semibold text-white shadow-lg shadow-pink-500/30 transition-all duration-200 hover:from-pink-400 hover:to-fuchsia-500 active:scale-98"
               >
                 Join Free
               </Button>
@@ -180,23 +193,23 @@ function SidebarContent({
   return (
     <>
       <Link
-        href={ROUTES.home}
-        className={cn("mb-6 flex flex-col items-center gap-1", collapsed && "mb-4")}
+        href={isSignedIn ? ROUTES.homepage : ROUTES.home}
+        className={cn("mb-3 flex flex-col items-center gap-1", collapsed && "mb-2")}
         onClick={onNavigate}
         aria-label="Lucy AI home"
       >
         <LogoMark
-          size={collapsed ? 36 : 44}
-          className="shadow-lg shadow-purple-500/30"
+          size={collapsed ? 30 : 36}
+          className="shadow-md shadow-purple-500/20"
         />
       </Link>
 
       {!collapsed && (
-        <div className="mb-4">
+        <div className="mb-2">
           {isSignedIn ? (
             <CoinBalanceBadge variant="compact" />
           ) : (
-            <div className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-medium text-white">
+            <div className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-xs font-medium text-white">
               <span>0</span>
               <Link
                 href={ROUTES.pricing}
@@ -211,16 +224,17 @@ function SidebarContent({
         </div>
       )}
 
-      <nav className="flex flex-1 flex-col items-center gap-4" aria-label="Main">
+      <nav className="flex-1 w-full flex flex-col items-center gap-2.5 py-1" aria-label="Main">
         {navItems.map((item) => {
           const active = isNavActive(pathname, item.href);
           const href = item.label === "Create" ? createNavHref(Boolean(isSignedIn)) : item.href;
           const link = (
             <Link
               href={href}
+              prefetch
               onClick={onNavigate}
               className={cn(
-                "group flex flex-col items-center gap-1 text-[11px] transition-colors",
+                "group flex flex-col items-center gap-0.5 text-[10px] transition-colors",
                 active ? "text-pink-400" : "text-white/60 hover:text-white",
                 collapsed && "gap-0",
               )}
@@ -228,12 +242,11 @@ function SidebarContent({
             >
               <span
                 className={cn(
-                  "flex h-10 w-10 items-center justify-center rounded-xl transition-colors group-hover:bg-white/10",
+                  "flex h-8.5 w-8.5 items-center justify-center rounded-xl transition-colors group-hover:bg-white/10",
                   active && "bg-pink-500/15",
-                  collapsed && "h-9 w-9",
                 )}
               >
-                <LandingNavIcon label={item.label} className="h-5 w-5" />
+                <LandingNavIcon label={item.label} className="h-4.5 w-4.5" />
               </span>
               {!collapsed && item.label}
             </Link>
@@ -268,29 +281,29 @@ function SidebarContent({
         })}
       </nav>
 
-      <div className="mt-auto flex w-full flex-col items-center gap-3 pb-2">
+      <div className="mt-auto flex w-full flex-col items-center gap-2 pb-1">
         <Show when="signed-out">
           {!collapsed && (
-            <SignInButton forceRedirectUrl={ROUTES.home} fallbackRedirectUrl={ROUTES.home}>
+            <SignInButton forceRedirectUrl={ROUTES.homepage} fallbackRedirectUrl={ROUTES.homepage}>
               <button
                 type="button"
                 onClick={onNavigate}
-                className="text-xs font-medium text-white/80 hover:text-white"
+                className="text-[10px] font-medium text-white/80 hover:text-white"
               >
                 Sign in
               </button>
             </SignInButton>
           )}
-          <SignUpButton forceRedirectUrl={ROUTES.home} fallbackRedirectUrl={ROUTES.home}>
+          <SignUpButton forceRedirectUrl={ROUTES.homepage} fallbackRedirectUrl={ROUTES.homepage}>
             <Button
               onClick={onNavigate}
               className={cn(
-                "rounded-full bg-gradient-to-r from-pink-500 to-fuchsia-600 text-xs font-semibold text-white shadow-lg shadow-pink-500/40 hover:from-pink-400 hover:to-fuchsia-500",
-                collapsed ? "h-9 w-9 p-0" : "my-0.5 mx-1.5 h-9 w-full max-w-[88px] px-[18px] py-[9px]",
+                "rounded-full bg-gradient-to-r from-pink-500 to-fuchsia-600 font-bold text-white shadow-md shadow-pink-500/25 transition-all duration-200 hover:from-pink-400 hover:to-fuchsia-500 active:scale-95",
+                collapsed ? "h-8 w-8 p-0 flex items-center justify-center" : "my-0.5 h-8 w-[72px] text-[10px] px-1 tracking-tight uppercase"
               )}
               aria-label={collapsed ? "Join free" : undefined}
             >
-              {collapsed ? "+" : "Join Free"}
+              {collapsed ? <Plus className="h-4 w-4" /> : "Join Free"}
             </Button>
           </SignUpButton>
         </Show>
@@ -299,7 +312,7 @@ function SidebarContent({
             <Link
               href={ROUTES.dashboard}
               onClick={onNavigate}
-              className="text-xs font-medium text-white/80 hover:text-white"
+              className="text-[10px] font-medium text-white/80 hover:text-white"
             >
               Profile
             </Link>
@@ -310,6 +323,37 @@ function SidebarContent({
     </>
   );
 }
+
+const CompassDial = ({ active }: { active: boolean }) => {
+  return (
+    <m.div
+      className={cn(
+        "relative flex h-[24px] w-[24px] items-center justify-center rounded-full border transition-all duration-300",
+        active
+          ? "border-pink-500 bg-pink-500/10 shadow-[0_0_10px_rgba(236,72,153,0.3)]"
+          : "border-zinc-700 bg-zinc-900/50"
+      )}
+      animate={active ? { rotate: [0, -15, 10, -5, 0] } : {}}
+      transition={{ duration: 0.8, ease: "easeOut" }}
+    >
+      {/* Compass Needle */}
+      <div
+        className={cn(
+          "absolute w-[2px] h-[75%] transition-colors duration-300 rotate-[45deg] bg-gradient-to-b",
+          active ? "from-pink-500 to-pink-500/10" : "from-zinc-500 to-zinc-700/10"
+        )}
+      />
+      <span
+        className={cn(
+          "relative z-10 font-sans text-[10px] font-black tracking-tighter leading-none select-none transition-colors duration-300",
+          active ? "text-white" : "text-zinc-400"
+        )}
+      >
+        N
+      </span>
+    </m.div>
+  );
+};
 
 export function LandingSidebar() {
   const pathname = usePathname();
@@ -414,7 +458,7 @@ export function LandingSidebar() {
                 <X className="h-5 w-5" />
               </Button>
             </div>
-            <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pb-4">
+            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto no-scrollbar px-4 pb-4">
               <SidebarContent
                 layout="drawer"
                 collapsed={false}
@@ -428,24 +472,59 @@ export function LandingSidebar() {
       {/* Mobile bottom nav — hidden during active 1:1 chat */}
       {!hideBottomNav && (
         <nav
-          className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around border-t border-white/5 bg-black px-1 pb-[env(safe-area-inset-bottom)] pt-2 md:hidden"
+          className="fixed bottom-0 left-0 right-0 z-40 flex h-20 items-center justify-around border-t border-white/5 bg-zinc-950/95 backdrop-blur-md px-2 pb-safe pt-2 md:hidden"
           aria-label="Mobile navigation"
         >
-          {navItems.map((item) => (
-            <Link
-              key={item.label}
-              href={item.href}
-              title={item.label}
-              aria-label={item.label}
-              className={cn(
-                "flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-0.5 px-0.5 text-[10px] max-[360px]:text-[9px]",
-                isNavActive(pathname, item.href) ? "text-pink-400" : "text-white/60",
-              )}
-            >
-              <LandingNavIcon label={item.label} className="h-5 w-5 shrink-0" />
-              <span className="max-w-full truncate max-[360px]:hidden">{item.label}</span>
-            </Link>
-          ))}
+          {MOBILE_BOTTOM_NAV_ITEMS.map((item) => {
+            const active = isNavActive(pathname, item.href);
+            const Icon = item.icon;
+
+            if (item.isCenter) {
+              const createHref = isSignedIn ? ROUTES.create : signInHrefForCreate();
+              return (
+                <Link
+                  key={item.label}
+                  href={createHref}
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white shadow-lg shadow-pink-500/25 transition-transform duration-200"
+                  aria-label="Create AI Companion"
+                >
+                  <m.div
+                    whileHover={{ scale: 1.1, rotate: 90 }}
+                    whileTap={{ scale: 0.9, rotate: 180 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                    className="flex items-center justify-center"
+                  >
+                    <Icon className="h-6 w-6" />
+                  </m.div>
+                </Link>
+              );
+            }
+
+            return (
+              <Link
+                key={item.label}
+                href={item.href}
+                className={cn(
+                  "flex flex-1 flex-col items-center justify-center gap-1 py-1 text-[11px] font-medium transition-colors duration-200",
+                  active ? "text-pink-400" : "text-zinc-500 hover:text-white/80"
+                )}
+              >
+                <m.div
+                  whileTap={{ scale: 0.85 }}
+                  animate={active ? { scale: [1, 1.12, 1] } : {}}
+                  transition={{ duration: 0.35, ease: "easeInOut" }}
+                  className="flex items-center justify-center"
+                >
+                  {item.label === "Explore" ? (
+                    <CompassDial active={active} />
+                  ) : (
+                    <Icon className={cn("h-[22px] w-[22px]", active ? "text-pink-400" : "text-zinc-500")} />
+                  )}
+                </m.div>
+                <span className="text-[10px] tracking-wide font-sans">{item.label}</span>
+              </Link>
+            );
+          })}
         </nav>
       )}
     </TooltipProvider>

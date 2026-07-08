@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import Image from "next/image";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { m, AnimatePresence } from "framer-motion";
 import { MessageBubble } from "./message-bubble";
 import { ChatInput, type ChatSendOptions } from "./chat-input";
 import { TypingIndicator } from "./typing-indicator";
@@ -585,20 +586,28 @@ export function ChatWindow({
                 })}
               </div>
             ))}
-            {isTyping && (
-              <div className="flex gap-3 items-center py-2 justify-start max-w-[min(82%,22rem)]">
-                <div className="w-8 h-8 rounded-full shrink-0 overflow-hidden relative border border-white/20">
-                  {conversation.characterAvatar && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={conversation.characterAvatar} alt={conversation.characterName} className="object-cover w-full h-full" />
-                  )}
-                </div>
-                <TypingIndicator
-                  characterName={conversation.characterName}
-                  variant={bubbleVariant}
-                />
-              </div>
-            )}
+            <AnimatePresence>
+              {isTyping && (
+                <m.div
+                  initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                  className="flex gap-3 items-center py-2 justify-start max-w-[min(82%,22rem)]"
+                >
+                  <div className="w-8 h-8 rounded-full shrink-0 overflow-hidden relative border border-white/20">
+                    {conversation.characterAvatar && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={conversation.characterAvatar} alt={conversation.characterName} className="object-cover w-full h-full" />
+                    )}
+                  </div>
+                  <TypingIndicator
+                    characterName={conversation.characterName}
+                    variant={bubbleVariant}
+                  />
+                </m.div>
+              )}
+            </AnimatePresence>
             <div ref={bottomRef} />
           </div>
         </ScrollArea>

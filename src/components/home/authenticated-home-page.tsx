@@ -3,9 +3,10 @@ import { HomeExploreGallerySection } from "@/components/home/home-explore-galler
 
 interface AuthenticatedHomePageProps {
   initialCharacters: ExploreCharacter[];
+  page?: number;
 }
 
-export function AuthenticatedHomePage({ initialCharacters }: AuthenticatedHomePageProps) {
+export function AuthenticatedHomePage({ initialCharacters, page = 1 }: AuthenticatedHomePageProps) {
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-black text-white md:pt-6 md:pb-10">
       <div
@@ -14,7 +15,7 @@ export function AuthenticatedHomePage({ initialCharacters }: AuthenticatedHomePa
       />
 
       <div className="relative mx-auto w-full max-w-[1600px] px-3 py-6 sm:px-5 md:px-6 lg:px-8">
-        <HomeExploreGallerySection initialCharacters={initialCharacters} />
+        <HomeExploreGallerySection initialCharacters={initialCharacters} page={page} />
       </div>
     </main>
   );

@@ -156,8 +156,14 @@ async function resolvePrimaryModel(
   ctx: ChatContext,
 ): Promise<string> {
   if (ctx.modelOverride?.trim()) return ctx.modelOverride.trim();
+
+  // Honor process.env.OPENROUTER_MODEL override globally if defined in the env config
+  if (process.env.OPENROUTER_MODEL?.trim()) {
+    return process.env.OPENROUTER_MODEL.trim();
+  }
+
   const settingsDefault = await resolveDefaultModel();
-  const fallback = process.env.OPENROUTER_MODEL || settingsDefault || DEFAULT_MODEL;
+  const fallback = settingsDefault || DEFAULT_MODEL;
   return ctx.plan
     ? await resolveModelForPlan(ctx.plan, character.aiModel, fallback)
     : character.aiModel || fallback;

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 /** Cards revealed per scroll batch (keep small for mobile RAM). */
-export const CHARACTER_GRID_PAGE_SIZE = 8;
+export const CHARACTER_GRID_PAGE_SIZE = 16;
 
 function listFingerprint<T extends { id?: string }>(items: T[]): string {
   if (items.length === 0) return "0";

@@ -1,7 +1,7 @@
 import "server-only";
 
 import { unstable_cache } from "next/cache";
-import { auth, clerkClient, currentUser } from "@clerk/nextjs/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { planAllowanceFromEconomy } from "@/lib/data/economy-settings";
 import { ensureFreeMonthlyAllowance } from "@/lib/coins/monthly-allowance";
@@ -93,9 +93,7 @@ async function seedProfileRows(userId: string): Promise<void> {
 // a Supabase profile (+ subscription, settings) and their monthly coin allowance.
 // Idempotent — call at the top of authenticated server pages/actions.
 export async function ensureProfile(opts?: EnsureProfileOptions): Promise<string | null> {
-  const clerkSession = await currentUser();
-  const { userId: authUserId } = await auth();
-  const userId = clerkSession?.id ?? authUserId;
+  const { userId } = await auth();
   if (!userId) return null;
 
   const exists = await profileRowExists(userId);

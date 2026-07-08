@@ -162,13 +162,22 @@ export function CreateWizardShell({
   const queryClient = useQueryClient();
   const isPreview = mode === "preview" || mode === "fullscreen-preview";
 
-  const activeSteps = useMemo(() => getEnabledSteps(config), [config]);
-  const stepCount = activeSteps.length;
-
   const [internalStep, setInternalStep] = useState(0);
   const [internalDraft, setInternalDraft] = useState<CreateCharacterDraft>(
     initialDraft || DEFAULT_CREATE_DRAFT,
   );
+  const draft = controlledDraft ?? internalDraft;
+
+  const activeSteps = useMemo(() => {
+    const enabled = getEnabledSteps(config);
+    return enabled.filter((s) => {
+      const filter = s.config?.styleFilter;
+      if (!filter || filter === "all") return true;
+      return filter === draft.style;
+    });
+  }, [config, draft.style]);
+  const stepCount = activeSteps.length;
+
   const [submitting, setSubmitting] = useState(false);
   const [revealCharacter, setRevealCharacter] = useState<any>(null);
   const [matchedTemplate, setMatchedTemplate] = useState<any>(null);
@@ -177,7 +186,6 @@ export function CreateWizardShell({
   const [previewingVoice, setPreviewingVoice] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const draft = controlledDraft ?? internalDraft;
   const step = controlledPreviewStep ?? internalStep;
   const currentStep = activeSteps[step];
 
@@ -516,7 +524,7 @@ export function CreateWizardShell({
               <p className="text-center text-sm text-white/60">{stepDef.description}</p>
             )}
             <AppearanceGrid
-              options={optionsToAppearanceList(stepDef)}
+              options={optionsToAppearanceList(stepDef, null, draft.style)}
               value={
                 stepDef.stepKey === "ethnicity"
                   ? draft.ethnicity
@@ -541,7 +549,7 @@ export function CreateWizardShell({
             <div className="space-y-3">
               <p className="text-center text-sm font-medium text-white/80">Hair style</p>
               <AppearanceGrid
-                options={optionsToAppearanceList(stepDef, "hairStyle")}
+                options={optionsToAppearanceList(stepDef, "hairStyle", draft.style)}
                 value={draft.hairStyle}
                 onChange={(id) => updateDraft({ hairStyle: id })}
                 columns={4}
@@ -551,7 +559,7 @@ export function CreateWizardShell({
             <div className="space-y-3">
               <p className="text-center text-sm font-medium text-white/80">Hair color</p>
               <AppearanceGrid
-                options={optionsToAppearanceList(stepDef, "hairColor")}
+                options={optionsToAppearanceList(stepDef, "hairColor", draft.style)}
                 value={draft.hairColor}
                 onChange={(id) => updateDraft({ hairColor: id })}
                 columns={4}

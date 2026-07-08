@@ -144,10 +144,10 @@ export function GuestCharacterSidebarList({
                 // Min height for touch targets
                 collapsed ? "min-h-11" : "min-h-[56px]",
                 visible && "animate-slide-in",
-                isDark ? "hover:bg-white/[0.05]" : "hover:bg-muted/80",
+                isDark ? "hover:bg-white/[0.04]" : "hover:bg-muted/80",
                 active &&
                   (isDark
-                    ? "bg-white/[0.07] after:absolute after:inset-y-2 after:left-0 after:w-[3px] after:rounded-r-full after:bg-primary after:shadow-[0_0_12px_-2px] after:shadow-primary/50"
+                    ? "bg-gradient-to-r from-pink-500/10 via-pink-500/[0.02] to-transparent after:absolute after:inset-y-2 after:left-0 after:w-[3px] after:rounded-r-full after:bg-[#df1a97] after:shadow-[0_0_10px_rgba(223,26,151,0.5)]"
                     : "bg-muted after:absolute after:inset-y-1.5 after:left-0 after:w-[3px] after:rounded-r-full after:bg-primary"),
               )}
               style={{ animationDelay: animDelay }}
@@ -160,7 +160,7 @@ export function GuestCharacterSidebarList({
                   collapsed ? "h-10 w-10" : "h-11 w-11",
                   active &&
                     (isDark
-                      ? "ring-2 ring-primary/60 ring-offset-1 ring-offset-[#0a0a0a]"
+                      ? "ring-2 ring-pink-500/45 ring-offset-1 ring-offset-[#0a0a0a]"
                       : "ring-2 ring-primary/50 ring-offset-1 ring-offset-background"),
                 )}
               >

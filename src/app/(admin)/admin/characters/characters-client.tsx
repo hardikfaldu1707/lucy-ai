@@ -34,6 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 import type { AdminCharacter } from "@/lib/data/admin-characters";
 
 async function fetchCharacters(): Promise<AdminCharacter[]> {
@@ -269,7 +270,7 @@ export function AdminCharactersClient({ initialCharacters }: AdminCharactersClie
         title="Characters"
         description="All companions from the database — catalog and user-created. Deletes remove them everywhere on the site."
         action={
-          <Button onClick={openCreate} className="gap-2">
+          <Button onClick={openCreate} className="gap-2 bg-gradient-to-r from-pink-500 to-fuchsia-600 font-semibold hover:from-pink-400 hover:to-fuchsia-500 text-white rounded-xl shadow-md shadow-pink-500/10 transition-all duration-200 active:scale-95">
             <Plus className="h-4 w-4" />
             New character
           </Button>
@@ -304,18 +305,21 @@ export function AdminCharactersClient({ initialCharacters }: AdminCharactersClie
                 variant={showFilters ? "default" : "outline"}
                 size="sm"
                 onClick={() => setShowFilters((s) => !s)}
-                className="gap-2"
+                className={cn(
+                  "gap-2 rounded-xl transition-all duration-200",
+                  showFilters && "bg-gradient-to-r from-pink-500 to-fuchsia-600 hover:from-pink-400 hover:to-fuchsia-500 text-white border-none shadow-md shadow-pink-500/10"
+                )}
               >
                 <SlidersHorizontal className="h-4 w-4" />
                 Filters
                 {activeFilterCount > 0 && (
-                  <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
+                  <Badge variant="secondary" className="h-5 px-1.5 text-[10px] bg-white/20 text-white rounded-full">
                     {activeFilterCount}
                   </Badge>
                 )}
               </Button>
               {activeFilterCount > 0 && (
-                <Button type="button" variant="ghost" size="sm" onClick={clearFilters}>
+                <Button type="button" variant="ghost" size="sm" onClick={clearFilters} className="rounded-xl text-pink-400 hover:text-pink-300 hover:bg-pink-500/5">
                   Clear
                 </Button>
               )}
@@ -327,10 +331,10 @@ export function AdminCharactersClient({ initialCharacters }: AdminCharactersClie
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-muted-foreground">Type</label>
                 <Select value={filterType} onValueChange={(v) => setFilterType(v as FilterType)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="rounded-xl bg-white/[0.02] border-white/5 text-white focus:ring-pink-500/30">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-zinc-950 border-white/5 text-white">
                     <SelectItem value="all">All</SelectItem>
                     <SelectItem value="catalog">Catalog (Platform)</SelectItem>
                     <SelectItem value="user">User Created</SelectItem>
@@ -341,10 +345,10 @@ export function AdminCharactersClient({ initialCharacters }: AdminCharactersClie
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-muted-foreground">Status</label>
                 <Select value={publishFilter} onValueChange={(v) => setPublishFilter(v as PublishFilter)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="rounded-xl bg-white/[0.02] border-white/5 text-white focus:ring-pink-500/30">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-zinc-950 border-white/5 text-white">
                     <SelectItem value="all">All</SelectItem>
                     <SelectItem value="published">Published</SelectItem>
                     <SelectItem value="draft">Draft</SelectItem>
@@ -355,10 +359,10 @@ export function AdminCharactersClient({ initialCharacters }: AdminCharactersClie
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-muted-foreground">Category</label>
                 <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                  <SelectTrigger>
+                  <SelectTrigger className="rounded-xl bg-white/[0.02] border-white/5 text-white focus:ring-pink-500/30">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-zinc-950 border-white/5 text-white">
                     <SelectItem value="all">All</SelectItem>
                     {categories.map((cat) => (
                       <SelectItem key={cat} value={cat}>
@@ -372,10 +376,10 @@ export function AdminCharactersClient({ initialCharacters }: AdminCharactersClie
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-muted-foreground">AI Model</label>
                 <Select value={aiModelFilter} onValueChange={setAiModelFilter}>
-                  <SelectTrigger>
+                  <SelectTrigger className="rounded-xl bg-white/[0.02] border-white/5 text-white focus:ring-pink-500/30">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-zinc-950 border-white/5 text-white">
                     <SelectItem value="all">All</SelectItem>
                     {aiModels.map((m) => (
                       <SelectItem key={m} value={m}>
@@ -389,10 +393,10 @@ export function AdminCharactersClient({ initialCharacters }: AdminCharactersClie
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-muted-foreground">Gender</label>
                 <Select value={genderFilter} onValueChange={setGenderFilter}>
-                  <SelectTrigger>
+                  <SelectTrigger className="rounded-xl bg-white/[0.02] border-white/5 text-white focus:ring-pink-500/30">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-zinc-950 border-white/5 text-white">
                     <SelectItem value="all">All</SelectItem>
                     {genders.map((g) => (
                       <SelectItem key={g} value={g}>
@@ -406,10 +410,10 @@ export function AdminCharactersClient({ initialCharacters }: AdminCharactersClie
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-muted-foreground">Style</label>
                 <Select value={styleFilter} onValueChange={setStyleFilter}>
-                  <SelectTrigger>
+                  <SelectTrigger className="rounded-xl bg-white/[0.02] border-white/5 text-white focus:ring-pink-500/30">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-zinc-950 border-white/5 text-white">
                     <SelectItem value="all">All</SelectItem>
                     {styles.map((s) => (
                       <SelectItem key={s} value={s}>
@@ -458,7 +462,7 @@ export function AdminCharactersClient({ initialCharacters }: AdminCharactersClie
           <p className="mt-1 max-w-sm text-sm text-muted-foreground">
             Create your first character to get started. Characters appear in the explore page and can be chatted with.
           </p>
-          <Button onClick={openCreate} className="mt-6 gap-2">
+          <Button onClick={openCreate} className="mt-6 gap-2 bg-gradient-to-r from-pink-500 to-fuchsia-600 font-semibold hover:from-pink-400 hover:to-fuchsia-500 text-white rounded-xl shadow-md shadow-pink-500/10 transition-all duration-200 active:scale-95 border-none">
             <Plus className="h-4 w-4" />
             Create character
           </Button>
@@ -526,6 +530,7 @@ export function AdminCharactersClient({ initialCharacters }: AdminCharactersClie
               variant="outline"
               disabled={deleteMutation.isPending}
               onClick={() => setDeleteCharacter(null)}
+              className="rounded-xl border-white/10 text-white/80 hover:bg-white/[0.06] hover:text-white"
             >
               Cancel
             </Button>
@@ -533,6 +538,7 @@ export function AdminCharactersClient({ initialCharacters }: AdminCharactersClie
               type="button"
               variant="destructive"
               disabled={deleteMutation.isPending}
+              className="rounded-xl"
               onClick={() => {
                 if (deleteCharacter) {
                   deleteMutation.mutate(deleteCharacter.id, {
@@ -572,16 +578,17 @@ export function AdminCharactersClient({ initialCharacters }: AdminCharactersClie
               variant="outline"
               disabled={changeProfileMediaMutation.isPending}
               onClick={() => setPhotoEditCharacter(null)}
+              className="rounded-xl border-white/10 text-white/80 hover:bg-white/[0.06] hover:text-white"
             >
               Cancel
             </Button>
             <Button
               type="button"
-              variant="default"
               disabled={
                 changeProfileMediaMutation.isPending ||
                 !quickProfileMedia.avatarUrl.trim()
               }
+              className="rounded-xl bg-gradient-to-r from-pink-500 to-fuchsia-600 font-semibold text-white shadow-md shadow-pink-500/10 hover:from-pink-400 hover:to-fuchsia-500 active:scale-95 transition-all border-none"
               onClick={() => {
                 if (photoEditCharacter) {
                   changeProfileMediaMutation.mutate({

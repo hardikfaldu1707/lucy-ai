@@ -46,36 +46,43 @@ export default async function DashboardHomePage() {
       <PageHeader title={welcome} description="Here's what's happening with your companions today." />
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="overflow-hidden border-primary/10 bg-gradient-to-br from-primary/5 via-background to-background lg:col-span-2 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 hover:border-primary/20">
+        {/* Active Character Card */}
+        <Card className="overflow-hidden border-white/5 bg-zinc-950/40 backdrop-blur-md lg:col-span-2 transition-all duration-300 hover:border-pink-500/20 hover:shadow-[0_0_30px_rgba(236,72,153,0.04)]">
           <CardHeader>
-            <CardTitle>Active character</CardTitle>
-            <CardDescription>Your primary companion right now</CardDescription>
+            <CardTitle className="text-white">Active companion</CardTitle>
+            <CardDescription className="text-white/60">Your primary companion right now</CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col gap-5 sm:flex-row sm:items-center">
+          <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
             {activeCharacter ? (
               <>
-                <div className="relative h-28 w-28 shrink-0 overflow-hidden rounded-2xl ring-2 ring-primary/30 ring-offset-2 ring-offset-background">
-                  <Image
-                    src={activeCharacter.avatarUrl}
-                    alt={activeCharacter.name}
-                    fill
-                    className="object-cover"
-                    sizes="112px"
-                  />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h3 className="text-xl font-semibold tracking-tight">{activeCharacter.name}</h3>
-                  <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
-                    {activeCharacter.tagline}
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <Badge className="capitalize">{activeCharacter.relationshipStatus}</Badge>
-                    <Badge variant="secondary">{activeCharacter.messageCount} messages</Badge>
+                <div className="flex items-center gap-4 sm:contents w-full">
+                  <div className="relative h-20 w-20 sm:h-24 sm:w-24 shrink-0 overflow-hidden rounded-2xl ring-2 ring-pink-500/25 ring-offset-2 ring-offset-black">
+                    <Image
+                      src={activeCharacter.avatarUrl}
+                      alt={activeCharacter.name}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 640px) 80px, 96px"
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-lg sm:text-xl font-bold tracking-tight text-white">{activeCharacter.name}</h3>
+                    <p className="mt-1 line-clamp-2 text-xs sm:text-sm text-white/70">
+                      {activeCharacter.tagline}
+                    </p>
+                    <div className="mt-2.5 flex flex-wrap gap-1.5">
+                      <Badge className="capitalize bg-pink-500/10 text-pink-400 hover:bg-pink-500/15 border-none text-[10px] sm:text-xs py-0.5 px-2 font-medium">
+                        {activeCharacter.relationshipStatus}
+                      </Badge>
+                      <Badge variant="secondary" className="bg-white/5 text-white/80 hover:bg-white/10 border-none text-[10px] sm:text-xs py-0.5 px-2 font-medium">
+                        {activeCharacter.messageCount} messages
+                      </Badge>
+                    </div>
                   </div>
                 </div>
                 <Button
                   asChild
-                  className="w-full bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white shadow-md shadow-pink-500/25 hover:from-pink-400 hover:to-fuchsia-500 sm:w-auto"
+                  className="w-full bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white shadow-md shadow-pink-500/25 hover:from-pink-400 hover:to-fuchsia-500 sm:w-auto mt-2 sm:mt-0 shrink-0 font-semibold"
                 >
                   <Link
                     href={ROUTES.publicChatWithCharacter(activeCharacter.id)}
@@ -87,11 +94,11 @@ export default async function DashboardHomePage() {
                 </Button>
               </>
             ) : (
-              <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-sm text-muted-foreground">
+              <div className="flex flex-1 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between w-full">
+                <p className="text-sm text-white/60">
                   Start your first conversation to see your active companion here.
                 </p>
-                <Button asChild>
+                <Button asChild className="bg-gradient-to-r from-pink-500 to-fuchsia-600 hover:from-pink-400 hover:to-fuchsia-500 text-white font-semibold">
                   <Link href={ROUTES.publicChatNew}>Browse companions</Link>
                 </Button>
               </div>
@@ -99,30 +106,34 @@ export default async function DashboardHomePage() {
           </CardContent>
         </Card>
 
-        <Card className="border-primary/10 bg-gradient-to-b from-muted/30 to-background transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 hover:border-primary/20">
+        {/* Subscription / Plan Card */}
+        <Card className="border-white/5 bg-zinc-950/40 backdrop-blur-md transition-all duration-300 hover:border-pink-500/20 hover:shadow-[0_0_30px_rgba(236,72,153,0.04)]">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5 text-primary" />
+            <CardTitle className="flex items-center gap-2 text-white">
+              <CreditCard className="h-5 w-5 text-pink-500" />
               Subscription
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold capitalize text-primary">{profile?.plan ?? "free"}</p>
-            <div className="mt-3 rounded-xl border bg-background/80 px-3 py-2">
+            <p className="text-2xl font-black capitalize bg-gradient-to-r from-pink-400 to-fuchsia-500 bg-clip-text text-transparent">
+              {profile?.plan ?? "free"}
+            </p>
+            <div className="mt-3 rounded-xl border border-white/5 bg-black/40 px-3 py-2">
               <CoinBalanceBadge variant="card" />
             </div>
-            <Button variant="outline" className="mt-4 w-full" asChild>
+            <Button variant="outline" className="mt-4 w-full border-zinc-800 hover:bg-white/5 hover:text-white" asChild>
               <Link href={ROUTES.subscription}>Manage plan</Link>
             </Button>
           </CardContent>
         </Card>
       </div>
 
+      {/* Recent Chats Section */}
       <div className="grid gap-6 md:grid-cols-1">
-        <Card className="transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 hover:border-primary/20">
+        <Card className="border-white/5 bg-zinc-950/40 backdrop-blur-md transition-all duration-300 hover:border-pink-500/20 hover:shadow-[0_0_30px_rgba(236,72,153,0.04)]">
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Recent chats</CardTitle>
-            <Button variant="ghost" size="sm" asChild>
+            <CardTitle className="text-white">Recent chats</CardTitle>
+            <Button variant="ghost" size="sm" className="text-pink-400 hover:text-pink-300 hover:bg-pink-500/5 font-semibold" asChild>
               <Link href={ROUTES.publicChat}>
                 View all <ArrowRight className="ml-1 h-4 w-4" />
               </Link>
@@ -135,25 +146,25 @@ export default async function DashboardHomePage() {
                   key={c.id}
                   href={ROUTES.publicChatWithCharacter(c.characterId)}
                   prefetch
-                  className="group flex items-center gap-3 rounded-xl p-2.5 transition-all duration-200 hover:bg-muted/80 hover:translate-x-1"
+                  className="group flex items-center gap-3 rounded-xl p-2.5 transition-all duration-200 hover:bg-white/[0.03] active:scale-[0.98]"
                 >
-                  <Avatar className="h-10 w-10 shrink-0 ring-1 ring-border transition-transform duration-300 group-hover:scale-105">
+                  <Avatar className="h-10 w-10 shrink-0 ring-1 ring-white/10 transition-transform duration-300 group-hover:scale-105">
                     <AvatarImage src={c.characterAvatar} alt={c.characterName} />
-                    <AvatarFallback>{c.characterName[0]}</AvatarFallback>
+                    <AvatarFallback className="bg-pink-500/10 text-pink-400">{c.characterName[0]}</AvatarFallback>
                   </Avatar>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium">{c.characterName}</p>
-                    <p className="line-clamp-1 text-sm text-muted-foreground">{c.lastMessage}</p>
+                    <p className="truncate font-semibold text-white group-hover:text-pink-400 transition-colors">{c.characterName}</p>
+                    <p className="line-clamp-1 text-sm text-white/60">{c.lastMessage}</p>
                   </div>
-                  <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                  <span className="shrink-0 text-xs tabular-nums text-white/40">
                     {formatRelativeTime(c.lastMessageAt)}
                   </span>
                 </Link>
               ))
             ) : (
-              <div className="py-6 text-center">
-                <p className="text-sm text-muted-foreground">No conversations yet.</p>
-                <Button variant="link" className="mt-2" asChild>
+              <div className="py-8 text-center">
+                <p className="text-sm text-white/50">No conversations yet.</p>
+                <Button variant="link" className="mt-2 text-pink-400 hover:text-pink-300" asChild>
                   <Link href={ROUTES.publicChatNew}>Start a chat</Link>
                 </Button>
               </div>

@@ -16,11 +16,16 @@ function imageFromConfig(
   config: CreationConfig | undefined,
   stepKey: string,
   optionKey: string,
+  style?: CreateStyle,
 ): string | null {
   if (!config) return null;
   const step = getStepByKey(config, stepKey);
   const opt = step?.options.find((o) => o.optionKey === optionKey && o.isEnabled);
-  return opt?.imageUrl ?? null;
+  if (!opt) return null;
+  if (style === "anime" && opt.metadata?.imageUrlAnime) {
+    return opt.metadata.imageUrlAnime;
+  }
+  return opt.imageUrl ?? null;
 }
 
 /** Best portrait path from trait picks: outfit → body → style. */
@@ -30,25 +35,26 @@ export function resolveCreateAvatar(
 ): string {
   const outfit = input.outfit || input.appearance?.outfit;
   const bodyType = input.bodyType || input.appearance?.bodyType;
+  const style = input.style;
 
   if (outfit) {
-    const fromConfig = imageFromConfig(config, "outfit", outfit);
+    const fromConfig = imageFromConfig(config, "outfit", outfit, style);
     if (fromConfig) return fromConfig;
     const url = createOptionImageUrl("outfit", outfit);
     if (url) return url;
   }
 
   if (bodyType) {
-    const fromConfig = imageFromConfig(config, "body", bodyType);
+    const fromConfig = imageFromConfig(config, "body", bodyType, style);
     if (fromConfig) return fromConfig;
     const url = createOptionImageUrl("body", bodyType);
     if (url) return url;
   }
 
-  const fromStyle = imageFromConfig(config, "style", input.style);
+  const fromStyle = imageFromConfig(config, "style", style, style);
   if (fromStyle) return fromStyle;
 
-  const styleUrl = createOptionImageUrl("style", input.style);
+  const styleUrl = createOptionImageUrl("style", style);
   return styleUrl ?? "";
 }
 

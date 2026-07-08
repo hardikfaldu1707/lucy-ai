@@ -21,6 +21,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BuilderOptionRow } from "./builder-option-row";
 import type { CreationOption, CreationStep, CreationStepType } from "@/types/character-creation-config";
 
@@ -160,6 +161,29 @@ export function BuilderStepEditor({
             <div className="space-y-2">
               <Label>Step type</Label>
               <Input value={STEP_TYPE_LABELS[step.stepType]} readOnly className="bg-muted" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="step-style-filter">Style Filter</Label>
+              <Select
+                value={step.config?.styleFilter ?? "all"}
+                onValueChange={(v) =>
+                  onUpdateStep({
+                    config: {
+                      ...step.config,
+                      styleFilter: v as "all" | "realistic" | "anime",
+                    },
+                  })
+                }
+              >
+                <SelectTrigger id="step-style-filter" className="w-full">
+                  <SelectValue placeholder="All Styles" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Styles (Both)</SelectItem>
+                  <SelectItem value="realistic">Realistic Only</SelectItem>
+                  <SelectItem value="anime">Anime Only</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex items-center justify-between">
               <Label htmlFor="step-required">Required</Label>

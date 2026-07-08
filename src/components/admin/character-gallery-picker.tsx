@@ -11,7 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MediaTypePicker } from "@/components/shared/media-type-picker";
 import {
   uploadGalleryMediaToR2,
   resolveCharacterUploadOptions,
@@ -23,7 +22,7 @@ import {
   VIDEO_MAX_UPLOAD_BYTES,
 } from "@/lib/storage/upload-limits";
 import { toast } from "sonner";
-import { GripVertical, Loader2, Plus, Trash2, Upload, X } from "lucide-react";
+import { GripVertical, Loader2, Plus, Trash2, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { type CharacterGalleryItem, type GalleryMediaType } from "@/types/gallery";
 
@@ -100,8 +99,6 @@ export function CharacterGalleryPicker({
   characterId,
 }: CharacterGalleryPickerProps) {
   const [uploading, setUploading] = useState(false);
-  const [showTypePicker, setShowTypePicker] = useState(false);
-  const [pendingType, setPendingType] = useState<GalleryMediaType | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [newItemTags, setNewItemTags] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -109,21 +106,9 @@ export function CharacterGalleryPicker({
   const uploadOptions = resolveCharacterUploadOptions(characterId);
   const useApi = Boolean(characterId);
 
-  const openTypePicker = () => {
-    setShowTypePicker(true);
-    setPendingType(null);
-  };
-
-  const handleTypeSelect = (type: GalleryMediaType) => {
-    setShowTypePicker(false);
-    setPendingType(type);
-    setNewItemTags([]);
-  };
-
   const handleFiles = async (files: FileList | null) => {
-    if (!files?.length || !pendingType) return;
+    if (!files?.length) return;
 
-    const type = pendingType;
     const toUpload = Array.from(files);
     const tags = newItemTags;
 
@@ -133,11 +118,17 @@ export function CharacterGalleryPicker({
       let added = 0;
 
       for (const file of toUpload) {
-        const allowed = type === "video" ? isAllowedVideoFile(file) : isAllowedImageFile(file);
-        if (!allowed) {
-          toast.error(`${file.name}: unsupported format for ${type}`);
+        const type = isAllowedVideoFile(file)
+          ? "video"
+          : isAllowedImageFile(file)
+            ? "image"
+            : null;
+
+        if (!type) {
+          toast.error(`${file.name}: unsupported format. Please upload JPEG, PNG, WebP, GIF, MP4, or WebM`);
           continue;
         }
+
         const maxSize = type === "video" ? VIDEO_MAX_UPLOAD_BYTES : IMAGE_MAX_UPLOAD_BYTES;
         if (file.size > maxSize) {
           toast.error(`${file.name}: file too large`);
@@ -157,7 +148,6 @@ export function CharacterGalleryPicker({
       if (added > 0) {
         onChange(latestItems);
         toast.success(`${added} item(s) added`);
-        setPendingType(null);
         setNewItemTags([]);
       }
     } catch (err) {
@@ -171,10 +161,6 @@ export function CharacterGalleryPicker({
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
-    if (!pendingType) {
-      openTypePicker();
-      return;
-    }
     void handleFiles(e.dataTransfer.files);
   };
 
@@ -232,10 +218,7 @@ export function CharacterGalleryPicker({
     }
   };
 
-  const accept =
-    pendingType === "video"
-      ? "video/mp4,video/webm,.mp4,.webm"
-      : "image/*";
+  const accept = "image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,.jpg,.jpeg,.png,.webp,.gif,.mp4,.webm";
 
   return (
     <div className="space-y-3">
@@ -247,7 +230,7 @@ export function CharacterGalleryPicker({
           size="sm"
           className="h-8 gap-1 text-xs"
           disabled={uploading}
-          onClick={openTypePicker}
+          onClick={() => fileInputRef.current?.click()}
         >
           {uploading ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
@@ -269,38 +252,13 @@ export function CharacterGalleryPicker({
         </p>
       )}
 
-      {showTypePicker && (
-        <div className="rounded-xl border bg-muted/30 p-3">
-          <div className="mb-2 flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">Choose media type</span>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              aria-label="Close"
-              onClick={() => setShowTypePicker(false)}
-            >
-              <X className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-          <MediaTypePicker
-            title="Add chat media"
-            subtitle="Same Photo / Video flow users see in chat"
-            variant="admin"
-            disabled={uploading}
-            onSelect={handleTypeSelect}
-          />
-        </div>
-      )}
-
-      {pendingType && !uploading && (
+      {!uploading && (
         <div className="rounded-xl border bg-card p-3">
           <MatchTagsInput
             value={newItemTags}
             onChange={setNewItemTags}
-            label={`Match tags for this ${pendingType} (optional)`}
-            placeholder="e.g. red dress — press Enter to add"
+            label="Match tags for newly added media (optional)"
+            placeholder="e.g. selfie, bedroom — press Enter to add"
           />
         </div>
       )}
@@ -314,15 +272,11 @@ export function CharacterGalleryPicker({
         }}
         onDragLeave={() => setIsDragOver(false)}
         onDrop={handleDrop}
-        onClick={() => {
-          if (pendingType) fileInputRef.current?.click();
-          else openTypePicker();
-        }}
+        onClick={() => fileInputRef.current?.click()}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
-            if (pendingType) fileInputRef.current?.click();
-            else openTypePicker();
+            fileInputRef.current?.click();
           }
         }}
         className={cn(
@@ -339,7 +293,7 @@ export function CharacterGalleryPicker({
           accept={accept}
           multiple
           className="hidden"
-          aria-label={pendingType ? `Upload ${pendingType}` : "Upload gallery media"}
+          aria-label="Upload gallery media"
           onChange={(e) => void handleFiles(e.target.files)}
         />
         {uploading ? (
@@ -348,9 +302,7 @@ export function CharacterGalleryPicker({
           <>
             <Upload className="mb-2 h-6 w-6 text-muted-foreground" aria-hidden />
             <p className="text-xs font-medium">
-              {pendingType
-                ? `Drag & drop or click to upload ${pendingType}`
-                : "Tap Add media or drop files here"}
+              Drag & drop or click to upload photo or video
             </p>
             <p className="mt-1 text-[10px] text-muted-foreground">
               Images up to 10MB, videos up to 50MB

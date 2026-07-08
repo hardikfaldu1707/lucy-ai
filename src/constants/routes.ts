@@ -4,6 +4,7 @@ export function characterProfilePath(slug: string): string {
 
 export const ROUTES = {
   home: "/",
+  homepage: "/home",
   features: "/features",
   pricing: "/pricing",
   faq: "/faq",
@@ -76,7 +77,7 @@ export function characterEntryHref(characterSlug: string): string {
 
 export function authRedirectUrl(characterSlug?: string | null): string {
   if (characterSlug) return ROUTES.characterProfile(characterSlug);
-  return ROUTES.home;
+  return ROUTES.homepage;
 }
 
 /** Clerk may pass a path (/dashboard) or full URL (http://192.168.x.x:3000/dashboard). */
@@ -124,7 +125,6 @@ export const DASHBOARD_NAV = [
   { title: "Voice", href: ROUTES.voice, icon: "Phone" },
   { title: "Memory", href: ROUTES.memory, icon: "Brain" },
   { title: "Subscription", href: ROUTES.subscription, icon: "CreditCard" },
-  { title: "Profile", href: ROUTES.profile, icon: "User" },
   { title: "Settings", href: ROUTES.settings, icon: "Settings" },
 ] as const;
 
