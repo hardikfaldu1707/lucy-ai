@@ -80,6 +80,7 @@ export function authRedirectUrl(characterSlug?: string | null): string {
   return ROUTES.homepage;
 }
 
+
 /** Clerk may pass a path (/dashboard) or full URL (http://192.168.x.x:3000/dashboard). */
 export function resolveAuthPageRedirect(
   redirectUrl?: string | null,

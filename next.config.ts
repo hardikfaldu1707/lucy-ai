@@ -108,9 +108,9 @@ const nextConfig: NextConfig = {
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: imageRemotePatterns,
-    // Option to disable image optimization in production to bypass Vercel limits.
-    // By default, it is enabled (unoptimized: false) for maximum speed and bandwidth savings.
-    unoptimized: process.env.NEXT_PUBLIC_DISABLE_IMAGE_OPTIMIZATION === "true",
+    // Option to enable/disable image optimization in production if needed.
+    // By default, it is disabled (unoptimized: true) to bypass Vercel limits (preventing 402 Payment Required errors).
+    unoptimized: process.env.NEXT_PUBLIC_DISABLE_IMAGE_OPTIMIZATION !== "false",
   },
 };
 
