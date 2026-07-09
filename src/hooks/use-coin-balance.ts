@@ -9,15 +9,19 @@ import {
 } from "@/lib/coins/client";
 
 export function useCoinBalance() {
-  const { isSignedIn, isLoaded } = useAuth();
+  const { isSignedIn, isLoaded, getToken } = useAuth();
 
   return useQuery({
     queryKey: COIN_BALANCE_QUERY_KEY,
-    queryFn: fetchCoinBalance,
+    queryFn: async () => {
+      const token = await getToken();
+      return fetchCoinBalance(token);
+    },
     enabled: isLoaded && isSignedIn,
-    staleTime: 30_000,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
+    staleTime: 10_000,
+    refetchInterval: 15_000, // Poll every 15 seconds for real-time updates
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
     placeholderData: (prev) => prev,
   });
 }

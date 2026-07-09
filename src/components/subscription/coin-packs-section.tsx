@@ -138,7 +138,7 @@ export function CoinPacksSection({ packs, enabled }: CoinPacksSectionProps) {
           priceLabel={formatPrice(selectedPack.priceCents, selectedPack.currency)}
           coinAmount={selectedPack.coinAmount}
           onSuccess={() => {
-            queryClient.invalidateQueries({ queryKey: ["coin-balance"] });
+            queryClient.invalidateQueries({ queryKey: ["coins", "balance"] });
             router.refresh();
           }}
         />

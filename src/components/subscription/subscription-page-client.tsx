@@ -53,7 +53,7 @@ export function SubscriptionPageClient({
   useEffect(() => {
     if (searchParams.get("coins_purchased") === "1") {
       toast.success("Coins purchased successfully!");
-      queryClient.invalidateQueries({ queryKey: ["coin-balance"] });
+      queryClient.invalidateQueries({ queryKey: ["coins", "balance"] });
     }
     if (searchParams.get("upgraded") === "1") {
       toast.success("Plan upgraded successfully!");

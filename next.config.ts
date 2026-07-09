@@ -108,9 +108,9 @@ const nextConfig: NextConfig = {
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: imageRemotePatterns,
-    // Bypass Vercel's image optimizer limits in production by disabling it.
-    // Images will load directly from R2/remote host.
-    unoptimized: true,
+    // Option to disable image optimization in production to bypass Vercel limits.
+    // By default, it is enabled (unoptimized: false) for maximum speed and bandwidth savings.
+    unoptimized: process.env.NEXT_PUBLIC_DISABLE_IMAGE_OPTIMIZATION === "true",
   },
 };
 

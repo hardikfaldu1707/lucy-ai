@@ -121,9 +121,7 @@ export function signupForGuestChat(characterSlug: string): string {
 export const DASHBOARD_NAV = [
   { title: "Home", href: ROUTES.dashboard, icon: "LayoutDashboard" },
   { title: "My girls", href: ROUTES.myGirls, icon: "Sparkles" },
-  { title: "Chat", href: ROUTES.chat, icon: "MessageCircle" },
   { title: "Voice", href: ROUTES.voice, icon: "Phone" },
-  { title: "Memory", href: ROUTES.memory, icon: "Brain" },
   { title: "Subscription", href: ROUTES.subscription, icon: "CreditCard" },
   { title: "Settings", href: ROUTES.settings, icon: "Settings" },
 ] as const;

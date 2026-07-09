@@ -160,47 +160,67 @@ export function MessageBubble({
       >
         {isMedia ? (
           /* Media bubble */
-          <div
-            className={cn(
-              "w-52 relative overflow-hidden aspect-[3/4] border border-white/10 bg-zinc-950 shadow-md",
-              isUser
-                ? groupPosition === "last" || groupPosition === "single"
-                  ? "rounded-2xl rounded-br-md"
-                  : "rounded-2xl"
-                : groupPosition === "last" || groupPosition === "single"
-                  ? "rounded-2xl rounded-bl-md"
-                  : "rounded-2xl",
-            )}
-          >
-            {message.isStreaming && !message.mediaUrl ? (
-              <div className="absolute inset-0 flex items-center justify-center bg-zinc-900/90">
-                <HeartLoader size="md" />
-              </div>
-            ) : message.mediaUrl && isVideo ? (
-              <video
-                src={message.mediaUrl}
-                controls
-                playsInline
-                preload="metadata"
-                className="h-full w-full object-cover"
-              />
-            ) : message.mediaUrl ? (
-              <ShimmerImage
-                src={message.mediaUrl}
-                alt={isUser ? "Shared GIF" : `Photo from ${characterName ?? "AI"}`}
-              />
-            ) : null}
-
-            {/* Overlaid timestamp + ticks */}
-            {!(message.isStreaming && !message.mediaUrl) && (
-              <div className="absolute bottom-2 right-2 rounded-md bg-black/60 px-1.5 py-0.5 flex items-center gap-1 backdrop-blur-[2px] z-10">
-                <BubbleMeta
-                  createdAt={message.createdAt}
-                  deliveryStatus={deliveryStatus}
-                  isUser={isUser}
-                  variant="dark"
-                  inline
+          <div className="flex flex-col gap-1.5 max-w-full">
+            <div
+              className={cn(
+                "w-52 relative overflow-hidden aspect-[3/4] border border-white/10 bg-zinc-950 shadow-md",
+                isUser
+                  ? groupPosition === "last" || groupPosition === "single"
+                    ? "rounded-2xl rounded-br-md"
+                    : "rounded-2xl"
+                  : groupPosition === "last" || groupPosition === "single"
+                    ? "rounded-2xl rounded-bl-md"
+                    : "rounded-2xl",
+              )}
+            >
+              {message.isStreaming && !message.mediaUrl ? (
+                <div className="absolute inset-0 flex items-center justify-center bg-zinc-900/90">
+                  <HeartLoader size="md" />
+                </div>
+              ) : message.mediaUrl && isVideo ? (
+                <video
+                  src={message.mediaUrl}
+                  controls
+                  playsInline
+                  preload="metadata"
+                  className="h-full w-full object-cover"
                 />
+              ) : message.mediaUrl ? (
+                <ShimmerImage
+                  src={message.mediaUrl}
+                  alt={isUser ? "Shared GIF" : `Photo from ${characterName ?? "AI"}`}
+                />
+              ) : null}
+
+              {/* Overlaid timestamp + ticks */}
+              {!(message.isStreaming && !message.mediaUrl) && (
+                <div className="absolute bottom-2 right-2 rounded-md bg-black/60 px-1.5 py-0.5 flex items-center gap-1 backdrop-blur-[2px] z-10">
+                  <BubbleMeta
+                    createdAt={message.createdAt}
+                    deliveryStatus={deliveryStatus}
+                    isUser={isUser}
+                    variant="dark"
+                    inline
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Accompanying text message below the media */}
+            {message.content && message.content.trim() && (
+              <div
+                className={cn(
+                  "w-fit max-w-full px-3.5 py-2 text-sm shadow-sm rounded-2xl",
+                  isUser
+                    ? "bg-primary text-primary-foreground self-end"
+                    : isDark
+                      ? "border border-white/[0.06] bg-zinc-900/85 text-white/95"
+                      : "bg-muted text-foreground",
+                )}
+              >
+                <p className="whitespace-pre-wrap break-words leading-[1.35] [overflow-wrap:anywhere]">
+                  {message.content}
+                </p>
               </div>
             )}
           </div>

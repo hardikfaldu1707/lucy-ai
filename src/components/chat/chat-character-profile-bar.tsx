@@ -72,7 +72,7 @@ export function ChatCharacterProfileBar({
           aria-label={`View ${characterName}'s profile`}
         >
           <Avatar className="h-9 w-9 shrink-0 ring-1 ring-white/10 sm:h-10 sm:w-10">
-            <AvatarImage src={characterAvatar} alt={characterName} />
+            <AvatarImage src={characterAvatar} alt={characterName} loading="eager" />
             <AvatarFallback className="text-sm">{characterName[0]}</AvatarFallback>
           </Avatar>
           <div className="min-w-0 flex-1">

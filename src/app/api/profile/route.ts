@@ -25,10 +25,10 @@ export async function GET() {
   const { userId } = await auth();
   if (!userId) return new NextResponse("Unauthorized", { status: 401 });
 
-  await ensureProfile({ skipAllowance: true });
-
-  const profile = await getProfileById(userId);
-  const settings = await getProfileSettingsById(userId);
+  const [profile, settings] = await Promise.all([
+    getProfileById(userId),
+    getProfileSettingsById(userId),
+  ]);
   if (!profile) {
     return NextResponse.json({ error: "Profile not found" }, { status: 404 });
   }

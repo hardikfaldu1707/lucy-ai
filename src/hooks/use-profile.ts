@@ -16,9 +16,8 @@ export function useProfile() {
     queryKey: PROFILE_QUERY_KEY,
     queryFn: fetchProfile,
     enabled: isLoaded && isSignedIn,
-    staleTime: 0,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
+    staleTime: 30_000,
+    refetchOnMount: false,
     placeholderData: (prev) => prev,
   });
 }
